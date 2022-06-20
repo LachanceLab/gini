@@ -50,21 +50,9 @@ table(group, exclude = NULL)
 pop <- tibble(IDD=raw_data$IID,
               ancestry=group)
 
-#####################################################
-
 # reads the list of IIDs to remove (who withdrew consent) and filters them out
 IIDs_to_remove <- fread(loc_remove)$V1
 pop <- pop %>% filter(!(IID %in% IIDs_to_remove))
-
-ancestries <- levels(as.factor(pop$ancestry))
-# loops through each of 9 ancestries and outputs files containing IIDs of the
-# people in that group [[I MIGHT NOT EVEN NEED THIS?]]
-for (ancestry2 in ancestries) {
-  pop_ancestry <- pop %>% filter(ancestry == ancestry2) %>% select(IID)
-  loc_output <- paste0(dir_output,"pop_",ancestry2,"_iids.txt")
-  write.table(pop_ancestry, loc_output,
-              row.names=FALSE, col.names=FALSE, quote=FALSE)
-}
 
 # Produces file containing FID (which is just IID), IID, and their ancestry
 pop <- pop %>% mutate(FID=IID) %>% select(FID,IID,ancestry)
