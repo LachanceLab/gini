@@ -1,0 +1,2 @@
+chrom   rsID    chr_position    A1      A2      effect_weight   VarFreq_Ashkenazi       VarFreq_Caribbean       VarFreq_China   VarFreq_India   VarFreq_Iran    VarFreq_Italy   VarFreq_Nigeria VarFreq_Poland   VarFreq_United
+1       rs123456        1234567 A       G       0.00123456      0.1001  0.1002  0.1003  0.1004  0.1005  0.1006  0.1007  0.1008  0.1009

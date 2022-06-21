@@ -1,7 +1,7 @@
 # 1 - assign_ancestries_to_IIDs.R
 
-# This script runs the ancestral grouping code found on the homepage of Prive's
-# github page for the UKBB-PGS project: https://github.com/privefl/UKBB-PGS
+# This script runs the ancestral grouping code found on the homepage of Prive et
+# al's github page for the UKBB-PGS project: https://github.com/privefl/UKBB-PGS
 # It produces a tsv file containing the IIDs of everyone in UKBB, their ancestry
 # (according to Prive's method), and whether they self identify as white-British)
 
@@ -17,7 +17,7 @@ loc_output <- "/storage/coda1/p-jlachance6/0/shared/gini/UKB/pop_ALL_iids.txt"
 # sets location of file with list of IIDs to remove (due to withdrawing consent
 # from study) and of directory where ancestry-IID files will be created
 loc_remove <- "/directory/IIDS_to_remove.csv"
-dir_output <- "/directory/output/"
+dir_output <- "../generated_data/"
 
 
 ### Code ----
@@ -58,5 +58,5 @@ pop <- pop %>% filter(!(IID %in% IIDs_to_remove))
 pop <- pop %>% mutate(FID=IID) %>% select(FID,IID,ancestry)
 # r stands for 'removed those who withdrew consent
 # c stands for 'clean', meaning it contains FID, IID, and ancestry
-loc_output <- paste0(dir_output,"pop_ALLrc_iids.txt")
+loc_output <- paste0(dir_output,"pop_ALLrc_IIDs.txt")
 write.table(pop,loc_output,row.names=FALSE,col.names=FALSE,quote=FALSE)
