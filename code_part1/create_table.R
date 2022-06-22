@@ -7,7 +7,6 @@
 ### Libraries and directories ----
 library(tidyverse)
 library(data.table)
-library(quincunx)
 
 # location to 'phenotype-description.csv' file downloaded from Prive et al.'s
 # github: https://github.com/privefl/UKBB-PGS/blob/main/phenotype-description.xlsx
@@ -16,10 +15,15 @@ loc_phenotype_description <- "../prive_data/phenotype-description.csv"
 # location to 'phenotype-info.csv' file downloaded from Prive et al.'s
 # github: https://github.com/privefl/UKBB-PGS/blob/main/phenotype-info.csv
 loc_phenotype_info <- "../prive_data/phenotype-info.csv"
+# location to 'pred-cor-PLR.csv' file downloaded from Prive et al.'s figshare:
+# https://figshare.com/articles/dataset/Effect_sizes_for_215_polygenic_scores/14074760/2?file=31619357
+loc_pcor <- "../prive_data/pred-cor-PLR.csv"
 # location to a file we generated that vastly speeds up the process of binning
 loc_chr_max_bps <- "../generated_data/chr_max_bps.txt"
 # directory where summary files with betas+AFs for each trait are stored
 dir_summary_files <- "../generated_data/betas_and_AFs/"
+# location where the final traits_table should be saved to
+loc_traits_table <- "../generated_data/traits_table.txt"
 
 ### Code ----
 
@@ -36,7 +40,22 @@ prive_description <- as_tibble(fread(loc_phenotype_description))
 traits_table <- prive_description %>%
   filter(phenotype %in% codes) %>%
   left_join(prive_info, by=c("phenotype"="pheno")) %>%
-  rename("prive_code"="phenotype")
+  rename("prive_code"="phenotype") %>%
+  mutate(trait_type = ifelse(is.na(N),"binary","quantitative"))
+
+## Joining Prive et al.'s partial correlation values =====
+
+pcors <- as_tibble(fread(loc_pcor))
+pcors$pop <- gsub('United Kingdom', 'United', pcors$pop)
+pcors <- pcors %>%
+  rename(Nsize = N) %>%
+  arrange(pop) %>%
+  pivot_wider(
+    names_from = pop,
+    names_glue = "{.value}_{pop}",
+    values_from = c(Nsize,pcor,inf,sup)
+  )
+traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
 ## Generating gini for each =====
 
@@ -112,9 +131,10 @@ get_gini <- function(list) {
 }
 
 # expands traits_table for gini calculation
-ancestries <- sort(read.csv(
+pop_centers <- read.csv(
   "https://raw.githubusercontent.com/privefl/UKBB-PGS/main/pop_centers.csv",
-  stringsAsFactors = FALSE)$Ancestry)
+  stringsAsFactors = FALSE)
+ancestries <- sort(pop_centers$Ancestry)
 ancestries[9] <- "United" # in order to match other data
 for (ancestry in ancestries) {
   col_gini <- paste0("gini_",ancestry)
@@ -134,7 +154,7 @@ for (i in 1:nrow(traits_table)) {
   filename <- paste0(code,"-betasAFs.txt")
   loc_summary_file <- paste0(dir_summary_files,filename)
   
-  print(paste("Reading summary file for",code))
+  print(paste("Calculating gini for",code))
   summary_file <- as_tibble(fread(loc_summary_file))
   n_snps <- nrow(summary_file)
   
@@ -165,3 +185,57 @@ for (i in 1:nrow(traits_table)) {
     traits_table[i,col_gini] <- pop_gini
   }
 }
+
+## Calculating portability indices =====
+
+# obtains mean PC distance between ancestries
+prive_PC <- pop_centers %>% select(PC1:PC16)
+prive_dist_to_UK <- as.matrix(dist(prive_PC))[,1]
+distances <- tibble(
+  population = pop_centers$Ancestry,
+  prive_dist_to_UK = prive_dist_to_UK
+) %>% arrange(population)
+distances$population <- str_replace(distances$population,"United Kingdom","United")
+
+
+portability_indices <- c()
+portability_index_SEs <- c()
+portability_index_Ps <- c()
+codes <- traits_table$prive_code
+# loops through trait and calculates the slope of the line of best fit for
+# for relative predictive performance against PC distance from UK
+for (code in codes) {
+  temp <- traits_table %>% filter(prive_code == code) %>%
+    select(starts_with("pcor_")) %>%
+    pivot_longer(
+      cols = starts_with("pcor_"),
+      names_prefix = "pcor_",
+      names_to = "population",
+      values_to = "pcor"
+    ) %>% mutate(
+      relative_pcor = pcor / (traits_table %>% filter(prive_code == code))$pcor_United[1]
+    ) %>% left_join(distances, by="population")
+  
+  lin_model <- lm((temp$relative_pcor - 1) ~ 0 + temp$prive_dist_to_UK)
+  portability_index <- summary(lin_model)$coefficients[1,1]
+  portability_index_SE <- summary(lin_model)$coefficients[1,2]
+  portability_index_P <- summary(lin_model)$coefficients[1,4]
+  
+  portability_indices <- append(portability_indices,portability_index)
+  portability_index_SEs <- append(portability_index_SEs,portability_index_SE)
+  portability_index_Ps <- append(portability_index_Ps,portability_index_P)
+  
+  print(paste(code,portability_index))
+}
+# appends portability index statistics to traits_table
+traits_table$portability_index <- portability_indices
+traits_table$portability_index_SE <- portability_index_SEs
+traits_table$portability_index_P <- portability_index_Ps
+
+## Calculating F_statistic (PRS divergence) ----
+
+# insert code here
+
+
+## Saving the traits_table
+write.table(traits_table,loc_traits_table,sep="\t",quote=FALSE,row.names=FALSE)
