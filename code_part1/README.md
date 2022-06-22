@@ -7,3 +7,4 @@ The code in this folder is used to create a master traits table containing all t
 1. `assign_ancestries_to_IIDs.R`: Assigns an ancestry to each individual in the sample using Prive et al's code.
 2. `create_ancestry_AFs.sh`: PLINK script that calculates allele frequencies per ancestry
 3. `append_betas_AFs.R`: Appends allele frequencies onto Prive et al.'s effect weights and generates files
+4. `create_table.R`: Creates a table containing all relevant trait information, such as prediction performance, heritability, gini, portability, and PRS divergence.
