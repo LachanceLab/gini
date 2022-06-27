@@ -4,7 +4,7 @@
 # their data from. This includes joining all of Prive et al.'s trait info into
 # one, and calculating gini, portability, and PRS divergence for each trait
 
-### Libraries and directories ----
+### Libraries and directories ####
 library(tidyverse)
 library(data.table)
 
@@ -27,7 +27,7 @@ loc_traits_table <- "../generated_data/traits_table.txt"
 
 ### Code ----
 
-## Joining trait descriptions =====
+## Joining trait descriptions ####
 
 # not all traits listed in Prive et al.'s tables had betas computed, so we are
 # going to restrict the tables to just the taits that do have them
@@ -43,7 +43,7 @@ traits_table <- prive_description %>%
   rename("prive_code"="phenotype") %>%
   mutate(trait_type = ifelse(is.na(N),"binary","quantitative"))
 
-## Joining Prive et al.'s partial correlation values =====
+## Joining Prive et al.'s partial correlation values ####
 
 pcors <- as_tibble(fread(loc_pcor))
 pcors$pop <- gsub('United Kingdom', 'United', pcors$pop)
@@ -57,7 +57,7 @@ pcors <- pcors %>%
   )
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
-## Generating gini for each =====
+## Generating gini for each ####
 
 # loads a file that contains the max base pair position for each chromosome
 chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
@@ -186,7 +186,7 @@ for (i in 1:nrow(traits_table)) {
   }
 }
 
-## Calculating portability indices =====
+## Calculating portability indices ####
 
 # obtains mean PC distance between ancestries
 prive_PC <- pop_centers %>% select(PC1:PC16)
@@ -232,7 +232,7 @@ traits_table$portability_index <- portability_indices
 traits_table$portability_index_SE <- portability_index_SEs
 traits_table$portability_index_P <- portability_index_Ps
 
-## Calculating F_statistic (PRS divergence) ----
+## Calculating F_statistic (PRS divergence) ####
 
 # insert code here
 
