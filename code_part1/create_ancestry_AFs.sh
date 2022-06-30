@@ -7,8 +7,8 @@ do
 
 ~/plink1_9/plink \
 --bfile /directory/UKB_QC_chr$i \
---keep ../generated_data/pop_ALLrc_iids.txt \
---within ../generated_data/pop_ALLrc_iids.txt \
+--keep ../generated_data/pop_ALLrc_IIDs.txt \
+--within ../generated_data/pop_ALLrc_IIDs.txt \
 --freq \
 --out ../generated_data/allele_frequencies/pop_ALL_AFs_chr$i
 

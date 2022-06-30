@@ -9,9 +9,12 @@
 library(tidyverse)
 library(data.table)
 
+# sets working directory
+setwd("./")
 # sets location to allele frequencies generated in previous PLINK script
 dir_AFs <- "../generated_data/allele_frequencies/"
 # sets location to Prive et al.'s list of SNPs and their betas, from:
+# 'PGS-effects-PLR.csv.gz' <-- unzip first
 # https://figshare.com/articles/dataset/Effect_sizes_for_215_polygenic_scores/14074760/2?file=31619351
 loc_betas <- "../prive_data/PGS-effects-PLR.csv"
 # sets directory where all the betas+appended AFs will be saved to
@@ -37,7 +40,8 @@ betas <- tibble(
 for (code in codes) {
   betas[,as.character(code)] <- as.numeric()
 }
-col_ancestries <- colnames(AFs[[1]])[5:length(colnames(AFs[[1]]))]
+temp <- as_tibble(fread(paste0(dir_AFs,"pop_ALL_AFs_chr22.frq.strat")))
+col_ancestries <- paste0("VarFreq_",levels(as.factor(temp$CLST)))
 for (col_ancestry in col_ancestries) {
   betas[,col_ancestry] <- as.numeric()
 }

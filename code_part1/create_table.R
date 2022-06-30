@@ -8,17 +8,25 @@
 library(tidyverse)
 library(data.table)
 
-# location to 'phenotype-description.csv' file downloaded from Prive et al.'s
-# github: https://github.com/privefl/UKBB-PGS/blob/main/phenotype-description.xlsx
+# sets working directory
+setwd("./")
+
+# sets directory where necessary prive files are stored. The following files
+# need to be in this directory with the same file names listed here:
+
+# 'phenotype-description.csv' download from Prive et al's github:
+# https://github.com/privefl/UKBB-PGS/blob/main/phenotype-description.xlsx
 # NOTE: MUST CONVERT TO READABLE FORMAT FOR R (.csv, .tsv, .txt, etc.)
-loc_phenotype_description <- "../prive_data/phenotype-description.csv"
-# location to 'phenotype-info.csv' file downloaded from Prive et al.'s
-# github: https://github.com/privefl/UKBB-PGS/blob/main/phenotype-info.csv
-loc_phenotype_info <- "../prive_data/phenotype-info.csv"
-# location to 'pred-cor-PLR.csv' file downloaded from Prive et al.'s figshare:
+
+# 'phenotype-info.csv' download from Prive et al.'s github:
+# https://github.com/privefl/UKBB-PGS/blob/main/phenotype-info.csv
+
+# 'pred-cor-PLR.csv' download from Prive et al.'s figshare:
 # https://figshare.com/articles/dataset/Effect_sizes_for_215_polygenic_scores/14074760/2?file=31619357
-loc_pcor <- "../prive_data/pred-cor-PLR.csv"
+dir_prive_data <- "../prive_data/"
+
 # location to a file we generated that vastly speeds up the process of binning
+# can be obtained from our github under ~/generated_data/
 loc_chr_max_bps <- "../generated_data/chr_max_bps.txt"
 # directory where summary files with betas+AFs for each trait are stored
 dir_summary_files <- "../generated_data/betas_and_AFs/"
@@ -26,6 +34,11 @@ dir_summary_files <- "../generated_data/betas_and_AFs/"
 loc_traits_table <- "../generated_data/traits_table.txt"
 
 ### Code ----
+
+# sets location to files used later in the script
+loc_phenotype_description <- paste0(dir_prive_data,"phenotype-description.csv")
+loc_phenotype_info <- paste0(dir_prive_data,"phenotype-info.csv")
+loc_pcor <-paste0(dir_prive_data,"pred-cor-PLR.csv")
 
 ## Joining trait descriptions ####
 

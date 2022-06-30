@@ -10,10 +10,11 @@
 library(tidyverse)
 library(data.table)
 
+# sets working directory
+setwd("./")
 # sets location of phenotype file containing UKB IIDs and their first 16
 # principal components (or more)
 loc_PC <- "/directory/ukb_IID_16PCs.txt"
-loc_output <- "/storage/coda1/p-jlachance6/0/shared/gini/UKB/pop_ALL_iids.txt"
 # sets location of file with list of IIDs to remove (due to withdrawing consent
 # from study) and of directory where ancestry-IID files will be created
 loc_remove <- "/directory/IIDS_to_remove.csv"
@@ -23,7 +24,7 @@ dir_output <- "../generated_data/"
 ### Code ----
 
 # reads PC data and selects for just first 16 PCs (if more are present)
-raw_data <- as_tibble(loc_PC)
+raw_data <- as_tibble(fread(loc_PC))
 PC_UKBB <- raw_data %>% select(paste0("V", 26:41))
 
 # Prive's code from github
@@ -47,7 +48,7 @@ group <- apply(all_sq_dist, 1, function(x) {
 table(group, exclude = NULL)
 
 # creates table containing IIDs and ancestry (keep order of original data)
-pop <- tibble(IDD=raw_data$IID,
+pop <- tibble(IID=raw_data$IID,
               ancestry=group)
 
 # reads the list of IIDs to remove (who withdrew consent) and filters them out
