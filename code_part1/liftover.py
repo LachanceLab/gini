@@ -35,9 +35,6 @@ for x in range(0, len(contents)):
 		line = line.strip().split()
 		chrom_index = line.index('chrom')
 		chrom_pos_index = line.index('chr_position')
-		popList = ['VarFreq_Ashkenaz', 'VarFreq_Caribbean', 'VarFreq_China', 'VarFreq_India', 'VarFreq_Iran' , 'VarFreq_Italy', 'VarFreq_Nigeria', 'VarFreq_Poland', 'VarFreq_United']
-		for pop in popList:
-			line.append(pop)
 		line = '\t'.join(line)
 		print(line)
 	else:
@@ -49,7 +46,7 @@ for x in range(0, len(contents)):
 		new_position_tuple = lo.convert_coordinate(chrom, chrom_position)
 		if new_position_tuple: #if the list contains elements
 			new_position = new_position_tuple[0][1]
-			line[chrom_pos_index] = new_position
+			line[chrom_pos_index] = int(new_position)
 			lineList = list(map(convert, line))
 			line = '\t'.join(lineList)
 			print(line)
