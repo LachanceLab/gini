@@ -5,7 +5,6 @@
 import pandas as pd
 import argparse as ap
 import os
-import time
 
 parser = ap.ArgumentParser()
 parser = ap.ArgumentParser(description="creation of SNP.txt for each trait")
