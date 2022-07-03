@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-#Example input: ./liftover.py -s /Volumes/T7/prive_sf_211_PLR_9ancestries/153-1KG_PLR.txt -o /Users/adrianharris/Desktop/
+#Example input: ./liftover.py -s <summary_file_path> -o </output_directory_path/>
+
 import argparse as ap
 import sys 
 import pyliftover
@@ -49,8 +50,7 @@ for x in range(0, len(contents)):
 			line[chrom_pos_index] = int(new_position)
 			lineList = list(map(convert, line))
 			line = '\t'.join(lineList)
-			print(line)
-			#need a way to write to this specific position of 
+			print(line) 
 		else:
 			pass
 #sys.stdout = original_stdout
