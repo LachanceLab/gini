@@ -64,7 +64,7 @@ histogram1 <- ggplot(divergence_df, aes(x=as.numeric(sum), fill=ancestry)) + geo
 histogram1 <- histogram1 + theme(legend.title=element_blank())
 print(histogram1)
 
-histogram2 <- ggplot(divergence_df2, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Skin Colour') + annotate("text",x=0.75,y=2.25,label=paste0("log(F) =", f_val2, sep=" "), size = 6)
+histogram2 <- ggplot(divergence_df2, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Skin Colour') + annotate("text",x=0.75,y=2.20,label=paste0("log(F) =", f_val2, sep=" "), size = 6)
 histogram2 <- histogram2 + theme(legend.title=element_blank()) 
 
 print(histogram2)
