@@ -60,11 +60,11 @@ f_val2 <- round(summary(one.way2)[[1]]["F value"][[1]][[1]], digits = 3)
 f_val2 <- round(log(f_val2), digits = 3)
 #p_val <- summary(one.way)[[1]]["Pr(>F)"][[1]][[1]]
 
-histogram1 <- ggplot(divergence_df, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Type 1 Diabetes') + annotate("text",x=2,y=1,label=paste0("log(F) =", f_val, sep=" "), size=6)
+histogram1 <- ggplot(divergence_df, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Type 1 Diabetes') + annotate("text",x=2.25,y=1,label=paste0("log(F) =", f_val, sep=" "), size=6)
 histogram1 <- histogram1 + theme(legend.title=element_blank())
 print(histogram1)
 
-histogram2 <- ggplot(divergence_df2, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Skin Colour') + annotate("text",x=0.75,y=2.2,label=paste0("log(F) =", f_val2, sep=" "), size = 6)
+histogram2 <- ggplot(divergence_df2, aes(x=as.numeric(sum), fill=ancestry)) + geom_density(color='#e9ecef', alpha=0.6, position='identity') + theme_bw() + labs(x='Polygenic Score per UKBB Individual', y='Density') + ggtitle('Skin Colour') + annotate("text",x=0.75,y=2.25,label=paste0("log(F) =", f_val2, sep=" "), size = 6)
 histogram2 <- histogram2 + theme(legend.title=element_blank()) 
 
 print(histogram2)
