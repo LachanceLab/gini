@@ -56,6 +56,29 @@ traits_table <- prive_description %>%
   rename("prive_code"="phenotype") %>%
   mutate(trait_type = ifelse(is.na(N),"binary","quantitative"))
 
+# consolidates trait groups into fewer categories
+groups_consolidated <- list(
+  "psychological" = c("psychiatric disorders"),
+  "diseases" = c("circulatory system","dermatologic","digestive",
+                 "endocrine/metabolic","genitourinary","hematopoietic",
+                 "musculoskeletal","neoplasms","neurological",
+                 "psychiatric disorders","respiratory","sense organs",         
+                 "symptoms"),
+  "biological measures" = c("biological measures"),
+  "lifestyle/environment" = c("lifestyle and environment"),
+  "physical measures" = c("injuries & poisonings","physical measures","sex-specific factors")
+)
+for (i in 1:nrow(traits_table)) {
+  for (group_consolidated in names(groups_consolidated)) {
+    if (traits_table$group[i] %in% groups_consolidated[[group_consolidated]]) {
+      traits_table$group_consolidated[i] <- group_consolidated
+      break
+    }
+  }
+}
+psychological_codes <- c("fluid_intelligence")
+traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidated"] <- "psychological"
+
 ## Joining Prive et al.'s partial correlation values ####
 
 pcors <- as_tibble(fread(loc_pcor))
