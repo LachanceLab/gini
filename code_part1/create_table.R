@@ -1,4 +1,4 @@
-# 4 - create_table.R
+# 5 - create_table.R
 
 # This script creates the traits table from which most proceeding analysis take
 # their data from. This includes joining all of Prive et al.'s trait info into
@@ -30,8 +30,9 @@ dir_prive_data <- "../prive_data/"
 loc_chr_max_bps <- "../generated_data/chr_max_bps.txt"
 # directory where summary files with betas+AFs for each trait are stored
 dir_summary_files <- "../generated_data/betas_and_AFs/"
-# location where the final traits_table should be saved to
-loc_traits_table <- "../generated_data/traits_table.txt"
+# directory where the traits_table and other intermediate output files will be
+# saved to
+dir_out <- "../generated_data/"
 
 ### Code ----
 
@@ -93,7 +94,7 @@ pcors <- pcors %>%
   )
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
-## Generating gini for each ####
+## Generating gini for each trait ####
 
 # loads a file that contains the max base pair position for each chromosome
 chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
@@ -184,7 +185,16 @@ threshold_zero_padding <- TRUE  # whether traits with less than 100 significant
                                 # bins are padded with 0 heritability bins
 threshold <- 100                # top # of bins (by heritability) to include
 
-# loops through each trait and calculates gini for each
+# loops through each trait and calculates gini for each, as well as keeps track
+# of the SNPs in the top 100 bins in each trait for the UK
+top100bin_SNPs <- tibble(
+  chrom = as.numeric(),
+  rsID = as.character(),
+  chr_position = as.numeric(),
+  A1 = as.character(),
+  A2 = as.character(),
+  prive_code = as.character()
+)
 for (i in 1:nrow(traits_table)) {
   code <- traits_table$prive_code[i]
   filename <- paste0(code,"-betasAFs.txt")
@@ -194,33 +204,46 @@ for (i in 1:nrow(traits_table)) {
   summary_file <- as_tibble(fread(loc_summary_file))
   n_snps <- nrow(summary_file)
   
-  if (bin_size > 1) {summary_file <- bin_snps(summary_file, bin_size)}
-  else {summary_file <- summary_file %>% mutate(bin_ID = row_number())}
+  if (bin_size > 1) {summary_file <- bin_snps(summary_file, bin_size)
+  } else {summary_file <- summary_file %>% mutate(bin_ID = row_number())}
   
   for (ancestry in ancestries) {
     col_AF <- paste0("VarFreq_",ancestry)
     col_gini <- paste0("gini_",ancestry)
     pop_data <- summary_file %>%
-      select(effect_weight,!!as.name(col_AF), bin_ID) %>%
+      #select(effect_weight,!!as.name(col_AF), bin_ID) %>%
       drop_na()
     pop_data[[col_AF]] <- as.numeric(pop_data[[col_AF]])
     
     pop_data <- get_h2(pop_data, "effect_weight",col_AF)
     
-    if (bin_size > 1) {pop_data <- get_data_binned(pop_data, bin_summary_method)}
+    if (bin_size > 1) {pop_data_binned <- get_data_binned(pop_data, bin_summary_method)}
     
-    n_significant_bins <- nrow(pop_data)
+    n_significant_bins <- nrow(pop_data_binned)
     
     if (threshold < n_significant_bins) {
-      h2_list <- (pop_data %>% filter(rank <= threshold))$h2
+      h2_list <- (pop_data_binned %>% filter(rank <= threshold))$h2
     } else {
-      h2_list <- c(rep(0, (threshold - n_significant_bins)), pop_data$h2)
+      h2_list <- c(rep(0, (threshold - n_significant_bins)), pop_data_binned$h2)
     }
     pop_gini <- get_gini(h2_list)
     
     traits_table[i,col_gini] <- pop_gini
+    
+    if (ancestry == "United") {
+      pop_data_sig <- pop_data %>% filter(bin_ID %in% (pop_data_binned %>% filter(rank <= threshold))$bin_ID) %>%
+        select(chrom, rsID, chr_position, A1, A2) %>%
+        mutate(prive_code = code)
+      top100bin_SNPs <- top100bin_SNPs %>% add_row(pop_data_sig)
+    }
   }
 }
+loc_out <- paste0(dir_out,"top100bin_SNPs.txt")
+write.table(top100bin_SNPs, loc_out, row.names = FALSE, quote = FALSE, sep="\t")
+# saves a version of this file with just rsIDs for PLINK to use later
+loc_out <- paste0(dir_out,"top100bin_SNPs_rsIDs.txt")
+write.table(top100bin_SNPs %>% select(rsID, A2) %>% distinct(),
+            loc_out, row.names = FALSE, col.names = FALSE, quote = FALSE, sep="\t")
 
 ## Calculating portability indices ####
 
@@ -274,4 +297,5 @@ traits_table$portability_index_P <- portability_index_Ps
 
 
 ## Saving the traits_table
-write.table(traits_table,loc_traits_table,sep="\t",quote=FALSE,row.names=FALSE)
+loc_out <- paste0(dir_out,"traits_table.txt")
+write.table(traits_table,loc_out,sep="\t",quote=FALSE,row.names=FALSE)

@@ -11,6 +11,7 @@ library(data.table)
 
 # sets working directory
 setwd("./")
+
 # sets location to allele frequencies generated in previous PLINK script
 dir_AFs <- "../generated_data/allele_frequencies/"
 # sets location to Prive et al.'s list of SNPs and their betas, from:

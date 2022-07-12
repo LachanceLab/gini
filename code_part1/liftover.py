@@ -2,6 +2,10 @@
 
 #Example input: ./liftover.py -s <summary_file_path> -o </output_directory_path/>
 
+# 4 - liftover.py
+
+# Converts the genetic map in `../other_data/aau1043_datas3` from GRCh38 to GRCh37 to match existing data
+
 import argparse as ap
 import sys 
 import pyliftover

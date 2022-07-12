@@ -1,6 +1,6 @@
 # plot_scatterplot_matrix_density.R
 
-# Plots the 5x5 scatterplot matrix and the dual density plots
+# Plots the scatterplot matrix and the dual density plots
 
 
 ### Libraries and directories ####
@@ -8,18 +8,22 @@ library(tidyverse)
 library(GGally)
 library(rlang)
 
+# sets working directory
+setwd("./")
+
 # sets location of trait_table generated in part1
-#loc_table <- "../generated_data/traits_table.txt"
-loc_table <- "D:/Genee_local/github/nuno_files_2/table_PLR_100k_sum_100_zp.txt"
-#dir_out <- "../generated_figures/"
-dir_out <- "D:/OneDrive - Georgia Institute of Technology/Lachance/Genee/06-27/"
+loc_table <- "../generated_data/traits_table.txt"
+# sets directory for generated figures
+dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
+# columns to plot
+vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index","f_stat")
 
 ### Code ####
 traits_table <- as_tibble(read_tsv(loc_table)) %>%
-  select(prive_code, trait, description, trait_type, group,
-         gini_United, pcor_United, portability_index, ldpred2_h2, f_stat) %>%
+  select(prive_code, description, trait_type, group,
+         all_of(vars)) %>%
   mutate(lifestyle = group == "lifestyle and environment") %>%
   drop_na()
 
@@ -54,7 +58,7 @@ p_value_to_text <- function(p_value) {
 ### Scatterplot Matrix ####
 
 # calculates adjusted p-values for correlation measurement between variables
-vars <- c("ldpred2_h2","gini_United","pcor_United","portability_index","f_stat")
+
 p_values_cor <- tibble(
   var1 = as.character(),
   var2 = as.character(),
@@ -62,12 +66,12 @@ p_values_cor <- tibble(
   unadj_p_value = as.numeric(),
   adj_p_value = as.numeric()
 )
-for (i in 1:4) {
+for (i in 1:(length(vars) - 1)) {
   x <- vars[[i]]
-  for (j in (i+1):5) {
+  for (j in (i+1):(length(vars))) {
     y <- vars[[j]]
     cor1 <- cor.test(as.data.frame(traits_table)[,x],
-                    as.data.frame(traits_table)[,y])
+                     as.data.frame(traits_table)[,y])
     cor_value <- cor1$estimate[[1]]
     p_value <- cor1$p.value
     p_values_cor <- p_values_cor %>% add_row(
@@ -99,7 +103,7 @@ upper_corr_p <- function(data,mapping) {
   
   # determines full text to display
   text <- paste0("Corr = ", round(cor_value,digits), p_text_list[[2]],
-                "\nAdj P = ", p_text_list[[1]])
+                 "\nAdj P = ", p_text_list[[1]])
   
   # makes GGally textplot using custom text
   p <- ggally_text(label=text,
@@ -114,6 +118,7 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- c(
   "ldpred2_h2" = "Heritability\n(h^2_SNP)",
+  "cMperMb" = "Recombination\nRate (R)",
   "gini_United"="Polygenicity\n(Gini_100,UK)",
   "pcor_United"="Performance\n(p_UK)",
   "portability_index"="Portability\n(m)",
@@ -124,7 +129,7 @@ diag_label <- function(data, mapping) {
   # makes GGally textplot using custom text
   p <- ggally_text(label=var_labels[[variable]],
                    color="black",
-                   size=10*sf) +
+                   size=9*sf) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
                                       color = "black",
@@ -133,11 +138,27 @@ diag_label <- function(data, mapping) {
 }
 
 # Bottom-left plots: scatterplot
+# axis_lims <- list(
+#   "f_stat" = c(0.9,3.6),
+#   "cMperMb"=c(-5,-1),
+#   "ldpred2_h2" = c(0,1),
+#   "pcor_United"=c(0,0.64),
+#   "portability_index"=c(-0.0055,0),
+#   "gini_United"=c(0,1))
+get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
+  vector <- vector[!is.na(vector)]
+  lim_range <- diff(range(vector)) * 1.05
+  lims <- mean(range(vector)) + c(-1,1) * lim_range/2
+  if (!is.na(hard_min)) {lims[1] <- hard_min}
+  if (!is.na(hard_max)) {lims[2] <- hard_max}
+  lims
+}
 axis_lims <- list(
-  "f_stat" = c(0,3.6),
+  "f_stat" = get_axis_lims(traits_table$f_stat),
+  "cMperMb"= get_axis_lims(traits_table$cMperMb),
   "ldpred2_h2" = c(0,1),
-  "pcor_United"=c(0,0.64),
-  "portability_index"=c(-0.006,0),
+  "pcor_United"= get_axis_lims(traits_table$pcor_United,0),
+  "portability_index"= get_axis_lims(traits_table$portability_index,NA,0),
   "gini_United"=c(0,1))
 lm_scatterplot <- function(data, mapping) {
   x <- as.character(quo_get_expr(mapping[[1]]))
@@ -154,35 +175,36 @@ lm_scatterplot <- function(data, mapping) {
     theme_light()
   p
 }
-# Plots actual 5x5 scatterplot matrix
-p_5x5 <- ggpairs(data = traits_table,
-        columns=names(var_labels),
-        lower = list(continuous = lm_scatterplot),
-        diag = list(continuous = diag_label),
-        upper = list(continuous = upper_corr_p),
-        axisLabels = "show"
+scplot_textsize <- 20
+# Plots actual scatterplot matrix
+p_sc <- ggpairs(data = traits_table,
+                columns=vars,
+                lower = list(continuous = lm_scatterplot),
+                diag = list(continuous = diag_label),
+                upper = list(continuous = upper_corr_p),
+                axisLabels = "show"
 ) +
   theme(strip.text.x = element_blank(),
         strip.text.y = element_blank(),
-        text = element_text(size = ddplot_textsize*sf),
-        axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf),
-        axis.text.y = element_text(size=(ddplot_textsize*0.5)*sf))
+        text = element_text(size = scplot_textsize*sf),
+        axis.text.x = element_text(size=(scplot_textsize*0.5)*sf),
+        axis.text.y = element_text(size=(scplot_textsize*0.5)*sf))
 
 # Saves image onto system
 smplot_width <- 1200
 smplot_height <- 1150
 loc_out <- paste0(dir_out,"scatterplot_matrix.png")
 png(loc_out, width = smplot_width*sf, height = smplot_height*sf)
-print(p_5x5)
+print(p_sc)
 dev.off()
-print(paste("Saved 5x5 scatterplot matrix"))
+print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","Polygenicity","Performance","Portability","Divergence")
+column_labels <- c("Heritability","Recombination Rate","Polygenicity","Performance","Portability","Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
-# for each of the 5 measurements
+# for each of the 6 measurements
 p_values_WRT <- tibble(
   var_measurement = as.character(),
   var_comparison = as.character(),
@@ -200,7 +222,7 @@ for (i in 1:2) {
     subtable2 <- traits_table %>% filter(trait_type=="quantitative") %>% select(vars)
   }
   
-  for (j in 1:5) {
+  for (j in 1:length(vars)) {
     var_measurement <- colnames(subtable1)[j]
     WRT1 <- wilcox.test(subtable1[[j]], subtable2[[j]], paired=FALSE)
     p_value <- WRT1$p.value
@@ -212,8 +234,8 @@ for (i in 1:2) {
     )
   }
   # Uses False Discovery Rate to adjust p-values. Adjusts within 5x1 plot
-  adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(5*i-(5-1)):(5*i)],"fdr")
-  p_values_WRT$adj_p_value[(5*i-(5-1)):(5*i)] <- adj_p_values_WRT
+  adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)],"fdr")
+  p_values_WRT$adj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)] <- adj_p_values_WRT
 }
 
 ## Dual Density Plot function ####
@@ -270,7 +292,7 @@ ddplot_height <- 200
 ddplot_textsize <- 20
 for (var_comparison in c("group","type")) {
   density_plots <- list()
-  for (i in 1:5) {
+  for (i in 1:length(vars)) {
     var_measurement <- vars[i]
     
     density_plot <- dual_density(data=traits_table,
@@ -280,11 +302,11 @@ for (var_comparison in c("group","type")) {
     density_plots[[i]] <- density_plot
   }
   
-  p_5x1 <- ggmatrix(plots=density_plots,
-           nrow=1,
-           ncol=5,
-           legend=1,
-           xAxisLabels = column_labels) +
+  ddp <- ggmatrix(plots=density_plots,
+                  nrow=1,
+                  ncol=length(vars),
+                  legend=1,
+                  xAxisLabels = column_labels) +
     theme(legend.position="bottom",
           axis.text.y = element_blank(),
           legend.key.size = unit(1,"cm"),
@@ -294,9 +316,8 @@ for (var_comparison in c("group","type")) {
   
   loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison,".png")
   png(loc_out, width = ddplot_width*sf, height = ddplot_height*sf)
-  print(p_5x1)
+  print(ddp)
   dev.off()
   
   print(paste("Saved dual density plots for",var_comparison))
 }
-
