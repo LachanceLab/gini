@@ -17,6 +17,7 @@ loc_table <- "../generated_data/traits_table.txt"
 dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
+print_mode <- "pdf" # set to either "png" or "pdf"
 # columns to plot
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index","f_stat")
 
@@ -193,8 +194,12 @@ p_sc <- ggpairs(data = traits_table,
 # Saves image onto system
 smplot_width <- 1200
 smplot_height <- 1150
-loc_out <- paste0(dir_out,"scatterplot_matrix.png")
-png(loc_out, width = smplot_width*sf, height = smplot_height*sf)
+loc_out <- paste0(dir_out,"scatterplot_matrix.", print_mode)
+if (print_mode == "png") {
+  png(loc_out, width = smplot_width*sf, height = smplot_height*sf)
+} else if (print_mode == "pdf") {
+  pdf(loc_out, width = smplot_width*sf / 75, height = smplot_width*sf / 75)
+}
 print(p_sc)
 dev.off()
 print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
@@ -314,8 +319,12 @@ for (var_comparison in c("group","type")) {
           text = element_text(size = ddplot_textsize*sf),
           axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf))
   
-  loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison,".png")
-  png(loc_out, width = ddplot_width*sf, height = ddplot_height*sf)
+  loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison,".", print_mode)
+  if (print_mode == "png") {
+    png(loc_out, width = ddplot_width*sf, height = ddplot_height*sf)
+  } else if (print_mode =="pdf") {
+    pdf(loc_out, width = ddplot_width*sf / 75, height = ddplot_height*sf / 75)
+  }
   print(ddp)
   dev.off()
   
