@@ -4,3 +4,6 @@
 generated_figures/*
 prive_data/*
 other_data/*
+*.Rout
+*.out
+*.err
