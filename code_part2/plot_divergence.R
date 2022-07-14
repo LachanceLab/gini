@@ -1,28 +1,49 @@
+# plot_divergence.R
+
+# Plots the PRS distribution of different ancestries, highlighting their divergence
+
+
+### Libraries and directories ####
 library(tidyverse)
 library(ggpubr)
 library(data.table)
 
-loc_PRSs <- "D:/Genee_local/divergence_plots/pop_sampled_PRSs.txt"
-loc_table <- "D:/Genee_local/divergence_plots/traits_table.txt"
-dir_out <- "D:/Genee_local/divergence_plots/"
+# sets working directory
+setwd("./")
 
+# Sets the location of the sampled individuals' PRSs
+loc_PRSs <- "../generated_data/pop_sampled_PRSs.txt"
+# sets the location of the traits table
+loc_table <- "../generated_data/traits_table.txt"
+# sets directory of outputted figures
+dir_out <- "../generated_figures/"
+
+### Code ####
+
+# reads traits table
 traits_table <- as_tibble(fread(loc_table))
+# reads the PRSs and changes "United" to "UK"
 PRSs <- as_tibble(fread(loc_PRSs))
 PRSs[PRSs$ancestry=="United","ancestry"] <- "UK"
 
+# function that generates divergence plot
 plot_divergence <- function(code) {
+  
+  # extracts info about trait
   PRS_trait <- PRSs %>% select(Ancestry = ancestry, PRS = all_of(code))
   slice <- traits_table %>% filter(prive_code == code)
   description <- slice$description[1]
   f_stat <- slice$f_stat[1]
   p_value <- slice$p_value_f[1]
+  
+  # converts p-value to more legible text
   if (p_value < 1E-320) {
     p_text <- "< 1E-320"
   } else {
     p_text <- paste0("= ", formatC(p_value, format="E", digits=2))
   }
   
-  
+  # plots divergence
   gg<-ggplot(PRS_trait, aes(x=PRS, fill=Ancestry)) +
     geom_density(color='#e9ecef', alpha=0.6, position='identity') +
     theme_light() +
@@ -38,15 +59,16 @@ plot_divergence <- function(code) {
   gg
 }
 
-# Plots all traits' divergence plot
+# Plots all traits' divergence plot and saves to [dir_out]/divergence_plots/
+dir.create(paste0(dir_out,"divergence_plots/"), recursive = TRUE)
 for (code in traits_table$prive_code) {
   gg <- plot_divergence(code)
-  loc_out <- paste0(dir_out,"divergence_plot_",code,".png")
+  loc_out <- paste0(dir_out,"divergence_plots/divergence_plot_",code,".png")
   ggsave(loc_out,plot=gg,width=2200,height=2200,units="px")
   print(paste("Saved divergence plot for",code))
 }
 
-# Makes figure 2
+# Makes Figure 2
 figure_codes <- c("250.1","darker_skin0")
 plots <- list()
 for (i in 1:length(figure_codes)) {

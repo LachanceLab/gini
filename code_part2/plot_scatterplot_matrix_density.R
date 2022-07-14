@@ -17,7 +17,7 @@ loc_table <- "../generated_data/traits_table.txt"
 dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
-print_mode <- "pdf" # set to either "png" or "pdf"
+print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index","f_stat")
 
