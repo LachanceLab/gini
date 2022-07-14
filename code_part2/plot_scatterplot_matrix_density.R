@@ -39,21 +39,25 @@ color_p_significant <- "gray20"
 color_p_nonsignificant <- "gray50"
 p_value_to_text <- function(p_value) {
   p_text <- round(p_value,digits)
+  sci <- FALSE
+  # uses scientific notation when < 0.001
   if (p_value < 0.001) {
-    stars <- "***"
-    p_text <- formatC(p_value,format="e", digits=2)
-    text_color = color_p_significant
-  } else if (p_value < 0.01) {
-    stars <- "**"
-    text_color = color_p_significant
-  } else if (p_value < 0.05) {
-    stars <- "*"
+    p_text <- formatC(p_value,format="E", digits=2)
+    p_text_stem <- as.numeric(substr(p_text,1,4))
+    p_text_exp <- as.numeric(substr(p_text,6,10))
+    p_text <- paste0("adjusted~p==",p_text_stem,"%*%10^",p_text_exp)
+  } else {
+    p_text <- paste0("adjusted~p==",p_text)
+  }
+  
+  # changes text to darker color if significant
+  if (p_value < 0.05) {
     text_color = color_p_significant
   } else {
-    stars <- ""
     text_color = color_p_nonsignificant
   }
-  list(p_text,stars,text_color)
+  
+  list(p_text,text_color)
 }
 
 ### Scatterplot Matrix ####
@@ -101,15 +105,16 @@ upper_corr_p <- function(data,mapping) {
   p_value <- slice$adj_p_value
   
   p_text_list <- p_value_to_text(p_value)
+  p_text <- p_text_list[[1]]
   
   # determines full text to display
-  text <- paste0("Corr = ", round(cor_value,digits), p_text_list[[2]],
-                 "\nAdj P = ", p_text_list[[1]])
+  text_rline <- paste0("r = ", round(cor_value,digits),"\n")
+  
   
   # makes GGally textplot using custom text
-  p <- ggally_text(label=text,
-                   color=p_text_list[[3]],
-                   size=8*sf) +
+  p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=10*sf) +
+    geom_text(aes(x=0.5,y=0.42),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
+              label = p_text, parse=TRUE ) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
                                       color = theme_get()$panel.background$fill, fill = "transparent"))
@@ -174,6 +179,9 @@ lm_scatterplot <- function(data, mapping) {
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
+  # log10 scales for h^2
+  if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
+  if (y == "ldpred2_h2") {p <- p + scale_y_log10()}
   p
 }
 scplot_textsize <- 20
@@ -259,7 +267,7 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   
   # converts p-value to text version
   p_text_list <- p_value_to_text(adj_p_value)
-  text <- paste0("Adj P = ",p_text_list[[1]],p_text_list[[2]])
+  text <- p_text_list[[1]]
   
   # Adds density plots
   p <- ggplot(data=data, mapping=aes(x=!!as.name(x) )) +
@@ -281,13 +289,19 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
                         breaks=c("binary", "quantitative"),
                         values = c("binary"="gray70", "quantitative"="gray10"))
   }
+  # log10 scales for h^2
+  if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
   # Adds p-value to plot
+  is_h2 <- x=="ldpred2_h2"
+  xlims <- axis_lims[[x]]
   yrange <- layer_scales(p)$y$range$range
-  yrange[2] <- yrange[2] * 1.15 # pads top to allow space for p-value
+  padding <- 1.20
+  yrange[2] <- yrange[2] * padding # pads top to allow space for p-value
   p <- p +
     ylim(yrange) +
-    geom_text(data=NULL, label=text, x=max(xlims), y=max(yrange), vjust=1, hjust=1,
-              color=p_text_list[[3]], size = 4*sf)
+    geom_text(data=NULL, label=text, parse=TRUE,
+              aes(x=ifelse(x=="ldpred2_h2",0.01,min(xlims)), y=max(yrange)*((0.95+padding)/(2*padding))),
+              vjust=0, hjust=0, color=p_text_list[[2]], size = 4*sf)
   
   p
 }

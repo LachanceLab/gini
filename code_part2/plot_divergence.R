@@ -53,22 +53,26 @@ plot_divergence <- function(code) {
           axis.ticks.y = element_blank()) +
     xlab("Polygenic Score per UKBB Individual") +
     ylab("Density") +
-    labs(title=description,
+    labs(title=paste0("PRS Divergence: ",description),
          subtitle = paste0("ANOVA: log10(F-stat) = ", round(log10(f_stat),2),
                            ". p-value ",p_text ))
   gg
 }
+
+# plot save settings for each plot (in pixels)
+width <- 2200
+height <- 2200
 
 # Plots all traits' divergence plot and saves to [dir_out]/divergence_plots/
 dir.create(paste0(dir_out,"divergence_plots/"), recursive = TRUE)
 for (code in traits_table$prive_code) {
   gg <- plot_divergence(code)
   loc_out <- paste0(dir_out,"divergence_plots/divergence_plot_",code,".png")
-  ggsave(loc_out,plot=gg,width=2200,height=2200,units="px")
+  ggsave(loc_out,plot=gg,width=width,height=height,units="px")
   print(paste("Saved divergence plot for",code))
 }
 
-# Makes Figure 2
+# Makes Figure 2: Divergence plot
 figure_codes <- c("250.1","darker_skin0")
 plots <- list()
 for (i in 1:length(figure_codes)) {
@@ -82,4 +86,4 @@ gg_fig <- ggarrange(plots[[1]],plots[[2]],
                     legend = "bottom")
 
 loc_out <- paste0(dir_out,"figure_2_divergence_plots.png")
-ggsave(loc_out,plot=gg_fig,width=4400,height=2200,units="px")
+ggsave(loc_out,plot=gg_fig,width=2*width,height=height,units="px")

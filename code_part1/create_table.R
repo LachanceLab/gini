@@ -7,6 +7,7 @@
 ### Libraries and directories ####
 library(tidyverse)
 library(data.table)
+source("../code_part1/helper_functions.R")
 
 # sets working directory
 setwd("./")
@@ -29,7 +30,7 @@ dir_prive_data <- "../prive_data/"
 loc_map <- "../other_data/aau1043_datas3_hg19"
 # location to a file we generated that vastly speeds up the process of binning
 # can be obtained from our github under ~/generated_data/
-loc_chr_max_bps <- "../other_data/chr_max_bps.txt"
+loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
 # directory where summary files with betas+AFs for each trait are stored
 dir_summary_files <- "../generated_data/betas_and_AFs/"
 # directory where the traits_table and other intermediate output files will be
@@ -101,74 +102,6 @@ traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
 # loads a file that contains the max base pair position for each chromosome
 chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
-# function that creates a dictionary used for giving SNP bins IDs
-create_bin_dict = function(bin_size) {
-  chr_bins <- chr_max_bps %>%
-    mutate(
-      bins_per = ceiling(max_bps / bin_size),
-      bins = cumsum(bins_per)
-    ) %>% select(chr, bins)
-  
-  bin_dict = list("1" = 0)
-  for (i in 2:22) {bin_dict[as.character(i)] <-  chr_bins$bins[i-1]}
-  
-  return(bin_dict)
-}
-# function that assigns each SNP a binID before binning function
-bin_snps = function(data, bin_size) {
-  bin_dict <- create_bin_dict(bin_size)
-  data_snp_bins <- data[0,] %>%
-    mutate(bin_ID = as.numeric())
-  for (chr in 1:22) {
-    chr_bins_floor <- bin_dict[[chr]]
-    chr_data <- data %>% filter(chrom == chr) %>% mutate(
-      bin_ID = ceiling(chr_position / bin_size) + chr_bins_floor
-    )
-    data_snp_bins <- data_snp_bins %>% add_row(chr_data)
-  }
-  return(data_snp_bins)
-}
-# function that groups SNPs together by bin, combining their SNP h^2
-get_data_binned = function(data_snp_bins, method="sum") {
-  data_binned <- data_snp_bins %>%
-    group_by(bin_ID)
-  if (method == "sum") {
-    data_binned <- data_binned %>% summarise(h2 = sum(h2),bin_n_snps = n())
-  } else if (method == "max") {
-    data_binned <- data_binned %>% summarise(h2 = max(h2),bin_n_snps = n())
-  }
-  data_binned <- data_binned %>% arrange(h2) %>%
-    mutate(
-      rank = nrow(data_binned) - row_number() + 1,
-      rank_percentile = rank / max(rank)
-    )
-  return(data_binned)
-}
-# function that calculates and appends individual SNP h2 using betas and
-# allele frequencies
-get_h2 <- function(data_AF, col_beta, col_AF) {
-  pop_data <- data_AF %>%
-    mutate(
-      h2 = 2 * data_AF[[col_beta]]**2 * data_AF[[col_AF]] * (1 - data_AF[[col_AF]]) 
-    ) %>%
-    arrange(h2) %>%
-    mutate(
-      rank = nrow(data_AF) - row_number() + 1,
-      rank_percentile = rank / max(rank)
-    )
-  return(pop_data)
-}
-# function that computes the gini of a list of values in ascending order
-get_gini <- function(list) {
-  # Adapted from: https://github.com/oliviaguest/gini
-  n <- length(list)
-  numerator <- 0
-  for (i in 1:n) {numerator <- numerator + (2*i - n - 1)*list[i]}
-  denominator <- n * sum(list)
-  
-  G <- numerator/denominator
-  return(G)
-}
 
 # expands traits_table for gini calculation
 pop_centers <- read.csv(
