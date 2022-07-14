@@ -2,7 +2,7 @@
 
 # This script takes the summary files of a trait, calculates SNP gvc, bins SNPs,
 # and plots a Lorenz curve for the top 100 bins. Loops for all traits and makes
-# Figure 2 consisting of two Lorenz curves.
+# Figure 2 consisting of two Lorenz curves
 
 ### Libraries and directories ####
 library(tidyverse)
