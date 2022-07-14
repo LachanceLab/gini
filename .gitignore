@@ -1,5 +1,6 @@
 *.Rhistory
 *.RData
-generated_figures/*
 *.png
-generated_figures/scatterplot_matrix.png
+generated_figures/*
+prive_data/*
+other_data/*
