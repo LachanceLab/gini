@@ -1,9 +1,9 @@
 *.Rhistory
 *.RData
 *.png
-generated_figures/*
-prive_data/*
-other_data/*
+generated_figures/
+prive_data/
+other_data/
 *.Rout
 *.out
 *.err
