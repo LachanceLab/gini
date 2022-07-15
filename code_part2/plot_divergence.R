@@ -35,13 +35,21 @@ plot_divergence <- function(code) {
   description <- slice$description[1]
   f_stat <- slice$f_stat[1]
   p_value <- slice$p_value_f[1]
+  logfstat <- round(log10(f_stat),2)
   
   # converts p-value to more legible text
   if (p_value < 1E-320) {
     p_text <- "< 1E-320"
+    p_text <- bquote(ANOVA:~log[10](F)==.(logfstat)~~~~~p-value<10^{-320})
   } else {
-    p_text <- paste0("= ", formatC(p_value, format="E", digits=2))
+    p_text <- formatC(p_value,format="E", digits=2)
+    p_text_stem <- as.numeric(substr(p_text,1,4))
+    p_text_exp <- as.numeric(substr(p_text,6,10))
+    p_text <- bquote(ANOVA:~log[10](F)==.(logfstat)~~~~~p-value==.(p_text_stem)%*%10^{.(p_text_exp)})
   }
+  
+  ff <- bquote(10^{.(threshold)})
+  #subtitle <- paste0("ANOVA: log10(F-stat) = ", round(log10(f_stat),2),". p-value ",p_text )
   
   # plots divergence
   gg<-ggplot(PRS_trait, aes(x=PRS, fill=Ancestry)) +
@@ -54,11 +62,9 @@ plot_divergence <- function(code) {
     xlab("Polygenic Score per UKBB Individual") +
     ylab("Density") +
     labs(title=paste0("PRS Divergence: ",description),
-         subtitle = paste0("ANOVA: log10(F-stat) = ", round(log10(f_stat),2),
-                           ". p-value ",p_text ))
+         subtitle = p_text)
   gg
 }
-
 # plot save settings for each plot (in pixels)
 width <- 2200
 height <- 2200

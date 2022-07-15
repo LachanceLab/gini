@@ -54,10 +54,13 @@ cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshol
         h2_cshare = rep(0, threshold - nrow(sf)),
         ) %>% arrange(h2)
   }
-  sf <- sf %>% mutate(percentile = row_number() / threshold)
+  sf <- sf %>%
+    mutate(percentile = row_number() / nrow(sf))
   sf
 }
-# function that actually plots Lorenz curve
+sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, summary_method)
+gg <- plot_lorenz(code, sf, ancestry)sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, summary_method)
+gg <- plot_lorenz(code, sf, ancestry)# function that actually plots Lorenz curve
 plot_lorenz <- function(code, sf, ancestry="United") {
   
   slice <- traits_table %>% filter(prive_code == code)
@@ -77,17 +80,15 @@ plot_lorenz <- function(code, sf, ancestry="United") {
     ylab(paste("Proportion of top", threshold,"bins' genetic variance contribution")) +
     theme_light() +
     theme(aspect.ratio = 1) +
-    xlim(0,100) +
-    ylim(0,1) +
-    scale_x_continuous(expand = c(0.0,0.0)) +
-    scale_y_continuous(expand = c(0,0))
+    scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
+    scale_y_continuous(limits=c(0,1), expand = c(0,0))
   gg
 }
 # settings used for plotting. Deviation from these (other than ancestry) will
 # lead to the displayed Gini score on the plot being incorrect
 ancestry <- "United"
 threshold <- 100
-threshold_padding <- TRUE
+threshold_padding <- FALSE
 bin_size <- 100000
 bin_summary_method <- "sum"
 
@@ -98,7 +99,7 @@ height <- 2200
 # Plots all traits' divergence plot and saves to [dir_out]/divergence_plots/
 dir.create(paste0(dir_out,"lorenz_curves/"), recursive = TRUE)
 for (code in traits_table$prive_code) {
-  sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, summary_method)
+  sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
   gg <- plot_lorenz(code, sf, ancestry)
   
   loc_out <- paste0(dir_out,"lorenz_curve/lorenz_curve_",code,".png")
@@ -107,11 +108,12 @@ for (code in traits_table$prive_code) {
 }
 
 # Makes Figure 2: Lorenz Curve
-figure_codes <- c("geek_time","277.4")
+figure_codes <- c("geek_time","275.1")
 plots <- list()
 for (i in 1:length(figure_codes)) {
   code <- figure_codes[i]
-  gg <- plot_divergence(code)
+  sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
+  gg <- plot_lorenz(code, sf, ancestry)
   plots[[i]] <- gg
 }
 
