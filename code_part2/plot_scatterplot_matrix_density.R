@@ -17,9 +17,10 @@ loc_table <- "../generated_data/traits_table.txt"
 dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
+p_adjust_method <- "fdr" # used in p.adjust()
 print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
-vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index","f_stat")
+vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 
 ### Code ####
 traits_table <- as_tibble(read_tsv(loc_table)) %>%
@@ -89,7 +90,7 @@ for (i in 1:(length(vars) - 1)) {
   }
 }
 # uses False Discovery Rate to adjust p-values
-adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,"fdr")
+adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,p_adjust_method)
 p_values_cor$adj_p_value <- adj_p_values_cor
 
 ## Matrix subplot functions
@@ -122,20 +123,22 @@ upper_corr_p <- function(data,mapping) {
 }
 
 # Diagonal plots: display name and symbol of variable
-var_labels <- c(
-  "ldpred2_h2" = "Heritability\n(h^2_SNP)",
-  "cMperMb" = "Recombination\nRate (R)",
-  "gini_United"="Polygenicity\n(Gini_100,UK)",
-  "pcor_United"="Performance\n(p_UK)",
-  "portability_index"="Portability\n(m)",
-  "f_stat" = "Divergence\n(log10(F))")
+var_labels <- list(
+  "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
+  "cMperMb" = c("Recombination","Rate~(R)"),
+  "gini_United" = c("Polygenicity","(Gini[list(100,UK)])"),
+  "pcor_United" = c("Performance","(symbol(r)[UK])"),
+  "portability_index" = c("Portability","(m)"),
+  "f_stat" = c("Divergence","(log[10](F))"))
 diag_label <- function(data, mapping) {
   variable <- as.character(quo_get_expr(mapping[[1]]))
   
   # makes GGally textplot using custom text
-  p <- ggally_text(label=var_labels[[variable]],
-                   color="black",
-                   size=9*sf) +
+  p <- ggally_text(label="") +
+    geom_text(aes(x=0.5,y=0.55), size=9*sf, hjust=0.5, vjust=0, color="black",
+              label = var_labels[[variable]][1], parse = TRUE) +
+    geom_text(aes(x=0.5,y=0.45), size=9*sf, hjust=0.5, vjust=1, color="black",
+              label = var_labels[[variable]][2], parse = TRUE) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
                                       color = "black",
@@ -144,13 +147,6 @@ diag_label <- function(data, mapping) {
 }
 
 # Bottom-left plots: scatterplot
-# axis_lims <- list(
-#   "f_stat" = c(0.9,3.6),
-#   "cMperMb"=c(-5,-1),
-#   "ldpred2_h2" = c(0,1),
-#   "pcor_United"=c(0,0.64),
-#   "portability_index"=c(-0.0055,0),
-#   "gini_United"=c(0,1))
 get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
   vector <- vector[!is.na(vector)]
   lim_range <- diff(range(vector)) * 1.05
@@ -227,8 +223,9 @@ p_values_WRT <- tibble(
 for (i in 1:2) {
   if (i==1) {
     var_comparison <- "group"
-    subtable1 <- traits_table %>% filter(lifestyle) %>% select(vars)
-    subtable2 <- traits_table %>% filter(!lifestyle) %>% select(vars)
+    # restricts to just quantitative to demonstrate relationships accurately
+    subtable1 <- traits_table %>% filter(trait_type=="quantitative") %>% filter(lifestyle) %>% select(vars)
+    subtable2 <- traits_table %>% filter(trait_type=="quantitative") %>% filter(!lifestyle) %>% select(vars)
   } else if (i==2) {
     var_comparison <- "type"
     subtable1 <- traits_table %>% filter(trait_type=="binary") %>% select(vars)
@@ -247,7 +244,7 @@ for (i in 1:2) {
     )
   }
   # Uses False Discovery Rate to adjust p-values. Adjusts within 5x1 plot
-  adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)],"fdr")
+  adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)],p_adjust_method)
   p_values_WRT$adj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)] <- adj_p_values_WRT
 }
 
@@ -258,7 +255,9 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   xlims <- axis_lims[[x]]
   
   # gets adjusted p-values from Wilcoxon Ranked Test already done
-  if (the_var_comparison=="group") {col_var <- "lifestyle"}
+  if (the_var_comparison=="group") {
+    col_var <- "lifestyle"
+    data <- data %>% filter(trait_type=="quantitative")}
   else if (the_var_comparison=="type") {col_var <- "trait_type"}
   
   adj_p_value <- (p_values_WRT %>%
@@ -279,7 +278,7 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   if (the_var_comparison == "group") {
     p <- p +
       labs(fill="Trait Group") +
-      scale_fill_manual(labels=c("Lifestyle","Other"),
+      scale_fill_manual(labels=c("Lifestyle","Non-lifestyle"),
                         breaks=c(TRUE, FALSE),
                         values = c("TRUE"="dodgerblue1", "FALSE"="gray20"))
   } else if (the_var_comparison == "type") {
