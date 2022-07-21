@@ -27,7 +27,8 @@ setwd("./")
 dir_prive_data <- "../prive_data/"
 
 # location to the genetic recombination map in hg19 format, created by liftover.py
-loc_map <- "../other_data/aau1043_datas3_hg19"
+loc_map <- paste0("../other_data/aau1043_datas3_hg19")
+
 # location to a file we generated that vastly speeds up the process of binning
 # can be obtained from our github under ~/generated_data/
 loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
@@ -43,6 +44,8 @@ dir_out <- "../generated_data/"
 loc_phenotype_description <- paste0(dir_prive_data,"phenotype-description.csv")
 loc_phenotype_info <- paste0(dir_prive_data,"phenotype-info.csv")
 loc_pcor <-paste0(dir_prive_data,"pred-cor-PLR.csv")
+loc_map <- paste0(dir_other_data,"aau1043_datas3_hg19")
+loc_short_labels <- "trait_short_labels.csv"
 
 ## Joining trait descriptions ####
 
@@ -54,10 +57,12 @@ codes <- str_replace(filenames,"-betasAFs.txt","")
 # reads prive's phenotype description and info files
 prive_info <- as_tibble(fread(loc_phenotype_info))
 prive_description <- as_tibble(fread(loc_phenotype_description))
+short_labels <- as_tibble(fread(loc_short_labels)) %>% select(-description)
 traits_table <- prive_description %>%
   filter(phenotype %in% codes) %>%
+  left_join(short_labels, by="phenotype") %>%
   left_join(prive_info, by=c("phenotype"="pheno")) %>%
-  rename("prive_code"="phenotype") %>%
+  dplyr::rename("prive_code"="phenotype") %>%
   mutate(trait_type = ifelse(is.na(N),"binary","quantitative"))
 
 # consolidates trait groups into fewer categories

@@ -1,0 +1,246 @@
+﻿phenotype,description,short_label
+153,Colorectal cancer,Colorectal cancer
+165,Cancer within the respiratory system,Respiratory system cancer
+172,Skin cancer,Skin cancer
+174.1,Breast cancer [female],Breast cancer
+180,Cervical cancer and dysplasia,Cervical cancer
+185,Cancer of prostate,Prostate cancaer
+187.2,Malignant neoplasm of testis,Malignant testis neoplasm
+189.2,Cancer of bladder,Bladder cancer
+191.11,Cancer of brain,Brain cancer
+193,Thyroid cancer,Thyroid cancer
+200.1,Polycythemia vera,Polycythemia vera
+208,Benign neoplasm of colon,Benign colon neoplasm
+211,Benign neoplasm of other parts of digestive system,Benign digestive neoplasm
+218,Benign neoplasm of uterus,Benign uterus neoplasm
+241.2,Nontoxic multinodular goiter,Nontoxic multinodular goiter
+242,Thyrotoxicosis with or without goiter,Thyrotoxicosis
+244,Hypothyroidism,Hypothyroidism
+250.1,Type 1 diabetes,Type 1 diabetes
+250.2,Type 2 diabetes,Type 2 diabetes
+250.7,Diabetic retinopathy,Diabetic retinopathy
+251.1,Hypoglycemia,Hypoglycemia
+252.1,Hyperparathyroidism,Hyperparathyroidism
+272,Disorders of lipoid metabolism,Lipoid metabolism disorders
+274.1,Gout,Gout
+275.1,Disorders of iron metabolism,Iron metabolism disorders
+277.4,Disorders of bilirubin excretion,Bilirubin excretion disorders
+278,"Overweight, obesity and other hyperalimentation",Hyperalimentation
+280,Iron deficiency anemias,Iron deficiency anemias
+285,Other anemias,Other anemias
+286.12,Congenital deficiency of other clotting factors (including factor VII),Clotting factors congenital deficiency
+290.1,Dementias,Dementias
+290.11,Alzheimer's disease,Alzheimer's disease
+296.2,Depression,Depression
+318,Tobacco use disorder,Tobacco use disorder
+332,Parkinson's disease,Parkinson's disease
+335,Multiple sclerosis,Multiple sclerosis
+351,Other peripheral nerve disorders,Other peripheral nerve disorders
+361,Retinal detachments and defects,Retinal defects
+362.29,Macular degeneration (senile) of retina NOS,Macular degeneration
+364.5,Corneal dystrophy,Corneal dystrophy
+365,Glaucoma,Glaucoma
+366,Cataract,Cataract
+371.1,"Uveitis, noninfectious or NOS",Uveitis
+371,Inflammation of the eye,Eye inflammation
+379.3,Aphakia and other disorders of lens,Lens disorders
+383,Otosclerosis,Otosclerosis
+401,Hypertension,Hypertension
+411.4,Coronary atherosclerosis,Coronary atherosclerosis
+415,Pulmonary heart disease,Pulmonary heart disease
+427.2,Atrial fibrillation and flutter,Atrial fibrillation/flutter
+428,Congestive heart failure; nonhypertensive,Congestive heart failure
+433.1,Occlusion and stenosis of precerebral arteries,Precerebral arteries occlusion
+433,Cerebrovascular disease,Cerebrovascular disease
+442.11,Abdominal aortic aneurysm,Abdominal aortic aneurysm
+443.9,"Peripheral vascular disease, unspecified",Peripheral vascular disease
+451,Phlebitis and thrombophlebitis,Phlebitis/thrombophlebitis
+454,Varicose veins,Varicose veins
+455,Hemorrhoids,Hemorrhoids
+459.9,Circulatory disease NEC,Circulatory disease NEC
+471,Nasal polyps,Nasal polyps
+495,Asthma,Asthma
+496,Chronic airway obstruction,Chronic airway obstruction
+530.1,"Esophagitis, GERD and related diseases",Esophagitis/GERD
+531.3,Duodenal ulcer,Duodenal ulcer
+535.6,Duodenitis,Duodenitis
+540,Appendiceal conditions,Appendiceal conditions
+550.1,Inguinal hernia,Inguinal hernia
+555.1,Regional enteritis,Regional enteritis
+555.2,Ulcerative colitis,Ulcerative colitis
+557.1,Celiac disease,Celiac disease
+562.1,Diverticulosis,Diverticulosis
+564,Functional digestive disorders,Functional digestive disorders
+565.1,Anal and rectal polyp,Anal and rectal polyp
+571.5,Other chronic nonalcoholic liver disease,Nonalcoholic liver diseases
+574,Cholelithiasis and cholecystitis,Cholelithiasis/cholecystitis
+575,Other biliary tract disease,Biliary tract disease
+593,Hematuria,Hematuria
+594,Urinary calculus,Urinary calculus
+596.1,Bladder neck obstruction,Bladder neck obstruction
+600,Hyperplasia of prostate,Prostate hyperplasia
+615,Endometriosis,Endometriosis
+618,Genital prolapse,Genital prolapse
+626.1,Irregular menstrual cycle/bleeding,Irregular menstrual cycle
+654.2,Rhesus isoimmunization in pregnancy,Rhesus isoimmunization
+681,Superficial cellulitis and abscess,Superficial cellulitis/abscess
+695.4,Lupus (localized and systemic),Lupus
+696.4,Psoriasis,Psoriasis
+697,Sarcoidosis,Sarcoidosis
+702.1,Actinic keratosis,Actinic keratosis
+702.2,Seborrheic keratosis,Seborrheic keratosis
+704,Diseases of hair and hair follicles,Hair diseases
+706.2,Sebaceous cyst,Sebaceous cyst
+709.2,Sicca syndrome,Sicca syndrome
+709.7,Unspecified diffuse connective tissue disease,Unspecified CT disease
+714.1,Rheumatoid arthritis,Rheumatoid arthritis
+715.2,Ankylosing spondylitis,Ankylosing spondylitis
+716,Other arthropathies,Other arthropathies
+717,Polymyalgia Rheumatica,Polymyalgia Rheumatica
+727.4,"Ganglion and cyst of synovium, tendon, and bursa",Cyst of synovium/tendon/bursa
+728.71,Contracture of palmar fascia [Dupuytren's disease],Dupuytren's disease
+735.3,Hallux valgus (Bunion),Bunion
+740,Osteoarthrosis,Osteoarthrosis
+743.1,Osteoporosis,Osteoporosis
+785,Abdominal pain,Abdominal pain
+790.6,Other abnormal blood chemistry,Abnormal blood chemistry
+960.2,Allergy/adverse effect of penicillin,Penicillin allergy
+abnormal_appetite,Recent poor appetite or overeating,Abnormal appetite
+albumin,Albumin,Albumin
+ankle_spacing,Ankle spacing width,Ankle spacing
+apoA,Apolipoprotein A,Apolipoprotein A
+apoB,Apolipoprotein B,Apolipoprotein B
+avMSE,avMSE,avMSE
+bad_hearing,Hearing difficulty/problems,Hearing problems
+birth_weight,Birth weight,Birth weight
+calcium,Calcium,Calcium
+celiac_gluten,Diagnosed with coeliac disease or gluten sensitivity,Coeliac disease
+cholesterol,Cholesterol,Cholesterol
+darker_hair0,"Hair colour (natural, before greying)",Darker hair
+darker_skin0,Skin colour,Skin color
+depressed_for_1w,Ever depressed for a whole week,Weeklong depression
+depression_feelings,Recent feelings of depression,Recent depression
+depression_stress_trauma,Depression possibly related to stressful or traumatic event,Stress depression
+diastolic_BP,"Diastolic blood pressure, automated reading",Diastolic BP
+drink_alcohol,Alcohol drinker status,Alcohol drinker
+ECG_P_duration,P duration,ECG P duration
+ECG_PP_interval,PP interval,ECG PP interval
+ECG_PQ_interval,PQ interval,ECG PQ interval
+ECG_QT_interval,QT interval,ECG QT interval
+ECG_QTC_interval,QTC interval,ECG QTC interval
+ECG_RR_interval,RR interval,ECG RR interval
+erythrocyte_width,Red blood cell (erythrocyte) distribution width,RBC distribution width
+erythrocyte,Red blood cell (erythrocyte) count,RBC count
+ever_addicted,Ever addicted to any substance or behaviour,Ever substance addicted
+ever_cannabis,Ever taken cannabis,Ever taken cannabis
+ever_smoked,Ever smoked,Ever smoked
+F_age_first_birth,Age at first live birth,First birth age
+F_irregular_menstrual_cycle,Length of menstrual cycle,Irregular menstrual cycle
+F_length_menstrual_cycle,Length of menstrual cycle,Menstrual cycle length
+F_log_oestradiol,Oestradiol (female only),Oestradiol (F)
+F_log_testosterone,Testosterone (female only),Testosterone (F)
+F_menarche,Age when periods started (menarche),Menarche
+fall_1y,Falls in the last year,Falls (1yr)
+fat_perc,Body fat percentage,Body fat %
+FEV1,"Forced expiratory volume in 1-second (FEV1), Best measure",FEV1
+fluid_intelligence,Fluid intelligence score,Fluid intelligence
+foreboding_feelings,Recent feelings of foreboding,Foreboding feelings
+fracture_5y,Fractured/broken bones in last 5 years,Fractured bones (5yr)
+FVC,"Forced vital capacity (FVC), Best measure",FVC
+geek_time,Time spent watching television (TV) or using computer,Duration TV/PC
+glasses,Wears glasses or contact lenses,Wear glasses/contacts
+haematocrit_perc,Haematocrit percentage,Haematocrit %
+haemoglobin,Haemoglobin concentration,[Hb]
+hand_grip_strength,Hand grip strength (mean of both),Hand grip strength
+hard_falling_asleep,Trouble falling asleep,Trouble falling asleep
+headaches_for_3m,Headaches for 3+ months,Headaches (3+ mo)
+height,Standing height,Height
+immature_reticulocyte_frac,Immature reticulocyte fraction,Immature reticulocyte fraction
+income,Average total household income before tax,Household income
+insomnia,Sleeplessness / insomnia,Insomnia
+LDL,LDL direct,LDL
+left_handed,Handedness (chirality/laterality) ,Left handed
+less_alcohol,Alcohol intake frequency,Alcohol frequency
+less_happy_with_health,General happiness with own health,Health happinness
+less_happy,General happiness,General happiness
+less_tanned,Ease of skin tanning,Skin tanning
+log_age_first_sex,Age first had sexual intercourse,First sex age
+log_ALP,Alkaline phosphatase,Alkaline phosphatase
+log_ALT,Alanine aminotransferase,Alanine aminotransferase
+log_AST,Aspartate aminotransferase,Aspartate aminotransferase
+log_basophil_perc,Basophil percentage,Basophil %
+log_bilirubin,Total bilirubin,Bilirubin
+log_BMI,Body mass index (BMI),BMI
+log_creatinine_urine,Creatinine (enzymatic) in urine,Creatinine (urine)
+log_creatinine,Creatinine,Creatinine
+log_CRP,C-reactive protein,C-reactive protein
+log_cystatinC,Cystatin C,Cystatin C
+log_ECG_QRS_duration,QRS duration,ECG QRS duration
+log_eosinophil_perc,Eosinophil percentage,Eosinophil %
+log_fat_free_mass,Whole body fat-free mass,Fat-free mass
+log_fat_mass,Whole body fat mass,Fat mass
+log_glucose,Glucose,Glucose
+log_HbA1c,Glycated haemoglobin (HbA1c),HbA1c
+log_HDL,HDL cholesterol,HDL
+log_heel_BMD,Heel bone mineral density (BMD),Heel BMD
+log_heel_BUA,"Heel Broadband ultrasound attenuation, direct entry",Heel BUA
+log_heel_SoS,Speed of sound through heel,Heel sound speed
+log_hip_circ,Hip circumference,Hip circumference
+log_HLR_reticulocyte,High light scatter reticulocyte count,HLR reticulocyte
+log_IGF1,IGF-1,IGF-1
+log_impedance,Impedance of whole body,Impedance
+log_leukocyte,White blood cell (leukocyte) count,WBC count
+log_lipoA,Lipoprotein A,Lipoprotein A
+log_log_gammaGT,Gamma glutamyltransferase,Gamma GT
+log_lymphocyte,Lymphocyte count,Lymphocyte count
+log_mean_carotid_IMT,Mean carotid IMT (intima-medial thickness) at 120/150/210/240 degrees,carotid IMT
+log_microalbumin_urine,Microalbumin in urine,Microalbumin (urine)
+log_monocyte,Monocyte count,Monocyte count
+log_neutrophil,Neutrophil count,Neutrophil count
+log_platelet_crit,Platelet crit,Platelet crit
+log_platelet_volume,Mean platelet (thrombocyte) volume,Platelet volume
+log_platelet_width,Platelet distribution width,Platelet distribution width
+log_platelet,Platelet count,Platelet count
+log_potassium_urine,Potassium in urine,Potassium (urine)
+log_pulse_rate,"Pulse rate, automated reading",Pulse rate
+log_reticulocyte,Reticulocyte count,Reticulocyte count
+log_rheumatoid_factor,Rheumatoid factor,Rheumatoid factor
+log_SHBG,Sex hormone binding globulin (SHBG),SHBG
+log_sleep,Sleep duration,Sleep duration
+log_triglycerides,Triglycerides,Triglycerides
+log_urea,Urea,Urea
+log_ventricular_rate,Ventricular rate,Ventricular rate
+log_vitaminD,Vitamin D,Vitamin D
+log_waist_circ,Waist circumference,Waist circumference
+log_water_mass,Whole body water mass,Water mass
+logMAR,logMAR in round (left/right),MAR
+lymphocyte_perc,Lymphocyte percentage,Lymphocyte %
+M_less_hair,Hair/balding pattern,Balding
+M_log_oestradiol,Oestradiol (male only),Oestradiol (M)
+M_log_testosterone,Testosterone (male only),Testosterone (M)
+MCH,Mean corpuscular haemoglobin,MCH
+MCV,Mean corpuscular volume,MCV
+monocyte_perc,Monocyte percentage,Monocyte %
+more_evening,Morning/evening person (chronotype),Chronotype
+more_sunscreen,Use of sun/uv protection,Sunscreen use
+myopia,Myopia diagnosis,Myopia
+narcolepsy,Daytime dozing / sleeping (narcolepsy),Narcolepsy
+neuroticism,Neuroticism score,Neuroticism
+neutrophil_perc,Neutrophil percentage,Neutrophil %
+no_sex,Age first had sexual intercourse,Virgin
+phosphate,Phosphate,Phosphate
+play_computer,Plays computer games,Plays PC games
+poorer_health,Overall health rating,Overall health
+protein,Total protein,Protein
+red_hair,"Hair colour (natural, before greying)",Red hair
+reticulocyte_volume,Mean reticulocyte volume,Reticulocyte volume
+self_harm_thoughts,Ever contemplated self-harm / Recent thoughts of suicide or self-harm,Ever suicidal thoughts
+sensitive_stomach,Sensitive stomach,Sensitive stomach
+sitting_height,Sitting height,Sitting height
+snoring,Snoring,Snoring
+sodium_urine,Sodium in urine,Sodium (urine)
+sphered_cell_volume,Mean sphered cell volume,Sphered cell volume
+systolic_BP,"Systolic blood pressure, automated reading",Systolic BP
+urate,Urate,Urate
+water_intake,Water intake,Water intake
+years_of_edu,Qualifications (years of education),Educational attainment
