@@ -169,6 +169,8 @@ for (i in 1:nrow(traits_table)) {
     }
     pop_gini <- get_gini(h2_list)
     
+    traits_table[i, "n_snps"] <- n_snps
+    traits_table[i, "n_significant_bins"] <- n_significant_bins
     traits_table[i,col_gini] <- pop_gini
     
     if (ancestry == "United") {
