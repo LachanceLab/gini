@@ -11,3 +11,11 @@ The code in this folder is used to create a master traits table containing all t
 5. `create_table.R`: Creates a table containing all relevant trait information, such as prediction performance, heritability, gini, portability, and PRS divergence.
 6. `encode_sampled_genotypes.sh`: Runs a PLINK command that encodes the genotypes of the sampled indviduals for the top 100 bin SNPs so that `calculate_divergence.R` can easily run
 7. `calculate_divergence.R`: Calculates the PRS for each sampled individual and calculates the level of divergence in PRS using the ANOVA F-stat
+
+Helper scripts (no need to run independently):
+- `helper_functions.R`: contains functions used by multiple scripts related to binning, heritability calculations, and gini computation
+
+
+### Custom input data included
+- `chr_max_bps.txt`: contains a list of the maximum base pairs per chromosome for binning purposes
+- `trait_short_labels`: contains a shortened trait description for each trait for data visualization purposes
