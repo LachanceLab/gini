@@ -202,7 +202,7 @@ loc_out <- paste0(dir_out,"scatterplot_matrix.", print_mode)
 if (print_mode == "png") {
   png(loc_out, width = smplot_width*sf, height = smplot_height*sf)
 } else if (print_mode == "pdf") {
-  pdf(loc_out, width = smplot_width*sf / 75, height = smplot_width*sf / 75)
+  pdf(loc_out, width = smplot_width*sf / 75, height = smplot_height*sf / 75)
 }
 print(p_sc)
 dev.off()

@@ -22,5 +22,4 @@ The genetic architecture of complex traits and its relevance to polygenic score 
 ### Visualization
 - `R: GGally`
 - `R: ggpubr`
-- `R: ggbiplot`
 - `R: rlang`
