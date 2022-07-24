@@ -7,3 +7,4 @@ The code in this folder is used to analyze and visualize the data generated in P
 - `plot_divergence.R`: plots the PRS distribution of different ancestries, highlighting their divergence
 - `plot_lorenz_curve.R`: plots a Lorenz curve for a trait using its significant bins' genetic variance contribution
 - `plot_scatterplot_matrix_density.R`: plots a scatterplot matrix of the main six statistics and the densities of those statistics
+- `generate_extra_ginis.R`: generates Gini coefficients using different calculation settings and then analyzes the difference in settings
