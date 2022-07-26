@@ -8,7 +8,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
           ellipse = FALSE, ellipse.prob = 0.68, labels = NULL, labels.size = 3, 
           alpha = 1, var.axes = TRUE, circle = FALSE, circle.prob = 0.69, 
           varname.size = 3, varname.adjust = 1.5, varname.abbrev = FALSE,
-          arrow.size = 0.75, var.color = "darkred", ell.size = 0.75, 
+          arrow.size = 0.75, var.color = "darkred", varadjust = FALSE, ell.size = 0.75, 
           ...) 
 {
   library(ggplot2)
@@ -37,8 +37,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   df.v <- r * df.v/sqrt(max(v.scale))
   if (obs.scale == 0) {
     u.axis.labs <- paste("standardized PC", choices, sep = "")
-  }
-  else {
+  } else {
     u.axis.labs <- paste("PC", choices, sep = "")
   }
   u.axis.labs <- paste(u.axis.labs, sprintf("(%0.1f%% explained var.)", 
@@ -51,12 +50,15 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   }
   if (varname.abbrev) {
     df.v$varname <- abbreviate(rownames(v))
-  }
-  else {
+  } else {
     df.v$varname <- rownames(v)
   }
   df.v$angle <- with(df.v, (180/pi) * atan(yvar/xvar))
   df.v$hjust = with(df.v, (1 - varname.adjust * sign(xvar))/2)
+  if (varadjust) {
+    df.v$hjust[1] <- df.v$hjust[1] * (2)
+    df.v$hjust[4] <- df.v$hjust[4] * (10)
+  }
   g <- ggplot(data = df.u, aes(x = xvar, y = yvar)) + xlab(u.axis.labs[1]) + 
     ylab(u.axis.labs[2]) + coord_equal()
   if (var.axes) {
@@ -80,8 +82,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
     else {
       g <- g + geom_text(aes(label = labels), size = labels.size)
     }
-  }
-  else {
+  } else {
     if (!is.null(df.u$groups)) {
       g <- g + geom_point(aes(color = groups), alpha = alpha)
     }

@@ -44,7 +44,6 @@ dir_out <- "../generated_data/"
 loc_phenotype_description <- paste0(dir_prive_data,"phenotype-description.csv")
 loc_phenotype_info <- paste0(dir_prive_data,"phenotype-info.csv")
 loc_pcor <-paste0(dir_prive_data,"pred-cor-PLR.csv")
-loc_map <- paste0(dir_other_data,"aau1043_datas3_hg19")
 loc_short_labels <- "trait_short_labels.csv"
 
 ## Joining trait descriptions ####

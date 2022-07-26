@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Example input: ./liftover.py -m <genetic_map_path>
+# Example input: ./liftover_hg38_hg19.py -m <genetic_map_path>
 
 # 4 - liftover.py
 

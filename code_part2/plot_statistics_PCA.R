@@ -23,7 +23,7 @@ print_mode <- "png" # set to either "png" or "pdf"
 vars <- c("Heritability"="ldpred2_h2",
           "Recombination Rate"="cMperMb",
           "Polygenicity"="gini_United",
-          "Performance"="pcor_United",
+          "Prediction"="pcor_United",
           "Portability"="portability_index",
           "Divergence"="f_stat")
 
@@ -35,6 +35,10 @@ colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
 matrix$Divergence <- log10(matrix$Divergence)
 #matrix[matrix$group_consolidated=="psychological","group_consolidated"] <- "lifestyle/environment"
 matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
+
+custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, labels=matrix_filtered$short_label,
+                varname.adjust = 1.25, varname.size = 3, var.color="gray20", ell.size = 0.6,
+                labels.size = 1.5, var.scale = 1, obs.scale = 1, arrow.size = 0.75)
 
 gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labels=matrix$short_label,
                 varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
@@ -71,9 +75,12 @@ gg_pca_scale <- list(
 )
 trait_types <- c("binary","quantitative")
 for (the_trait_type in trait_types) {
-  
+  varadjust = FALSE
   if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2,3,4)}
-  else if (the_trait_type == "quantitative") {gg_pca_scale_subset <- c(1,3,4)}
+  else if (the_trait_type == "quantitative") {
+    gg_pca_scale_subset <- c(1,3,4)
+    varadjust = TRUE
+  }
   
   matrix_filtered <- matrix %>%
     filter(trait_type == the_trait_type)
@@ -81,7 +88,7 @@ for (the_trait_type in trait_types) {
   matrix.pca <- prcomp(matrix_filtered[names(vars)], center=TRUE, scale. = TRUE)
   gg <- custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, labels=matrix_filtered$short_label,
                         varname.adjust = 1.25, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-                        labels.size = 3*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
+                        labels.size = 3*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, varadjust = var4adjust) +
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     theme_light() +
     theme(legend.position = "bottom",
