@@ -67,14 +67,13 @@ traits_table <- prive_description %>%
 
 # consolidates trait groups into fewer categories
 groups_consolidated <- list(
-  "psychological" = c("psychiatric disorders"),
   "diseases" = c("circulatory system","dermatologic","digestive",
                  "endocrine/metabolic","genitourinary","hematopoietic",
                  "musculoskeletal","neoplasms","neurological",
                  "psychiatric disorders","respiratory","sense organs",         
                  "symptoms"),
   "biological measures" = c("biological measures"),
-  "lifestyle/environment" = c("lifestyle and environment"),
+  "lifestyle/psychological" = c("lifestyle and environment","psychiatric disorders"),
   "physical measures" = c("injuries & poisonings","physical measures","sex-specific factors")
 )
 traits_table$group_consolidated <- as.character(NA)
@@ -87,7 +86,7 @@ for (i in 1:nrow(traits_table)) {
   }
 }
 psychological_codes <- c("fluid_intelligence")
-traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidated"] <- "psychological"
+traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidated"] <- "lifestyle/psychological"
 
 ## Joining Prive et al.'s partial correlation values ####
 

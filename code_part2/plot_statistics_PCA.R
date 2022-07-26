@@ -33,6 +33,7 @@ traits_table <- as_tibble(fread(loc_table))
 matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, trait_type, all_of(unname(vars)))
 colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
 matrix$Divergence <- log10(matrix$Divergence)
+#matrix[matrix$group_consolidated=="psychological","group_consolidated"] <- "lifestyle/environment"
 matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
 
 gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labels=matrix$short_label,
@@ -64,15 +65,15 @@ print(paste0("Saved PCA plot of all traits"))
 
 # plots PCA for each of binary and quantitative trait, comparing groups
 gg_pca_scale <- list(
-  labels = c("Biological Measures","Diseases","Lifestyle/Environment","Physical Measures","Psychological"),
-  breaks = c("biological measures","diseases","lifestyle/environment","physical measures","psychological"),
-  values = c("biological measures"="#F8766D", "diseases"="#A3A500","lifestyle/environment"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
+  labels = c("Biological Measures","Diseases","Lifestyle/Psychological","Physical Measures"),
+  breaks = c("biological measures","diseases","lifestyle/psychological","physical measures"),
+  values = c("biological measures"="#F8766D", "diseases"="#A3A500","lifestyle/psychological"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
 )
 trait_types <- c("binary","quantitative")
 for (the_trait_type in trait_types) {
   
-  if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2:5)}
-  else if (the_trait_type == "quantitative") {gg_pca_scale_subset <- c(1,3:5)}
+  if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2,3,4)}
+  else if (the_trait_type == "quantitative") {gg_pca_scale_subset <- c(1,3,4)}
   
   matrix_filtered <- matrix %>%
     filter(trait_type == the_trait_type)

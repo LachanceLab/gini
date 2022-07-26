@@ -5,6 +5,7 @@
 
 ### Libraries and directories ####
 library(tidyverse)
+library(data.table)
 library(GGally)
 library(rlang)
 
@@ -23,10 +24,12 @@ print_mode <- "png" # set to either "png" or "pdf"
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 
 ### Code ####
-traits_table <- as_tibble(read_tsv(loc_table)) %>%
-  select(prive_code, description, trait_type, group,
+traits_table <- as_tibble(fread(loc_table)) %>%
+  select(prive_code, description, trait_type, group, group_consolidated,
          all_of(vars)) %>%
-  mutate(lifestyle = group == "lifestyle and environment") %>%
+  #mutate(lifestyle = group == "lifestyle and environment") %>%
+  #mutate(lifestyle = (group_consolidated == "lifestyle/environment") | (group_consolidated == "psychological")) %>%
+  mutate(lifestyle = group_consolidated == "lifestyle/psychological") %>%
   drop_na()
 
 # Caps maximum portability to 0
@@ -278,7 +281,7 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   if (the_var_comparison == "group") {
     p <- p +
       labs(fill="Trait Group") +
-      scale_fill_manual(labels=c("Lifestyle","Non-lifestyle"),
+      scale_fill_manual(labels=c("Lifestyle/Psychological","Non-lifestyle/psychological"),
                         breaks=c(TRUE, FALSE),
                         values = c("TRUE"="dodgerblue1", "FALSE"="gray20"))
   } else if (the_var_comparison == "type") {
