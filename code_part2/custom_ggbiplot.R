@@ -8,7 +8,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
           ellipse = FALSE, ellipse.prob = 0.68, labels = NULL, labels.size = 3, 
           alpha = 1, var.axes = TRUE, circle = FALSE, circle.prob = 0.69, 
           varname.size = 3, varname.adjust = 1.5, varname.abbrev = FALSE,
-          arrow.size = 0.75, var.color = "darkred", varadjust = FALSE, ell.size = 0.75, 
+          arrow.size = 0.75, var.color = "darkred", overlap_fix = FALSE, ell.size = 0.75, 
           ...) 
 {
   library(ggplot2)
@@ -23,8 +23,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   v <- pcobj$rotation
   
   choices <- pmin(choices, ncol(u))
-  df.u <- as.data.frame(sweep(u[, choices], 2, d[choices]^obs.scale, 
-                              FUN = "*"))
+  df.u <- as.data.frame(sweep(u[, choices], 2, d[choices]^obs.scale, FUN = "*"))
   v <- sweep(v, 2, d^var.scale, FUN = "*")
   df.v <- as.data.frame(v[, choices])
   names(df.u) <- c("xvar", "yvar")
@@ -55,9 +54,14 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   }
   df.v$angle <- with(df.v, (180/pi) * atan(yvar/xvar))
   df.v$hjust = with(df.v, (1 - varname.adjust * sign(xvar))/2)
-  if (varadjust) {
-    df.v$hjust[1] <- df.v$hjust[1] * (2)
-    df.v$hjust[4] <- df.v$hjust[4] * (10)
+  df.v2 <- df.v
+  if (overlap_fix) {
+    df.v2$angle[1] <- df.v2$angle[1] + 3.2
+    df.v2$angle[4] <- df.v2$angle[4] - 0.5
+    df.v2$length <- sqrt(df.v2$xvar**2 + df.v2$yvar**2)
+    df.v2$length[1] <- df.v2$length[1] * 0.945
+    df.v2$xvar[c(1,4)] <- df.v2$length[c(1,4)] * cos(df.v2$angle[c(1,4)] * (pi/180))
+    df.v2$yvar[c(1,4)] <- df.v2$length[c(1,4)] * sin(df.v2$angle[c(1,4)] * (pi/180))
   }
   g <- ggplot(data = df.u, aes(x = xvar, y = yvar)) + xlab(u.axis.labs[1]) + 
     ylab(u.axis.labs[2]) + coord_equal()
@@ -91,7 +95,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
     }
   }
   if (!is.null(df.u$groups) && ellipse) {
-    theta <- c(seq(-pi, pi, length = 50), seq(pi, -pi, length = 50))
+    theta <- c(seq(-pi, pi, length = 100), seq(pi, -pi, length = 100))
     circle <- cbind(cos(theta), sin(theta))
     ell <- ddply(df.u, "groups", function(x) {
       if (nrow(x) <= 2) {
@@ -107,7 +111,7 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
     g <- g + geom_path(data = ell, aes(color = groups, group = groups), size=ell.size)
   }
   if (var.axes) {
-    g <- g + geom_text(data = df.v, aes(label = varname, 
+    g <- g + geom_text(data = df.v2, aes(label = varname, 
                                         x = xvar, y = yvar, angle = angle, hjust = hjust), 
                        color = var.color, size = varname.size)
   }
