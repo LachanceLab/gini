@@ -27,10 +27,9 @@ vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index"
 traits_table <- as_tibble(fread(loc_table)) %>%
   select(prive_code, description, trait_type, group, group_consolidated,
          all_of(vars)) %>%
-  #mutate(lifestyle = group == "lifestyle and environment") %>%
-  #mutate(lifestyle = (group_consolidated == "lifestyle/environment") | (group_consolidated == "psychological")) %>%
   mutate(lifestyle = group_consolidated == "lifestyle/psychological") %>%
   drop_na()
+
 
 # Caps maximum portability to 0
 traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0

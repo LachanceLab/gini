@@ -3,6 +3,7 @@
 # Creates PCA plots of the traits, using the six summary statistics as the initial dimensions
 
 ### Libraries and directories ####
+library(plyr)
 library(tidyverse)
 library(data.table)
 source("custom_ggbiplot.R") # loads custom 'ggbiplot' function from 'ggbiplot' package
@@ -28,6 +29,8 @@ vars <- c("Heritability"="ldpred2_h2",
           "Divergence"="f_stat")
 
 traits_table <- as_tibble(fread(loc_table))
+traits_table <- traits_table %>%
+    mutate(group_consolidated = ifelse(group=="psychiatric disorders","lifestyle/psychological",group_consolidated))
 
 # plots PCA for all traits, comparing binary vs quantitative traits
 matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, trait_type, all_of(unname(vars)))

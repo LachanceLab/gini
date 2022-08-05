@@ -23,3 +23,6 @@ The genetic architecture of complex traits and its relevance to polygenic score 
 - `R: GGally`
 - `R: ggpubr`
 - `R: rlang`
+- `R: webshot`
+- `R: webshot: PhantomJS`
+- `R: gt`

@@ -69,8 +69,7 @@ groups_consolidated <- list(
   "diseases" = c("circulatory system","dermatologic","digestive",
                  "endocrine/metabolic","genitourinary","hematopoietic",
                  "musculoskeletal","neoplasms","neurological",
-                 "psychiatric disorders","respiratory","sense organs",         
-                 "symptoms"),
+                 "respiratory","sense organs", "symptoms"),
   "biological measures" = c("biological measures"),
   "lifestyle/psychological" = c("lifestyle and environment","psychiatric disorders"),
   "physical measures" = c("injuries & poisonings","physical measures","sex-specific factors")
