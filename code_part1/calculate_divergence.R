@@ -73,7 +73,8 @@ for (code in codes) {
   # appends the PRS to the table containing the IIDs and ancestries of the
   # sampled individuals
   PRS <- geno %>% select(IID) %>% mutate(PRS = dps)
-  pop_sampled <- pop_sampled %>% left_join(PRS, by="IID")
+  pop_sampled <- pop_sampled %>% left_join(PRS, by="IID") %>%
+    filter(ancestry != "Ashkenazi")
   
   # computes an ANOVA and extracts F-stat and p-value
   aov_model <- aov(PRS ~ ancestry, data=pop_sampled)

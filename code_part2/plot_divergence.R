@@ -23,7 +23,7 @@ dir_out <- "../generated_figures/"
 # reads traits table
 traits_table <- as_tibble(fread(loc_table))
 # reads the PRSs and changes "United" to "UK"
-PRSs <- as_tibble(fread(loc_PRSs))
+PRSs <- as_tibble(fread(loc_PRSs)) %>% filter(ancestry != "Ashkenazi")
 PRSs[PRSs$ancestry=="United","ancestry"] <- "UK"
 
 # function that generates divergence plot
@@ -48,7 +48,7 @@ plot_divergence <- function(code) {
     p_text <- bquote(ANOVA:~log[10](F)==.(logfstat)~~~~~p-value==.(p_text_stem)%*%10^{.(p_text_exp)})
   }
   
-  ff <- bquote(10^{.(threshold)})
+  #ff <- bquote(10^{.(threshold)})
   #subtitle <- paste0("ANOVA: log10(F-stat) = ", round(log10(f_stat),2),". p-value ",p_text )
   
   # plots divergence
