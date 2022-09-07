@@ -79,14 +79,14 @@ big_table_gt <- gt(big_table) %>%
   )
 
 big_table_gt
-gtsave(big_table_gt, "table_big_table.png", dir_out)
+gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620)
 
 
 #### Makes High and Low Gini Table ####
 n_show <- 5 # shows top n_show highest and top n_show lowest
 trait_types <- c("binary", "quantitative")
 
-for (the_trait_type in trait_types) {
+for (the_trait_type in trait_types[1]) {
   #N_total <- nrow(traits_table %>% filter(trait_type == the_trait_type))
   N_total <- nrow(traits_table)
   
@@ -95,13 +95,15 @@ for (the_trait_type in trait_types) {
     #filter(trait_type == the_trait_type) %>%
     mutate(gini_United = as.character(round(gini_United,rounding_decimals)),
            rank = row_number()) %>%
-    select(rank, description, trait_type, group_consolidated, gini_United)
+    select(rank, description, 
+           #trait_type, group_consolidated, 
+           gini_United)
   
   table1 <- temp %>%
     filter(rank <= n_show) %>%
     add_row(
-      rank = 0, description = "...", group_consolidated = "",
-      trait_type = "",
+      rank = 0, description = "...",
+      #group_consolidated = "", trait_type = "",
       gini_United = ""
     ) %>%
     add_row(
@@ -114,8 +116,7 @@ for (the_trait_type in trait_types) {
     cols_label(
       rank = "#",
       description = "Trait",
-      trait_type = "Trait Type",
-      group_consolidated = "Trait Group",
+      #trait_type = "Trait Type", group_consolidated = "Trait Group",
       gini_United = md("Gini<sub>100,UK</sub>")
     ) %>%
     cols_align(
@@ -143,13 +144,15 @@ temp <- traits_table %>%
   arrange(f_stat) %>%
   mutate(f_stat = as.character(round(f_stat,rounding_decimals)),
          rank = row_number()) %>%
-  select(rank, description, trait_type, group_consolidated, f_stat)
+  select(rank, description,
+         #trait_type, group_consolidated,
+         f_stat)
 
 table2 <- temp %>%
   filter(rank <= n_show) %>%
   add_row(
-    rank = 0, description = "...", group_consolidated = "",
-    trait_type = "",
+    rank = 0, description = "...",
+    #group_consolidated = "", trait_type = "",
     f_stat = ""
   ) %>%
   add_row(
@@ -162,8 +165,7 @@ table2gt <- gt(table2) %>%
   cols_label(
     rank = "#",
     description = "Trait",
-    trait_type = "Trait Type",
-    group_consolidated = "Trait Group",
+    #trait_type = "Trait Type", group_consolidated = "Trait Group",
     f_stat = md("Divergence (D)")
   ) %>%
   cols_align(
@@ -176,5 +178,5 @@ table2gt <- gt(table2) %>%
   )
 
 table2gt
-gtsave(table2gt, paste0("table2_ALL",n_show,".png"), dir_out)
+gtsave(table2gt, paste0("table2_ALL",n_show,".png"), dir_out, vwidth = 1160, vheight=1620)
 print(paste("Made divergence table"))

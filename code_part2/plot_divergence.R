@@ -58,9 +58,12 @@ plot_divergence <- function(code) {
     theme(legend.position = "bottom",
           legend.title=element_blank(),
           axis.text.y = element_blank(),
-          axis.ticks.y = element_blank()) +
+          axis.ticks.y = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
     xlab("Polygenic Score per UKBB Individual") +
     ylab("Density") +
+    scale_y_continuous(expand=expansion(mult = c(0, .1))) +
     labs(title=paste0("PRS Divergence: ",description),
          subtitle = p_text)
   gg

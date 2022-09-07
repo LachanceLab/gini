@@ -58,9 +58,7 @@ cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshol
     mutate(percentile = row_number() / nrow(sf))
   sf
 }
-sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, summary_method)
-gg <- plot_lorenz(code, sf, ancestry)sf <- cleanup_data_lorenz(code, ancestry, threshold, threshold_padding, bin_size, summary_method)
-gg <- plot_lorenz(code, sf, ancestry)# function that actually plots Lorenz curve
+# function that actually plots Lorenz curve
 plot_lorenz <- function(code, sf, ancestry="United") {
   
   slice <- traits_table %>% filter(prive_code == code)
@@ -79,7 +77,9 @@ plot_lorenz <- function(code, sf, ancestry="United") {
     xlab(paste("Percentile of bin genetic variance contribution within top", threshold,"bins")) +
     ylab(paste("Proportion of top", threshold,"bins' genetic variance contribution")) +
     theme_light() +
-    theme(aspect.ratio = 1) +
+    theme(aspect.ratio = 1,
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
     scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
     scale_y_continuous(limits=c(0,1), expand = c(0,0))
   gg

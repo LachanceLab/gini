@@ -23,8 +23,8 @@ print_mode <- "png" # set to either "png" or "pdf"
 ### Code ###
 vars <- c("Heritability"="ldpred2_h2",
           "Recombination Rate"="cMperMb",
-          "Polygenicity"="gini_United",
-          "PGS Efficacy"="pcor_United",
+          "Gini"="gini_United",
+          "PGS Accuracy"="pcor_United",
           "Portability"="portability_index",
           "Divergence"="f_stat")
 
@@ -41,7 +41,7 @@ matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
 
 gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labels=matrix$short_label,
                 varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-               labels.size = 3*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
+               labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
   geom_text(aes(label="", color=matrix$trait_type), key_glyph = "rect") + # empty geom
   theme_light() +
   theme(legend.position = "bottom",
@@ -87,7 +87,7 @@ for (the_trait_type in trait_types) {
   matrix.pca <- prcomp(matrix_filtered[names(vars)], center=TRUE, scale. = TRUE)
   gg <- custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, labels=matrix_filtered$short_label,
                         varname.adjust = 1.25, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-                        labels.size = 3*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
+                        labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     theme_light() +
     theme(legend.position = "bottom",

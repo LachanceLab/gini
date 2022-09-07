@@ -128,8 +128,8 @@ upper_corr_p <- function(data,mapping) {
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
   "cMperMb" = c("Recombination","Rate~(R)"),
-  "gini_United" = c("Polygenicity","(Gini[list(100,UK)])"),
-  "pcor_United" = c("PGS~Efficacy","(symbol(r)[UK])"),
+  "gini_United" = c("Gini","(Gini[list(100,UK)])"),
+  "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
   "f_stat" = c("Divergence","(D)"))
 diag_label <- function(data, mapping) {
@@ -223,7 +223,7 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","Recombination Rate","Polygenicity","PGS Efficacy","Portability","Divergence")
+column_labels <- c("Heritability","Recombination Rate","Gini","PGS Accuracy","Portability","Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
 # for each of the 6 measurements
