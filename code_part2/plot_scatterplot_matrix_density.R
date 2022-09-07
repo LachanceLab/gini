@@ -164,6 +164,9 @@ axis_lims <- list(
   "pcor_United"= get_axis_lims(traits_table$pcor_United,0),
   "portability_index"= get_axis_lims(traits_table$portability_index,NA,0),
   "gini_United"=c(0,1))
+# format_axis_sci <- function(x) {
+#   formatC(x,format="E", digits=1, drop0trailing=TRUE)
+# }
 lm_scatterplot <- function(data, mapping) {
   x <- as.character(quo_get_expr(mapping[[1]]))
   y <- as.character(quo_get_expr(mapping[[2]]))
@@ -182,9 +185,12 @@ lm_scatterplot <- function(data, mapping) {
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
-  # log10 scales for h^2
+  # log10 scales for h^2 and portability
   if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
   if (y == "ldpred2_h2") {p <- p + scale_y_log10()}
+  #if (x == "portability_index") {p <- p + scale_x_continuous(labels = format_axis_sci)}
+  #if (y == "portability_index") {p <- p + scale_y_continuous(labels = format_axis_sci)}
+  
   p
 }
 scplot_textsize <- 20
@@ -295,8 +301,9 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
                         breaks=c("binary", "quantitative"),
                         values = c("binary"="gray70", "quantitative"="gray10"))
   }
-  # log10 scales for h^2
+  # log10 scales for h^2 and portability
   if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
+  #if (x == "portability_index") {p <- p + scale_x_continuous(labels = format_axis_sci)}
   # Adds p-value to plot
   is_h2 <- x=="ldpred2_h2"
   xlims <- axis_lims[[x]]
