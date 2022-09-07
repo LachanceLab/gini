@@ -129,9 +129,9 @@ var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
   "cMperMb" = c("Recombination","Rate~(R)"),
   "gini_United" = c("Polygenicity","(Gini[list(100,UK)])"),
-  "pcor_United" = c("Prediction","(symbol(r)[UK])"),
+  "pcor_United" = c("PGS~Efficacy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
-  "f_stat" = c("Divergence","(log[10](F))"))
+  "f_stat" = c("Divergence","(D)"))
 diag_label <- function(data, mapping) {
   variable <- as.character(quo_get_expr(mapping[[1]]))
   
@@ -171,9 +171,14 @@ lm_scatterplot <- function(data, mapping) {
   xlims <- axis_lims[[x]]
   ylims <- axis_lims[[y]]
   
+  p_value <- (p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x) ))$adj_p_value
+  if (p_value < 0.05) {linealpha <- 0.9}
+  else {linealpha <- 0.4}
+  
   p <- ggplot(data=data, mapping=mapping) +
-    geom_smooth(method="lm", color="dodgerblue1", formula=y~x, size=1*sf) +
-    geom_point(alpha=0.5,shape=19, size=1.75*sf) +
+    geom_line(stat="smooth", method="lm", color="dodgerblue1", formula=y~x, size=1*sf, alpha=linealpha) +
+    geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
+    geom_point(alpha=0.75,shape=19, size=1.75*sf) +
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
@@ -212,7 +217,7 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","Recombination Rate","Polygenicity","Prediction","Portability","Divergence")
+column_labels <- c("Heritability","Recombination Rate","Polygenicity","PGS Efficacy","Portability","Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
 # for each of the 6 measurements

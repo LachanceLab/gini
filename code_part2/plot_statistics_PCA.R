@@ -24,7 +24,7 @@ print_mode <- "png" # set to either "png" or "pdf"
 vars <- c("Heritability"="ldpred2_h2",
           "Recombination Rate"="cMperMb",
           "Polygenicity"="gini_United",
-          "Prediction"="pcor_United",
+          "PGS Efficacy"="pcor_United",
           "Portability"="portability_index",
           "Divergence"="f_stat")
 
@@ -37,6 +37,7 @@ matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, t
 colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
 matrix$Divergence <- log10(matrix$Divergence)
 matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
+#matrix$Polygenicity <- -matrix$Polygenicity
 
 gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labels=matrix$short_label,
                 varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
