@@ -41,7 +41,7 @@ big_table <- traits_table %>%
   select(description, trait_type, group_consolidated, all_of(vars)) %>%
   mutate(trait_type = ifelse(trait_type=="binary","Binary","Quantitative"),
          f_stat = log10(f_stat),
-         portability_index = ifelse(portability_index>0,0,1000*portability_index)) %>%
+         portability_index = ifelse(portability_index>0,0,portability_index)) %>%
   group_by(trait_type) %>%
   arrange(group_consolidated, description)
 
@@ -61,13 +61,18 @@ big_table_gt <- gt(big_table) %>%
     cMperMb = "Recombination Rate (R)",
     gini_United = md("Gini<sub>100,UK</sub>"),
     pcor_United = md("PGS Efficacy (&rho;<sub>UK</sub>)"),
-    portability_index = "Portability (1000*m)",
+    portability_index = "Portability (m)",
     f_stat = md("Divergence (D)")
   ) %>%
   fmt_number(
-    columns = vars,
+    columns = vars[vars !="portability_index"],
     suffixing = F,
     decimals = rounding_decimals
+  ) %>%
+  fmt_number(
+    columns = portability_index,
+    suffixing = F,
+    decimals = 5
   ) %>%
   cols_align(
     align = "left",

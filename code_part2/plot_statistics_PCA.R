@@ -45,7 +45,8 @@ gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labe
   geom_text(aes(label="", color=matrix$trait_type), key_glyph = "rect") + # empty geom
   theme_light() +
   theme(legend.position = "bottom",
-        text = element_text(size = 20*sf)) +
+        text = element_text(size = 20*sf),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) +
   labs(title="PCA of summary statistics for all traits",
        subtitle = NULL,
        color = "Trait Type") +
@@ -91,7 +92,8 @@ for (the_trait_type in trait_types) {
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     theme_light() +
     theme(legend.position = "bottom",
-          text = element_text(size = 20*sf)) +
+          text = element_text(size = 20*sf),
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
     labs(title=paste("PCA of summary statistics for",the_trait_type,"traits"),
          subtitle = NULL,
          color = "Trait Group")  +

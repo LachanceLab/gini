@@ -111,12 +111,16 @@ upper_corr_p <- function(data,mapping) {
   p_text <- p_text_list[[1]]
   
   # determines full text to display
-  text_rline <- paste0("r = ", round(cor_value,digits),"\n")
+  cor_text <- formatC(cor_value,digits=digits, format="f")
+  text_rline <- paste0("r = ", cor_text,"\n")
+  
   
   
   # makes GGally textplot using custom text
-  p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=10*sf) +
-    geom_text(aes(x=0.5,y=0.42),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
+  #p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=10*sf) +
+  p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=6*sf) +
+    #geom_text(aes(x=0.5,y=0.42),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
+    geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
               label = p_text, parse=TRUE ) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
@@ -293,7 +297,7 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
       labs(fill="Trait Group") +
       scale_fill_manual(labels=c("Lifestyle/Psychological","Non-lifestyle/psychological"),
                         breaks=c(TRUE, FALSE),
-                        values = c("TRUE"="dodgerblue1", "FALSE"="gray20"))
+                        values = c("TRUE"="#00BF7D", "FALSE"="gray20"))
   } else if (the_var_comparison == "type") {
     p <- p +
       labs(fill="Trait Type") +
