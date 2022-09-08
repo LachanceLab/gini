@@ -132,7 +132,7 @@ upper_corr_p <- function(data,mapping) {
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
   "cMperMb" = c("Recombination","Rate~(R)"),
-  "gini_United" = c("Gini","(Gini[list(100,UK)])"),
+  "gini_United" = c("Gini","(G[list(100,UK)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
   "f_stat" = c("Divergence","(D)"))

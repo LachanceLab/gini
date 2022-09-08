@@ -57,12 +57,12 @@ big_table_gt <- gt(big_table) %>%
   cols_label(
     description = "Trait",
     group_consolidated = "Trait Group",
-    ldpred2_h2 = md("Heritability (h<sup>2</sup>)"),
-    cMperMb = "Recombination Rate (R)",
-    gini_United = md("Gini<sub>100,UK</sub>"),
-    pcor_United = md("PGS Efficacy (&rho;<sub>UK</sub>)"),
-    portability_index = "Portability (m)",
-    f_stat = md("Divergence (D)")
+    ldpred2_h2 = md("h<sup>2</sup><sub>SNP</sup>"),
+    cMperMb = "R",
+    gini_United = md("G<sub>100,UK</sub>"),
+    pcor_United = md("&rho;<sub>UK</sub>"),
+    portability_index = "m",
+    f_stat = md("D")
   ) %>%
   fmt_number(
     columns = vars[vars !="portability_index"],
@@ -88,56 +88,47 @@ gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620
 
 
 #### Makes High and Low Gini Table ####
-n_show <- 5 # shows top n_show highest and top n_show lowest
-trait_types <- c("binary", "quantitative")
+n_show <- 10 # shows top n_show highest and top n_show lowest
 
-for (the_trait_type in trait_types[1]) {
-  #N_total <- nrow(traits_table %>% filter(trait_type == the_trait_type))
-  N_total <- nrow(traits_table)
-  
-  temp <- traits_table %>%
-    arrange(gini_United) %>%
-    #filter(trait_type == the_trait_type) %>%
-    mutate(gini_United = as.character(round(gini_United,rounding_decimals)),
-           rank = row_number()) %>%
-    select(rank, description, 
-           #trait_type, group_consolidated, 
-           gini_United)
-  
-  table1 <- temp %>%
-    filter(rank <= n_show) %>%
-    add_row(
-      rank = 0, description = "...",
-      #group_consolidated = "", trait_type = "",
-      gini_United = ""
-    ) %>%
-    add_row(
-      temp %>% filter(row_number() > (N_total - n_show))
-    ) %>%
-    mutate(rank = ifelse(rank==0,"",as.character(rank)))
-  
-  table1gt <- gt(table1) %>%
-    gt_theme() %>%
-    cols_label(
-      rank = "#",
-      description = "Trait",
-      #trait_type = "Trait Type", group_consolidated = "Trait Group",
-      gini_United = md("Gini<sub>100,UK</sub>")
-    ) %>%
-    cols_align(
-      align = "left",
-      columns = c("description")
-    ) %>%
-    tab_header(
-      #subtitle = paste("Only",the_trait_type,"traits"),
-      title = paste0(n_show," Lowest and ",n_show," Highest Gini Traits")
-    )
-  
-  table1gt
-  #gtsave(table1gt, paste0("table1",the_trait_type,".png"), dir_out)
-  gtsave(table1gt, paste0("table1_ALL",n_show,".png"), dir_out)
-  print(paste("Made gini table for",the_trait_type,"traits"))
-}
+N_total <- nrow(traits_table)
+
+temp <- traits_table %>%
+  arrange(gini_United) %>%
+  mutate(gini_United = as.character(formatC(gini_United,rounding_decimals,format="f")),
+         rank = row_number()) %>%
+  select(rank, description,
+         gini_United)
+
+table1 <- temp %>%
+  filter(rank <= n_show) %>%
+  add_row(
+    rank = 0, description = "...",
+    gini_United = ""
+  ) %>%
+  add_row(
+    temp %>% filter(row_number() > (N_total - n_show))
+  ) %>%
+  mutate(rank = ifelse(rank==0,"",as.character(rank)))
+
+table1gt <- gt(table1) %>%
+  gt_theme() %>%
+  cols_label(
+    rank = "#",
+    description = "Trait",
+    gini_United = md("G<sub>100,UK</sub>")
+  ) %>%
+  cols_align(
+    align = "left",
+    columns = c("description")
+  ) %>%
+  tab_header(
+    title = paste0(n_show," Lowest and ",n_show," Highest Gini Traits")
+  )
+
+table1gt
+gtsave(table1gt, paste0("table1_ALL",n_show,".png"), dir_out, vwidth = 2160, vheight=1620)
+print(paste("Made gini table for",the_trait_type,"traits"))
+
 
 #### Makes High and Low Divergence Table ####
 n_show <- 10 # shows top n_show highest and top n_show lowest
@@ -147,17 +138,15 @@ N_total <- nrow(traits_table)
 temp <- traits_table %>%
   mutate(f_stat = log10(f_stat)) %>%
   arrange(f_stat) %>%
-  mutate(f_stat = as.character(round(f_stat,rounding_decimals)),
+  mutate(f_stat = as.character(formatC(f_stat,rounding_decimals,format="f")),
          rank = row_number()) %>%
   select(rank, description,
-         #trait_type, group_consolidated,
          f_stat)
 
 table2 <- temp %>%
   filter(rank <= n_show) %>%
   add_row(
     rank = 0, description = "...",
-    #group_consolidated = "", trait_type = "",
     f_stat = ""
   ) %>%
   add_row(
@@ -170,7 +159,6 @@ table2gt <- gt(table2) %>%
   cols_label(
     rank = "#",
     description = "Trait",
-    #trait_type = "Trait Type", group_consolidated = "Trait Group",
     f_stat = md("Divergence (D)")
   ) %>%
   cols_align(
@@ -178,7 +166,6 @@ table2gt <- gt(table2) %>%
     columns = c("description")
   ) %>%
   tab_header(
-    #subtitle = paste("Only",the_trait_type,"traits"),
     title = paste0(n_show," Lowest and ",n_show," Highest Divergence Traits")
   )
 

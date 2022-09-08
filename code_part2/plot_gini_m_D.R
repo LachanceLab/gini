@@ -83,7 +83,7 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   title <- paste0(description)
   gini_text <- formatC(gini[[1]],digits=3, format="f")
   #subtitle <- bquote(Gini[100][','][UK]==.(gini_text))
-  text <- paste0("Gini[100][','][UK]==",gini_text)
+  text <- paste0("G[100][','][UK]==",gini_text)
   
   
   gg<-ggplot(sfile, aes(x=100*percentile, y=h2_cshare)) +
