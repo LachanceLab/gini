@@ -16,9 +16,21 @@ loc_table <- "../generated_data/traits_table.txt"
 # sets directory for generated figures
 dir_out <- "../generated_figures/"
 
-# sets scaling factors for image output. Default = 2
+# sets scaling factors for image output. Default = 3
 sf <- 3
-print_mode <- "png" # set to either "png" or "pdf"
+print_mode <- "pdf" # set to either "png" or "pdf"
+
+### Printing function ####
+print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
+  if (print_mode == "png") {
+    png(loc_out, width = plot_width*sf, height = plot_height*sf)
+  } else if (print_mode == "pdf") {
+    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+  }
+  print(gg)
+  dev.off()
+}
+
 
 ### Code ###
 vars <- c("Heritability"="ldpred2_h2",
@@ -45,25 +57,24 @@ gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labe
   geom_text(aes(label="", color=matrix$trait_type), key_glyph = "rect") + # empty geom
   theme_light() +
   theme(legend.position = "bottom",
-        text = element_text(size = 20*sf),
-        panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-  labs(title="PCA of summary statistics for all traits",
+        text = element_text(size = 29*sf),
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(title = NULL,#title="PCA of summary statistics for all traits",
        subtitle = NULL,
        color = "Trait Type") +
   scale_color_manual(labels=c("Binary","Quantitative"),
                      breaks=c("binary", "quantitative"),
-                     values = c("binary"="#F8766D", "quantitative"="#00BFC4"))
+                     values = c("binary"="#F8766D", "quantitative"="#00BFC4")) +
+  scale_x_continuous(expand = c(0.075,0.075))
+
 # Saves image onto system
 plot_width <- 1000
 plot_height <- 1000
 loc_out <- paste0(dir_out,"summary_stats_PCA_ALL.", print_mode)
-if (print_mode == "png") {
-  png(loc_out, width = plot_width*sf, height = plot_height*sf)
-} else if (print_mode == "pdf") {
-  pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
-}
-print(gg)
-dev.off()
+print_plot(gg, loc_out, print_mode, plot_width, plot_height, sf)
+#ggsave(loc_out,width=plot_width*sf,height=plot_height*sf,units="px")
 print(paste0("Saved PCA plot of all traits"))
 
 
@@ -92,22 +103,20 @@ for (the_trait_type in trait_types) {
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     theme_light() +
     theme(legend.position = "bottom",
-          text = element_text(size = 20*sf),
-          panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-    labs(title=paste("PCA of summary statistics for",the_trait_type,"traits"),
+          text = element_text(size = 29*sf),
+          panel.border = element_rect(colour = "black", fill=NA, size=1),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
+    labs(title = NULL,#title=paste("PCA of summary statistics for",the_trait_type,"traits"),
          subtitle = NULL,
          color = "Trait Group")  +
     scale_color_manual(labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
-                       values=gg_pca_scale[["values"]][gg_pca_scale_subset])
+                       values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
+    scale_x_continuous(expand = c(0.075,0.075))
   
   loc_out <- paste0(dir_out,"summary_stats_PCA_",the_trait_type,".", print_mode)
-  if (print_mode == "png") {
-    png(loc_out, width = plot_width*sf, height = plot_height*sf)
-  } else if (print_mode == "pdf") {
-    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
-  }
-  print(gg)
-  dev.off()
+  print_plot(gg, loc_out, print_mode, plot_width, plot_height, sf)
+  #ggsave(loc_out,width=plot_width*sf,height=plot_height*sf,units="px")
   print(paste("Saved PCA plot of",the_trait_type,"traits"))
 }

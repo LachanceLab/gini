@@ -150,7 +150,7 @@ for (code in codes) {
 
 
 #### VISUALIZING DATA ####
-#ginis <- as_tibble(fread("../generated_data/ginis_extra.txt"))
+ginis <- as_tibble(fread("../generated_data/ginis_extra.txt"))
 
 ginis <- ginis %>% mutate(
   bin_size = as.factor(bin_size),
@@ -355,3 +355,69 @@ ggplot(distances, aes(x=prive_dist_to_UK, y=mean_gini_sqdiff_UK)) +
        color = "Ancestry") +
   theme_light() +
   theme(legend.position = "none")
+
+
+
+#### Verifying robustness of parameters ####
+
+### bin size ####
+ginis_binsize <- ginis %>% filter(
+  bin_summary_method == "sum",
+  threshold_zero_padding = TRUE,
+  threshold == 100
+  ) %>%
+  select(prive_code, ancestry, bin_size, gini) %>%
+  group_by(prive_code, bin_size) %>%
+  summarize(gini = mean(gini)) %>%
+  pivot_wider(
+    names_from = bin_size,
+    values_from = gini,
+    names_prefix = "gini_"
+  ) %>%
+  left_join(traits_table %>% select(prive_code,short_label), by="prive_code")
+cor1 <- cor.test(ginis_binsize$gini_1, ginis_binsize$`gini_1e+05`)
+r <- cor1$estimate[[1]]
+p <- cor1$p.value
+ggplot(ginis_binsize, aes(x=gini_1,y=`gini_1e+05`)) +
+  geom_abline(slope=1,intercept=0) +
+  #geom_text(aes(label=short_label), size=2) +
+  geom_point() +
+  xlim(0,1) +
+  ylim(0,1) +
+  xlab("Gini (bin size = 1)") +
+  ylab("Gini (bin size = 100kb)") +
+  labs(title = "Gini is robust by bin size",
+       subtitle = paste0("r = ", round(r,4), " :: p = ", formatC(p,format="E",digits=2),
+                         "\nFiltered to bin summary method = sum, threshold = 100, TZP = true, Gini averaged across ancestries")) +
+  theme_light()
+
+### bin summary method ####
+ginis_bsm <- ginis %>% filter(
+  bin_size == 100000,
+  threshold_zero_padding = TRUE,
+  threshold == 100
+) %>%
+  select(prive_code, ancestry, bin_summary_method, gini) %>%
+  group_by(prive_code, bin_summary_method) %>%
+  summarize(gini = mean(gini)) %>%
+  pivot_wider(
+    names_from = bin_summary_method,
+    values_from = gini,
+    names_prefix = "gini_"
+  ) %>%
+  left_join(traits_table %>% select(prive_code,short_label), by="prive_code")
+cor1 <- cor.test(ginis_bsm$gini_sum, ginis_bsm$gini_max)
+r <- cor1$estimate[[1]]
+p <- cor1$p.value
+ggplot(ginis_bsm, aes(x=gini_sum,y=gini_max)) +
+  geom_abline(slope=1,intercept=0) +
+  #geom_text(aes(label=short_label), size=2) +
+  geom_point() +
+  xlim(0,1) +
+  ylim(0,1) +
+  xlab("Gini (bin summary method = sum)") +
+  ylab("Gini (bin summary method = max)") +
+  labs(title = "Gini is robust by bin summary method",
+       subtitle = paste0("r = ", round(r,4), " :: p = ", formatC(p,format="E",digits=2),
+                         "\nFiltered to bin size = 100kb, threshold = 100, TZP = true, Gini averaged across ancestries")) +
+  theme_light()

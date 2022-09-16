@@ -4,6 +4,7 @@
 # and PGS Divergence
 
 ### Libraries and directories ####
+detach("package:plyr", unload=TRUE)
 library(tidyverse)
 library(ggpubr)
 library(ggrepel)
@@ -27,6 +28,7 @@ dir_out <- "../generated_figures/"
 
 # sets scaling factors for image output. Default = 2
 sf <- 2
+print_mode <- "png" # set to either "png" or "pdf"
 
 ### Functions ####
 
@@ -37,11 +39,12 @@ common_theme <- theme_light() +
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(),
   panel.border = element_rect(colour = "black", fill=NA, size=1),
-  plot.title = element_text(hjust = 0.5, size=9*sf),
-  axis.title = element_text(size=7*sf),
-  axis.text = element_text(size=6*sf),
-  legend.title = element_text(size=7*sf),
-  legend.text = element_text(size=6*sf)
+  plot.title = element_text(hjust = 0.5, size=13*sf),
+  axis.title = element_text(size=12*sf),
+  axis.text = element_text(size=11*sf),
+  legend.title = element_text(size=12*sf),
+  legend.text = element_text(size=10*sf),
+  plot.margin = unit(0.25*sf*c(1,1,1,1), "cm")
 )
 
 # function that reads a trait's summary file and extracts the needed columns
@@ -68,7 +71,7 @@ cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshol
       ) %>% arrange(h2)
   }
   sf <- sf %>%
-    mutate(percentile = row_number() / nrow(sf))
+    mutate(percentile = dplyr::row_number() / nrow(sf))
   sf
 }
 # function that actually plots Lorenz curve
@@ -76,6 +79,10 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   
   slice <- traits_table %>% filter(prive_code == code)
   description <- slice$description
+  # adjusts the long description for geek_time trait
+  if (code == "geek_time") {
+    description <- "Time spent watching TV or using PC"
+  }
   gini <- slice[1,paste0("gini_",ancestry)]
   
   if (ancestry=="United") {ancestry <- "UK"}
@@ -88,11 +95,10 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   
   gg<-ggplot(sfile, aes(x=100*percentile, y=h2_cshare)) +
     geom_col(position = position_nudge(-0.5), fill="gray20", width=0.8) +
-    geom_abline(slope=1/100,color="dodgerblue1") +
+    geom_abline(slope=1/100,color="dodgerblue1", size=0.5*sf) +
     labs(title=title) +
     xlab(expression(paste("Percentile of summed ",italic(gvc)," for each bin"))) +
     ylab(expression(paste("Cumulative sum of bin ",italic(gvc)))) +
-    theme_light() +
     common_theme +
     scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
     scale_y_continuous(limits=c(0,1), expand = c(0,0))
@@ -103,7 +109,7 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
     annotate("text",
              x = 0.5 * 100, #x=0.025*(100),
              y = 0.975*(1), label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=3*sf)
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
     
   gg
 }
@@ -136,13 +142,14 @@ plot_portability <- function(code) {
   
   gg<-ggplot(pcor_data, aes(x=prive_dist_to_UK)) +
     geom_segment(aes(x=0,y=1, xend=max(prive_dist_to_UK), yend=1 + m * max(prive_dist_to_UK)),
-                 size=1, color="dodgerblue1") +
-    geom_point(aes(y = relative_pcor)) +
-    geom_errorbar(aes(ymin = relative_inf, ymax = relative_sup)) +
-    geom_text_repel(aes(label = ancestry, y = relative_pcor), seed=1, direction="x", size=2.25*sf) +
-    scale_x_continuous(expand=expansion(mult = c(0.01, .01))) +
-    scale_y_continuous(limits = c(0,max(1,max(pcor_data$relative_sup))),
-                       expand=expansion(mult = c(0, .01))) +
+                 size=0.5*sf, color="dodgerblue1") +
+    geom_point(aes(y = relative_pcor), size = 1.5*sf) +
+    #geom_errorbar(aes(ymin = relative_inf, ymax = relative_sup)) +
+    # geom_text_repel(aes(label = ancestry, y = relative_pcor), seed=4,
+    #                 #direction="x",
+    #                 #direction="y",
+    #                 size=4*sf) +
+    scale_x_continuous(expand=expansion(mult = c(0.02, .02))) +
     common_theme +
     xlab("Genetic PC Distance to UK") +
     ylab("PGS Accuracy Relative to UK") +
@@ -150,11 +157,19 @@ plot_portability <- function(code) {
   
   xrange <- layer_scales(gg)$x$range$range
   yrange <- layer_scales(gg)$y$range$range
+  # adds some padding at the top for visibility when portability is high
+  #if (m > -0.0007) {yrange[2] <- 1.15}
+  yrange[2] <- 1.15
   gg <- gg +
+    scale_y_continuous(limits = c(0,yrange[2]),
+                       #limits = c(0,max(1,max(pcor_data$relative_sup))),
+                       expand=expansion(mult = c(0, .01)),
+                       breaks = c(0,0.25,0.5,0.75,1),
+                       label = format(c(0,0.25,0.5,0.75,1))) +
     annotate("text",
              x=0.5*(xrange[2]-xrange[1]), #x=0.975*(xrange[2]-xrange[1]),
-             y = 0.975*(yrange[2]-0), label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=3*sf)
+             y = 0.985*(yrange[2]-0), label = text,
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
 }
 # function that generates divergence plot
@@ -185,7 +200,6 @@ plot_divergence <- function(code) {
   # plots divergence
   gg<-ggplot(PRS_trait, aes(x=PRS, fill=Ancestry)) +
     geom_density(color='#e9ecef', alpha=0.6, position='identity') +
-    theme_light() +
     common_theme +
     theme(legend.position = "bottom",
           #legend.title=element_blank(),
@@ -195,15 +209,17 @@ plot_divergence <- function(code) {
     xlab("Polygenic Score per UKBB Individual") +
     ylab("Density") +
     scale_x_continuous(expand=expansion(mult = c(0, 0))) +
-    scale_y_continuous(expand=expansion(mult = c(0, 0.01))) +
     labs(title=paste0(description))
   xrange <- layer_scales(gg)$x$range$range
   yrange <- layer_scales(gg)$y$range$range
+  yrange[2] <- yrange[2] * 1.1
   gg <- gg +
+    scale_y_continuous(limits = c(0,yrange[2]),
+                       expand=expansion(mult = c(0, 0.01))) +
     annotate("text",
              x=(xrange[2]+xrange[1])/2, #x=0.975*(xrange[2]-xrange[1])+xrange[1],
-             y = 0.975*(yrange[2]-0), label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=3*sf)
+             y = 0.985*(yrange[2]-0), label = text,
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
 }
 ### Code ####
@@ -261,21 +277,24 @@ low_D_code <- "250.1"
 low_D_plot <- plot_divergence(low_D_code) +
   theme(legend.justification = c(0,1),
         legend.position = c(0.01, 0.99),
-        legend.background = element_rect(fill=NULL))
+        legend.background = element_rect(fill="transparent"))
 
 high_D_code <- "darker_skin0"
 high_D_plot <- plot_divergence(high_D_code) +
   theme(legend.position = "none")
 
 ## arranges all plots together
-plots <- list(low_gini_plot , low_m_plot , low_D_plot,
-              high_gini_plot, high_m_plot, high_D_plot)
+plots <- list(low_gini_plot , high_gini_plot,
+              low_m_plot , high_m_plot,
+              low_D_plot, high_D_plot)
 
-ggarrange(plotlist = plots, ncol = 3, nrow = 2)
+ncol = 2
+nrow = 3
+gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow)
 
 # plot save settings for each plot (in pixels)
-width <- 1100
-height <- 1100
+plot_width <- 1100
+plot_height <- 1100
 
-loc_out <- paste0(dir_out,"figure_2.png")
-ggsave(loc_out,width=3*width*sf,height=2*height*sf,units="px")
+loc_out <- paste0(dir_out,"figure_2.", print_mode)
+ggsave(loc_out,width=ncol*plot_width*sf,height=nrow*plot_height*sf,units="px")

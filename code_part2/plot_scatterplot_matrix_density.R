@@ -23,6 +23,20 @@ print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 
+### Printing function ####
+print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
+  if (print_mode == "png") {
+    png(loc_out, width = plot_width*sf, height = plot_height*sf)
+  } else if (print_mode == "pdf") {
+    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+  }
+  print(gg)
+  dev.off()
+  # I don't really know what this does but it fixes a bug I was running into
+  dev.set(dev.next())
+  dev.set(dev.next())
+}
+
 ### Code ####
 traits_table <- as_tibble(fread(loc_table)) %>%
   select(prive_code, description, trait_type, group, group_consolidated,
@@ -38,8 +52,8 @@ traits_table[,"f_stat"] <- log10(traits_table[,"f_stat"])
 
 # Helper function for writing p-values onto plots
 digits <- 3 # how many digits to round p-values to (non-scientific notation)
-color_p_significant <- "gray20"
-color_p_nonsignificant <- "gray50"
+color_p_significant <- "gray5"
+color_p_nonsignificant <- "gray60"
 p_value_to_text <- function(p_value) {
   p_text <- round(p_value,digits)
   sci <- FALSE
@@ -112,14 +126,17 @@ upper_corr_p <- function(data,mapping) {
   
   # determines full text to display
   cor_text <- formatC(cor_value,digits=digits, format="f")
-  text_rline <- paste0("r = ", cor_text,"\n")
+  #text_rline <- paste0("r = ", cor_text,"\n")
+  text_rline <- paste0("r==", cor_text)
   
   
   
   # makes GGally textplot using custom text
   #p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=10*sf) +
-  p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=6*sf) +
-    #geom_text(aes(x=0.5,y=0.42),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
+  #p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=6*sf) +
+  p <- ggally_text(label="") +
+    geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=6*sf,color=p_text_list[[2]],
+              label = text_rline, parse=TRUE ) +
     geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
               label = p_text, parse=TRUE ) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
@@ -216,13 +233,7 @@ p_sc <- ggpairs(data = traits_table,
 smplot_width <- 1200
 smplot_height <- 1150
 loc_out <- paste0(dir_out,"scatterplot_matrix.", print_mode)
-if (print_mode == "png") {
-  png(loc_out, width = smplot_width*sf, height = smplot_height*sf)
-} else if (print_mode == "pdf") {
-  pdf(loc_out, width = smplot_width*sf / 75, height = smplot_height*sf / 75)
-}
-print(p_sc)
-dev.off()
+print_plot(p_sc, loc_out, print_mode, smplot_width, smplot_height, sf)
 print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
@@ -288,7 +299,6 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   # Adds density plots
   p <- ggplot(data=data, mapping=aes(x=!!as.name(x) )) +
     geom_density(mapping=aes(fill=!!as.name(col_var)),alpha=0.5,size=0.5*sf) +
-    xlim(xlims) +
     theme_light()
   
   # Adjusts legend to match the data
@@ -303,19 +313,18 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
       labs(fill="Trait Type") +
       scale_fill_manual(labels=c("Binary","Quantitative"), 
                         breaks=c("binary", "quantitative"),
-                        values = c("binary"="gray70", "quantitative"="gray10"))
+                        #values = c("binary"="gray70", "quantitative"="gray10"))
+                        values = c("binary"="#F8766D", "quantitative"="#00BFC4"))
   }
-  # log10 scales for h^2 and portability
-  if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
-  #if (x == "portability_index") {p <- p + scale_x_continuous(labels = format_axis_sci)}
+  # log10 scales for h^2
+  if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1))}
+  else {p <- p + xlim(xlims)}
   # Adds p-value to plot
-  is_h2 <- x=="ldpred2_h2"
-  xlims <- axis_lims[[x]]
   yrange <- layer_scales(p)$y$range$range
   padding <- 1.20
   yrange[2] <- yrange[2] * padding # pads top to allow space for p-value
   p <- p +
-    ylim(yrange) +
+    scale_y_continuous(limits = yrange, expand=expansion(mult = c(0, .05))) +
     geom_text(data=NULL, label=text, parse=TRUE,
               aes(x=ifelse(x=="ldpred2_h2",0.01,min(xlims)), y=max(yrange)*((0.95+padding)/(2*padding))),
               vjust=0, hjust=0, color=p_text_list[[2]], size = 4*sf)
@@ -343,21 +352,17 @@ for (var_comparison in c("group","type")) {
                   ncol=length(vars),
                   legend=1,
                   xAxisLabels = column_labels) +
-    theme(legend.position="bottom",
-          axis.text.y = element_blank(),
+    theme(legend.position="top",
           legend.key.size = unit(1,"cm"),
           legend.text = element_text(size = ddplot_textsize*sf),
+          axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf),
+          axis.text.y = element_blank(),
           text = element_text(size = ddplot_textsize*sf),
-          axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf))
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
   
   loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison,".", print_mode)
-  if (print_mode == "png") {
-    png(loc_out, width = ddplot_width*sf, height = ddplot_height*sf)
-  } else if (print_mode =="pdf") {
-    pdf(loc_out, width = ddplot_width*sf / 75, height = ddplot_height*sf / 75)
-  }
-  print(ddp)
-  dev.off()
+  print_plot(ddp, loc_out, print_mode, ddplot_width, ddplot_height, sf)
   
   print(paste("Saved dual density plots for",var_comparison))
 }
