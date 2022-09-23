@@ -177,7 +177,7 @@ plot1 <- ggplot(data=df_all, aes(x=overlap)) +
   geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.63", x=75, y = 6000, colour="black", label.size= NA, size=7) + geom_label(label="Max = 94", x=75, y = 4700, colour="black", label.size= NA, size=7) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
 plot1 <- plot1 + scale_x_continuous(name="Number of Overlapping Bins", breaks=c(0, 20, 40, 60, 80, 100))
 
-ggsave(file = "~/Desktop/Figure1A.pdf", units = c("in"), width=10, height=3.5, dpi=300, plot1)
+ggsave(file = "Figure1A.pdf", units = c("in"), width=10, height=3.5, dpi=300, plot1)
 
 #Section specific to the network graph 
 #Set threshold 
@@ -189,11 +189,11 @@ network <- graph_from_adjacency_matrix(as.matrix(similarity_matrix), weighted=T,
 #Color palette for plot 
 coul <- c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6")
 
-# Map the color to cylinders
+# Map the color to trait_groups
 my_color <- coul[as.numeric(as.factor(traits_table$group))]
 
 #Determine final output location 
-pdf(file = "~/Desktop/Figure1.pdf", width = 8, height = 8)
+pdf(file = "Figure1B.pdf", width = 8, height = 8)
 set.seed(5)
 #Plot with labels 
 #plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
