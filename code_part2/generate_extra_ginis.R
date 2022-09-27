@@ -421,3 +421,50 @@ ggplot(ginis_bsm, aes(x=gini_sum,y=gini_max)) +
        subtitle = paste0("r = ", round(r,4), " :: p = ", formatC(p,format="E",digits=2),
                          "\nFiltered to bin size = 100kb, threshold = 100, TZP = true, Gini averaged across ancestries")) +
   theme_light()
+
+# comparing rank order by threshold
+ginis_t <- ginis %>%
+  filter(ancestry=="United", bin_size == 100000, bin_summary_method == "sum", (threshold_zero_padding == TRUE)|(n_significant_bins > threshold) ) %>%
+  filter(threshold %in% c(50,100,150, 250)) %>%
+  select(prive_code, threshold, gini, n_significant_bins) %>%
+  group_by(threshold) %>%
+  mutate(gini_t_rank = order(order(gini, decreasing=FALSE))) %>%
+  ungroup() %>% group_by(prive_code) %>%
+  mutate(rank_sd = sd(gini_t_rank)) %>%
+  left_join(traits_table %>% select(prive_code,group_consolidated, trait_type) %>% filter(row_number() %% 1 == 0), by="prive_code") %>%
+  ungroup() %>% group_by(threshold) %>%
+  mutate(t_mean_gini = mean(gini))
+
+ggplot(ginis_t ,
+       aes(x=as.factor(threshold), y=gini_t_rank, group=prive_code)) +
+  geom_line(aes(color=group_consolidated)) +
+  facet_wrap(~ rank_sd > summary(unique(ginis_t$rank_sd))[[5]])
+  
+ggplot(ginis_t ,
+       aes(x=as.factor(threshold), y=gini - t_mean_gini, group=prive_code)) +
+  geom_line(aes(color=group_consolidated)) +
+  facet_wrap(~ rank_sd > summary(unique(ginis_t$rank_sd))[[5]])
+
+##### sandbox
+traits_table <- traits_table %>%
+  mutate(N_total = pmax(N, N_case, na.rm=TRUE))
+ggplot(traits_table, aes(x=log10(N_case), y=gini_United)) +
+  geom_point(aes(color=group_consolidated)) +
+  labs(title="Binary traits only")
+ggplot(traits_table, aes(x=log10(N_case), y=ldpred2_h2)) +
+  geom_point(aes(color=group_consolidated))
+cor.test(log10(traits_table$N_case), traits_table$gini_United)
+
+ggplot(traits_table, aes(x=N, y=gini_United)) +
+  geom_point(aes(color=group_consolidated)) +
+  geom_smooth(method="lm")
+####
+traits_table <- traits_table %>%
+  mutate(K = N_case / (N_case + N_control)) %>%
+  rowwise() %>%
+  mutate(
+    ldpred2_h2_raw = ldpred2_h2 / bigsnpr::coef_to_liab(K,K),
+    ldsc_h2_raw = ldsc_h2 / bigsnpr::coef_to_liab(K,K)
+  )
+ggplot(traits_table, aes(x=pmax(ldpred2_h2,ldpred2_h2_raw,na.rm=TRUE), y=gini_United)) +
+  geom_point()
