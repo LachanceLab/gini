@@ -52,8 +52,8 @@ get_data_binned = function(data_snp_bins, method="sum") {
     )
   return(data_binned)
 }
-# function that calculates and appends individual SNP h2 using betas and
-# allele frequencies
+# function that calculates and appends individual SNP gvc (called h2) using betas
+# and allele frequencies
 get_h2 <- function(data_AF, col_beta, col_AF) {
   pop_data <- data_AF %>%
     mutate(

@@ -53,6 +53,12 @@ loc_short_labels <- "trait_short_labels.csv"
 filenames <- dir(dir_summary_files)
 codes <- str_replace(filenames,"-betasAFs.txt","")
 
+# coef_to_liab function from package bigsnpr
+coef_to_liab <- function (K_pop, K_gwas = 0.5) {
+  z <- stats::dnorm(stats::qnorm(min(K_pop, 1 - K_pop)))
+  (K_pop * (1 - K_pop)/z)^2/(K_gwas * (1 - K_gwas))
+}
+
 # reads prive's phenotype description and info files
 prive_info <- as_tibble(fread(loc_phenotype_info))
 prive_description <- as_tibble(fread(loc_phenotype_description))
@@ -62,7 +68,11 @@ traits_table <- prive_description %>%
   left_join(short_labels, by="phenotype") %>%
   left_join(prive_info, by=c("phenotype"="pheno")) %>%
   dplyr::rename("prive_code"="phenotype") %>%
-  mutate(trait_type = ifelse(is.na(N),"binary","quantitative"))
+  mutate(trait_type = ifelse(is.na(N),"binary","quantitative"),
+         prevalence = ifelse(is.na(N),N_case / (N_case+N_control),as.numeric(NA))) %>%
+  rowwise() %>% mutate(
+         N_total = sum(N,N_case,N_control,na.rm=TRUE),
+         liab_coef = coef_to_liab(prevalence, prevalence))
 
 # consolidates trait groups into fewer categories
 groups_consolidated <- list(
