@@ -39,11 +39,11 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 ### Code ####
 traits_table <- as_tibble(fread(loc_table)) %>%
-  select(prive_code, description, trait_type, group, group_consolidated,
+  filter(prevalence > 0.01 | trait_type=="quantitative") %>%
+  select(prive_code, description, trait_type, group, group_consolidated, prevalence,
          all_of(vars)) %>%
-  mutate(lifestyle = group_consolidated == "lifestyle/psychological") %>%
-  drop_na()
-
+  mutate(lifestyle = group_consolidated == "lifestyle/psychological")
+  
 
 # Caps maximum portability to 0
 traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0
@@ -206,11 +206,13 @@ lm_scatterplot <- function(data, mapping) {
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
-  # log10 scales for h^2 and portability
-  if (x == "ldpred2_h2") {p <- p + scale_x_log10()}
-  if (y == "ldpred2_h2") {p <- p + scale_y_log10()}
-  #if (x == "portability_index") {p <- p + scale_x_continuous(labels = format_axis_sci)}
-  #if (y == "portability_index") {p <- p + scale_y_continuous(labels = format_axis_sci)}
+  # log10 scales for h^2
+  if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1),
+                                                 breaks = c(0.01,0.1,1),
+                                                 labels = c("0.01","0.10","1.00"))}
+  if (y == "ldpred2_h2") {p <- p + scale_y_log10(limits = c(0.0096,1),
+                                                 breaks = c(0.01,0.1,1),
+                                                 labels = c("0.01","0.10","1.00"))}
   
   p
 }
@@ -322,12 +324,18 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   # Adds p-value to plot
   yrange <- layer_scales(p)$y$range$range
   padding <- 1.20
-  yrange[2] <- yrange[2] * padding # pads top to allow space for p-value
+  #yrange[2] <- yrange[2] * padding # pads top to allow space for p-value
+  yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1] # pads top to allow space for p-value
   p <- p +
     scale_y_continuous(limits = yrange, expand=expansion(mult = c(0, .05))) +
-    geom_text(data=NULL, label=text, parse=TRUE,
-              aes(x=ifelse(x=="ldpred2_h2",0.01,min(xlims)), y=max(yrange)*((0.95+padding)/(2*padding))),
-              vjust=0, hjust=0, color=p_text_list[[2]], size = 4*sf)
+    # geom_text(data=NULL, label=text, parse=TRUE,
+    #           aes(x=ifelse(x=="ldpred2_h2",0.01,min(xlims)), y=max(yrange)*((0.95+padding)/(2*padding))),
+    #           vjust=0, hjust=0, color=p_text_list[[2]], size = 4*sf) +
+    annotate("text",
+             x = ifelse(x=="ldpred2_h2",0.1,mean(xlims)),
+             y=diff(yrange)*((0.95+padding)/(2*padding)),
+             label = text, parse=TRUE, vjust=0, hjust=0.5, size=4*sf,
+             color=p_text_list[[2]])
   
   p
 }
@@ -366,3 +374,95 @@ for (var_comparison in c("group","type")) {
   
   print(paste("Saved dual density plots for",var_comparison))
 }
+
+
+### Prevalence Plots ###
+
+# calculates adjusted p-values for correlation measurement between prevalence 
+# and summary statistics
+p_values_cor2 <- tibble(
+  var1 = as.character(),
+  var2 = as.character(),
+  cor = as.numeric(),
+  unadj_p_value = as.numeric(),
+  adj_p_value = as.numeric()
+)
+for (j in 1:(length(vars))) {
+  y <- vars[[j]]
+  cor1 <- cor.test(log10(as.data.frame(traits_table)[,"prevalence"]),
+                   as.data.frame(traits_table)[,y])
+  cor_value <- cor1$estimate[[1]]
+  p_value <- cor1$p.value
+  p_values_cor2 <- p_values_cor2 %>% add_row(
+    var1 = "log10_prevalence",
+    var2 = y,
+    cor = cor_value,
+    unadj_p_value = p_value,
+    adj_p_value = NA
+  )
+}
+# uses False Discovery Rate to adjust p-values
+adj_p_values_cor2 <- p.adjust(p_values_cor2$unadj_p_value,p_adjust_method)
+p_values_cor2$adj_p_value <- adj_p_values_cor2
+
+# Actually generates and saves dual density plots to system
+prevalence_plots <- list()
+for (i in 1:length(vars)) {
+  var_measurement <- vars[i]
+  xlims <- axis_lims[[var_measurement]]
+  
+  adj_p_value <- (p_values_cor2 %>% filter(var2==var_measurement))$adj_p_value
+  if (adj_p_value < 0.05) {linealpha <- 0.9
+  } else {linealpha <- 0.4}
+  
+  # converts p-value to text version
+  p_text_list <- p_value_to_text(adj_p_value)
+  text <- p_text_list[[1]]
+  
+  p <- ggplot(traits_table %>% filter(trait_type=="binary"),
+              aes(x = !!as.name(var_measurement), y = log10(prevalence))) +
+    geom_line(stat="smooth", method="lm", color="#F8766D", formula=y~x, size=1*sf, alpha=linealpha) +
+    geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
+    geom_point(alpha=0.75,shape=19, size=1.75*sf) +
+    xlab(var_labels[[var_measurement]]) +
+    ylab(bquote(Log[10](Prevalence))) +
+    theme_light()
+  if ( var_measurement == "ldpred2_h2") {
+    p <- p + scale_x_log10(limits = c(0.0096,1),
+                           breaks = c(0.01,0.1,1),
+                           labels = c("0.01","0.10","1.00"))
+  } else {p <- p + xlim(xlims)}
+  # Adds p-value to plot
+  yrange <- layer_scales(p)$y$range$range
+  padding <- 1.20
+  yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1] # pads top to allow space for p-value
+  p <- p +
+    scale_y_continuous(limits = yrange) +
+    annotate("text",
+             x = ifelse(var_measurement=="ldpred2_h2",0.1,mean(xlims)),
+             y=(diff(yrange))*((0.95+padding)/(2*padding)) + yrange[1],
+             label = text, parse=TRUE, vjust=0, hjust=0.5, size=4*sf,
+             color=p_text_list[[2]])
+  p
+  prevalence_plots[[i]] <- p
+}
+
+pscp <- ggmatrix(plots=prevalence_plots,
+                nrow=1,
+                ncol=length(vars),
+                xAxisLabels = NULL,
+                ylab = bquote(Log[10](Prevalence))) +
+  theme(legend.position="top",
+        legend.key.size = unit(1,"cm"),
+        legend.text = element_text(size = ddplot_textsize*sf),
+        axis.text = element_text(size=(ddplot_textsize*0.5)*sf),
+        axis.title.y = element_text(size=(ddplot_textsize*0.75)*sf),
+        text = element_text(size = ddplot_textsize*sf),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+loc_out <- paste0(dir_out,"prevalence_scatterplot.", print_mode)
+print_plot(pscp, loc_out, print_mode, ddplot_width+100, ddplot_height, sf)
+
+print("Saved prevalence scatterplot")
+

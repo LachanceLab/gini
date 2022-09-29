@@ -23,12 +23,12 @@ loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
 loc_PRSs <- "../generated_data/pop_sampled_PRSs.txt"
 # sets the location of the traits table
 loc_table <- "../generated_data/traits_table.txt"
-# sets directory of outputted figures
+# sets directory of outputted figuresN
 dir_out <- "../generated_figures/"
 
 # sets scaling factors for image output. Default = 2
 sf <- 2
-print_mode <- "png" # set to either "png" or "pdf"
+print_mode <- "pdf" # set to either "png" or "pdf"
 
 ### Functions ####
 
@@ -82,6 +82,8 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   # adjusts the long description for geek_time trait
   if (code == "geek_time") {
     description <- "Time spent watching TV or using PC"
+  } else if (code == "celiac_gluten") {
+    description <- "Coeliac disease/gluten sensitivity"
   }
   gini <- slice[1,paste0("gini_",ancestry)]
   
@@ -257,11 +259,11 @@ bin_size <- 100000
 bin_summary_method <- "sum"
 
 ## makes Lorenz plots
-low_gini_code <- "geek_time"
+low_gini_code <- low_gini_code <- "geek_time"
 low_gini_sf <- cleanup_data_lorenz(low_gini_code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
 low_gini_plot <- plot_lorenz(low_gini_code, low_gini_sf, ancestry)
 
-high_gini_code <- "275.1"
+high_gini_code <- "celiac_gluten" # 275.1
 high_gini_sf <- cleanup_data_lorenz(high_gini_code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
 high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf, ancestry)
 
@@ -273,7 +275,7 @@ high_m_code <- "haemoglobin"
 high_m_plot <- plot_portability(high_m_code)
 
 ## makes divergence plots
-low_D_code <- "250.1"
+low_D_code <- "208" #250.1
 low_D_plot <- plot_divergence(low_D_code) +
   theme(legend.justification = c(0,1),
         legend.position = c(0.01, 0.99),

@@ -451,9 +451,16 @@ traits_table <- traits_table %>%
 ggplot(traits_table, aes(x=log10(N_case), y=gini_United)) +
   geom_point(aes(color=group_consolidated)) +
   labs(title="Binary traits only")
+
+ggplot(traits_table, aes(x=log10(N_case/(N_case+N_control)), y=gini_United)) +
+  geom_point(aes(color=group_consolidated)) +
+  labs(title="Binary traits only")
+
 ggplot(traits_table, aes(x=log10(N_case), y=ldpred2_h2)) +
   geom_point(aes(color=group_consolidated))
 cor.test(log10(traits_table$N_case), traits_table$gini_United)
+ggplot(traits_table, aes(x=log10(N_case), y=pcor_United)) +
+  geom_point(aes(color=group_consolidated))
 
 ggplot(traits_table, aes(x=N, y=gini_United)) +
   geom_point(aes(color=group_consolidated)) +
@@ -467,4 +474,12 @@ traits_table <- traits_table %>%
     ldsc_h2_raw = ldsc_h2 / bigsnpr::coef_to_liab(K,K)
   )
 ggplot(traits_table, aes(x=pmax(ldpred2_h2,ldpred2_h2_raw,na.rm=TRUE), y=gini_United)) +
-  geom_point()
+  geom_point(aes(color=trait_type))
+
+ggplot(traits_table %>% filter(!(prive_code %in% low_prevalence)), aes(x=ldpred2_h2, pcor_United)) +
+  geom_text(aes(color=trait_type, label=paste(short_label,N_case)), size=2)
+
+ggplot(traits_tab)
+
+cor.test((traits_table%>%filter(trait_type=="binary"))$ldpred2_h2, (traits_table%>%filter(trait_type=="binary"))$pcor_United)
+cor.test((traits_table%>%filter(trait_type=="quantitative"))$ldpred2_h2, (traits_table%>%filter(trait_type=="quantitative"))$pcor_United)

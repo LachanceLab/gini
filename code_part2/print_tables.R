@@ -37,9 +37,12 @@ traits_table <- as_tibble(fread(loc_table))
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 rounding_decimals <- 3
 
+low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$description
+
 big_table <- traits_table %>%
   select(description, trait_type, group_consolidated, all_of(vars)) %>%
   mutate(trait_type = ifelse(trait_type=="binary","Binary","Quantitative"),
+         description = ifelse(description %in% low_prevalence, paste0(description,"*"),description),
          f_stat = log10(f_stat),
          portability_index = ifelse(portability_index>0,0,portability_index)) %>%
   group_by(trait_type) %>%
@@ -81,7 +84,8 @@ big_table_gt <- gt(big_table) %>%
   tab_header(
     title = "The Six Summary Statistics for 211 Traits",
     subtitle = "Full table provided in Github repository"
-  )
+  ) %>%
+  tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
 
 big_table_gt
 gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620)
@@ -90,14 +94,14 @@ gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620
 #### Makes High and Low Gini Table ####
 n_show <- 10 # shows top n_show highest and top n_show lowest
 
-N_total <- nrow(traits_table)
-
 temp <- traits_table %>%
+  filter(prevalence > 0.01 | trait_type=="quantitative") %>%
   arrange(gini_United) %>%
   mutate(gini_United = as.character(formatC(gini_United,rounding_decimals,format="f")),
          rank = row_number()) %>%
-  select(rank, description,
-         gini_United)
+  select(rank, description,gini_United)
+
+N_total <- nrow(temp)
 
 table1 <- temp %>%
   filter(rank <= n_show) %>%
@@ -133,15 +137,16 @@ print(paste("Made gini table for",the_trait_type,"traits"))
 #### Makes High and Low Divergence Table ####
 n_show <- 10 # shows top n_show highest and top n_show lowest
 
-N_total <- nrow(traits_table)
-
 temp <- traits_table %>%
+  filter(prevalence > 0.01 | trait_type=="quantitative") %>%
   mutate(f_stat = log10(f_stat)) %>%
   arrange(f_stat) %>%
   mutate(f_stat = as.character(formatC(f_stat,rounding_decimals,format="f")),
          rank = row_number()) %>%
   select(rank, description,
          f_stat)
+
+N_total <- nrow(temp)
 
 table2 <- temp %>%
   filter(rank <= n_show) %>%

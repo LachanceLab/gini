@@ -15,12 +15,6 @@ dir_gen_data <- "../generated_data/"
 loc_table <- "../generated_data/traits_table.txt"
 
 
-### function from package bigsnpr
-coef_to_liab <- function (K_pop, K_gwas = 0.5) {
-  z <- stats::dnorm(stats::qnorm(min(K_pop, 1 - K_pop)))
-  (K_pop * (1 - K_pop)/z)^2/(K_gwas * (1 - K_gwas))
-}
-
 ### Code ----
 
 # reads traits table
@@ -59,4 +53,18 @@ for (i in 1:length(codes)) {
 }
 
 ## Saving the traits_table
-write.table(traits_table,loc_table,sep="\t",quote=FALSE,row.names=FALSE)
+#write.table(traits_table,loc_table,sep="\t",quote=FALSE,row.names=FALSE)
+
+
+######
+
+traits_table <- as_tibble(fread(loc_table))
+
+ggplot(traits_table %>%
+         filter(
+           (prevalence > 0.01 | trait_type=="quantitative"),
+           summed_gvc100_raw < 1
+         ),
+       aes(x=ldpred2_h2, y=summed_gvc100_raw)) +
+  geom_point(aes(color=trait_type)) +
+  facet_wrap(~ trait_type)
