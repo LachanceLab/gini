@@ -23,6 +23,44 @@ loc_table <- "../generated_data/traits_table.txt"
 # reads traits table
 traits_table <- as.data.frame(fread(loc_table))
 
+#Filter out problematic binary traits from traits_table
+remove <- c("Malignant neoplasm of testis", 
+            "Cancer of bladder", 
+            "Cancer of brain", 
+            "Thyroid cancer", 
+            "Polycythemia vera", 
+            "Nontoxic multinodular goiter", 
+            "Thyrotoxicosis with or without goiter", 
+            "Type 1 diabetes", 
+            "Diabetic retinopathy", 
+            "Hypoglycemia", 
+            "Gout", 
+            "Disorders of iron metabolism", 
+            "Disorders of bilirubin excretion", 
+            "Congenital deficiency of other clotting factors (including factor VII)", 
+            "Dementias", 
+            "Alzheimer's disease", 
+            "Multiple sclerosis", 
+            "Retinal detachments and defects", 
+            "Macular degeneration (senile) of retina NOS", 
+            "Corneal dystrophy", 
+            "Peripheral vascular disease, unspecified", 
+            "Nasal polyps", 
+            "Appendiceal conditions", 
+            "Celiac disease", 
+            "Other chronic nonalcoholic liver disease", 
+            "Rhesus isoimmunization in pregnancy", 
+            "Lupus (localized and systemic)", 
+            "Psoriasis", 
+            "Sarcoidosis", 
+            "Rheumatoid arthritis", 
+            "Ankylosing spondylitis", 
+            "Polymyalgia Rheumatica", 
+            "Ganglion and cyst of synovium, tendon, and bursa", 
+            "Contracture of palmar fascia [Dupuytren's disease]")
+
+traits_table <- traits_table[!(traits_table$description %in% remove),]
+
 #Filter tibble to include prive_code, description, trait_type, group
 traits_table <- traits_table %>% select(c(prive_code, description, trait_type, group))
 
@@ -73,14 +111,27 @@ for (item in traits) {
 traits <- traits_vector
 rm(traits_vector, item, new_item, end_char)
 
-#Set row names using traits vector
-row.names(top_bins_table) <- traits
+#Change column to updated traits vector for top_bins_table
+top_bins_table$V1 <- traits
+
+#Filter down the traits vector using a column of the traits_table
+filtered_traits <- traits_table$prive_code
+traits <- traits[traits %in% filtered_traits]
+
+#Filter down top_bins_table using traits vector
+top_bins_table <- top_bins_table[top_bins_table$V1 %in% traits,]
+
+#Match order of traits_table with top_bins_traits
+traits_table <- traits_table[match(traits, traits_table$prive_code),]
 
 #Prepare top_bins_table for construction of similarity matrix
 top_bins_table <- top_bins_table[, 2:ncol(top_bins_table)]
 
+#Remove unnecessary values 
+rm(filtered_traits, loc_table, top_bins_loc, remove, groups_consolidated)
+
 #Creation of similarity matrix 
-similarity_matrix <- data.frame(matrix(ncol=211, nrow=211))
+similarity_matrix <- data.frame(matrix(ncol=177, nrow=177))
 
 #Fill similarity matrix
 for (row in 1:nrow(top_bins_table)) {
@@ -95,10 +146,6 @@ for (row in 1:nrow(top_bins_table)) {
 }
 rm(row, row2, sim, vector, vector2)
 
-#Change row names of traits_table, match order of traits vector and convert to description
-row.names(traits_table) <- traits_table$prive_code
-traits_table <- traits_table[match(traits,rownames(traits_table)),]
-
 #Set the row and column names to the traits vector
 row.names(similarity_matrix) <- traits
 colnames(similarity_matrix) <- traits
@@ -111,7 +158,7 @@ biological_vector <- c()
 disease_vector <- c()
 physical_vector <- c()
 
-#Iterate though similarity matrix and append to corresponding vectors
+#Iterate through similarity matrix and append to corresponding vectors
 for (row in 1:nrow(similarity_matrix)) {
   trait <- rownames(similarity_matrix)[row]
   trait_row <- traits_table[(traits_table$prive_code == trait),]
@@ -174,12 +221,15 @@ df_all$trait_group <- ""
 
 #Plot histogram in ggplot
 plot1 <- ggplot(data=df_all, aes(x=overlap)) +
-  geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.63", x=75, y = 6000, colour="black", label.size= NA, size=7) + geom_label(label="Max = 94", x=75, y = 4700, colour="black", label.size= NA, size=7) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
+  geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.96", x=60, y = 4000, colour="black", label.size= NA, size=6) + geom_label(label="Max = 94", x=60, y = 3000, colour="black", label.size= NA, size=6) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
 plot1 <- plot1 + scale_x_continuous(name="Number of Overlapping Bins", breaks=c(0, 20, 40, 60, 80, 100))
 
 ggsave(file = "Figure1A.pdf", units = c("in"), width=10, height=3.5, dpi=300, plot1)
 
-#Section specific to the network graph 
+#Section specific to the network graph
+#Keep variable with orginal values for matrix prior to applying threshold
+sim <- similarity_matrix
+
 #Set threshold 
 similarity_matrix[similarity_matrix<10] <- 0
 
@@ -194,7 +244,7 @@ my_color <- coul[as.numeric(as.factor(traits_table$group))]
 
 #Determine final output location 
 pdf(file = "Figure1B.pdf", width = 8, height = 8)
-set.seed(5)
+set.seed(1)
 #Plot with labels 
 #plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
 
@@ -204,5 +254,8 @@ plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex
 legend(x=-1.35, y=1.0, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
 
 dev.off()
+
+
+
 
 
