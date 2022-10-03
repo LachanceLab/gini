@@ -62,10 +62,10 @@ coef_to_liab <- function (K_pop, K_gwas = 0.5) {
 # reads prive's phenotype description and info files
 prive_info <- as_tibble(fread(loc_phenotype_info))
 prive_description <- as_tibble(fread(loc_phenotype_description))
-short_labels <- as_tibble(fread(loc_short_labels)) %>% select(-description)
+short_labels <- as_tibble(fread(loc_short_labels))
 traits_table <- prive_description %>%
   filter(phenotype %in% codes) %>%
-  left_join(short_labels, by="phenotype") %>%
+  left_join(short_labels %>% select(-description), by="phenotype") %>%
   left_join(prive_info, by=c("phenotype"="pheno")) %>%
   dplyr::rename("prive_code"="phenotype") %>%
   mutate(trait_type = ifelse(is.na(N),"binary","quantitative"),
@@ -73,6 +73,7 @@ traits_table <- prive_description %>%
   rowwise() %>% mutate(
          N_total = sum(N,N_case,N_control,na.rm=TRUE),
          liab_coef = coef_to_liab(prevalence, prevalence))
+traits_table$description <- short_labels$description
 
 # consolidates trait groups into fewer categories
 groups_consolidated <- list(

@@ -8,6 +8,7 @@
 library(tidyverse)
 library(data.table)
 library(ggrepel)
+library(ggpubr)
 source("../code_part1/helper_functions.R")
 
 # sets working directory
@@ -31,7 +32,9 @@ dir_out <- "../generated_figures/"
 
 
 ### Code ###
+sf <- 2
 traits_table <- as_tibble(fread(loc_table))
+include <- (traits_table %>% filter(!(prevalence < 0.01) | trait_type=="quantitative"))$prive_code
 
 # loads a file that contains the max base pair position for each chromosome
 chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
@@ -311,7 +314,7 @@ ginis_ancestry <- ginis_ancestry %>%
   mutate(short_label = factor(short_label, levels=ginis_ancestry_grouped$short_label),
          gini_diff_sq = (gini - mean_gini)**2)
 
-summary(aov(data=ginis_ancestry, gini ~ anestry))
+summary(aov(data=ginis_ancestry, gini ~ ancestry))
 ggplot(ginis_ancestry, aes(x=short_label, y=gini, color=ancestry)) +
   geom_point(alpha=0.5) +
   geom_point(aes(y=mean_gini), color="black", size=0.75) +
@@ -446,40 +449,59 @@ ggplot(ginis_t ,
   facet_wrap(~ rank_sd > summary(unique(ginis_t$rank_sd))[[5]])
 
 ##### sandbox
-traits_table <- traits_table %>%
-  mutate(N_total = pmax(N, N_case, na.rm=TRUE))
-ggplot(traits_table, aes(x=log10(N_case), y=gini_United)) +
-  geom_point(aes(color=group_consolidated)) +
-  labs(title="Binary traits only")
 
-ggplot(traits_table, aes(x=log10(N_case/(N_case+N_control)), y=gini_United)) +
-  geom_point(aes(color=group_consolidated)) +
-  labs(title="Binary traits only")
-
-ggplot(traits_table, aes(x=log10(N_case), y=ldpred2_h2)) +
-  geom_point(aes(color=group_consolidated))
-cor.test(log10(traits_table$N_case), traits_table$gini_United)
-ggplot(traits_table, aes(x=log10(N_case), y=pcor_United)) +
-  geom_point(aes(color=group_consolidated))
-
-ggplot(traits_table, aes(x=N, y=gini_United)) +
-  geom_point(aes(color=group_consolidated)) +
-  geom_smooth(method="lm")
-####
-traits_table <- traits_table %>%
+traits_table2 <- traits_table %>%
   mutate(K = N_case / (N_case + N_control)) %>%
   rowwise() %>%
   mutate(
     ldpred2_h2_raw = ldpred2_h2 / bigsnpr::coef_to_liab(K,K),
     ldsc_h2_raw = ldsc_h2 / bigsnpr::coef_to_liab(K,K)
   )
-ggplot(traits_table, aes(x=pmax(ldpred2_h2,ldpred2_h2_raw,na.rm=TRUE), y=gini_United)) +
+ggplot(traits_table2, aes(x=pmax(ldpred2_h2,ldpred2_h2_raw,na.rm=TRUE), y=gini_United)) +
   geom_point(aes(color=trait_type))
 
-ggplot(traits_table %>% filter(!(prive_code %in% low_prevalence)), aes(x=ldpred2_h2, pcor_United)) +
-  geom_text(aes(color=trait_type, label=paste(short_label,N_case)), size=2)
+cor.test((traits_table2%>%filter(trait_type=="binary"))$ldpred2_h2, (traits_table2%>%filter(trait_type=="binary"))$pcor_United)
+cor.test((traits_table2%>%filter(trait_type=="quantitative"))$ldpred2_h2, (traits_table2%>%filter(trait_type=="quantitative"))$pcor_United)
+####
+ginis_pop <- ginis %>% filter(
+  prive_code %in% include,
+  threshold == 100,
+  (threshold_zero_padding == TRUE | threshold < n_significant_bins),
+  bin_size == 100000,
+  bin_summary_method == "sum"
+) %>% select(prive_code, ancestry, gini) %>%
+  pivot_wider(
+  names_from = ancestry,
+  values_from = gini
+)
+ancestries_sorted <- (distances %>% arrange(prive_dist_to_UK))$ancestry[c(2:4,6:9)]
+gini_UK_plots <- list()
+for (i in 1:length(ancestries_sorted)) {
+  pop2 <- ancestries_sorted[i]
+  cor <- cor.test(ginis_pop[,"United"][[1]], ginis_pop[,pop2][[1]])
+  p<-ggplot(data=ginis_pop, aes(x = !!as.name(pop2), y = United)) +
+    geom_abline(slope=1,intercept=0, size=0.5*sf) +
+    geom_point(alpha=0.6, size=1.75*sf) +
+    scale_x_continuous(expand=c(0,0),limits=c(0,1)) +
+    scale_y_continuous(expand=c(0,0),limits=c(0,1)) +
+    xlab(bquote(Gini[100][','][.(pop2)])) +
+    ylab(bquote(Gini[100][','][UK])) +
+    theme_light() +
+    theme(plot.margin = unit(0.3*sf*c(0,1,0,1), "cm"),
+          aspect.ratio = 1) +
+    annotate("text", x=0.5, y=0.95,hjust=0.5,vjust=1, parse=TRUE, size=5*sf,
+             label = paste0("r==",round(cor$estimate[[1]],4)))
+  gini_UK_plots[[i]] <- p
+}
+ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 4, nrow = 2)
 
-ggplot(traits_tab)
-
-cor.test((traits_table%>%filter(trait_type=="binary"))$ldpred2_h2, (traits_table%>%filter(trait_type=="binary"))$pcor_United)
-cor.test((traits_table%>%filter(trait_type=="quantitative"))$ldpred2_h2, (traits_table%>%filter(trait_type=="quantitative"))$pcor_United)
+### Printing function ####
+print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
+  if (print_mode == "png") {
+    png(loc_out, width = plot_width*sf, height = plot_height*sf)
+  } else if (print_mode == "pdf") {
+    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+  }
+  print(gg)
+  dev.off()
+}

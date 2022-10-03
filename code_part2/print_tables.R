@@ -40,6 +40,7 @@ rounding_decimals <- 3
 low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$description
 
 big_table <- traits_table %>%
+  filter(!(description %in% low_prevalence)) %>%
   select(description, trait_type, group_consolidated, all_of(vars)) %>%
   mutate(trait_type = ifelse(trait_type=="binary","Binary","Quantitative"),
          description = ifelse(description %in% low_prevalence, paste0(description,"*"),description),
@@ -82,13 +83,14 @@ big_table_gt <- gt(big_table) %>%
     columns = c("description")
   ) %>%
   tab_header(
-    title = "The Six Summary Statistics for 211 Traits",
+    title = paste("The Six Summary Statistics for", nrow(big_table),"Traits"),
     subtitle = "Full table provided in Github repository"
   ) %>%
   tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
 
 big_table_gt
 gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620)
+gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 2160, vheight=1620, zoom=1)
 
 
 #### Makes High and Low Gini Table ####

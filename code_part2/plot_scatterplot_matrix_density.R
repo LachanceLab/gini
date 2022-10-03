@@ -19,7 +19,7 @@ dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
 p_adjust_method <- "fdr" # used in p.adjust()
-print_mode <- "png" # set to either "png" or "pdf"
+print_mode <- "pdf" # set to either "png" or "pdf"
 # columns to plot
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 
@@ -39,7 +39,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 ### Code ####
 traits_table <- as_tibble(fread(loc_table)) %>%
-  filter(prevalence > 0.01 | trait_type=="quantitative") %>%
+  filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
   select(prive_code, description, trait_type, group, group_consolidated, prevalence,
          all_of(vars)) %>%
   mutate(lifestyle = group_consolidated == "lifestyle/psychological")
@@ -434,13 +434,13 @@ for (i in 1:length(vars)) {
   } else {p <- p + xlim(xlims)}
   # Adds p-value to plot
   yrange <- layer_scales(p)$y$range$range
-  padding <- 1.20
+  padding <- 1.15
   yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1] # pads top to allow space for p-value
   p <- p +
     scale_y_continuous(limits = yrange) +
     annotate("text",
              x = ifelse(var_measurement=="ldpred2_h2",0.1,mean(xlims)),
-             y=(diff(yrange))*((0.95+padding)/(2*padding)) + yrange[1],
+             y=(diff(yrange))*((1+padding)/(2*padding)) + yrange[1],
              label = text, parse=TRUE, vjust=0, hjust=0.5, size=4*sf,
              color=p_text_list[[2]])
   p

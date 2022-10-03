@@ -114,10 +114,10 @@ avMSE,avMSE,avMSE
 bad_hearing,Hearing difficulty/problems,Hearing problems
 birth_weight,Birth weight,Birth weight
 calcium,Calcium,Calcium
-celiac_gluten,Diagnosed with coeliac disease or gluten sensitivity,Coeliac disease
+celiac_gluten,Diagnosed with celiac disease or gluten sensitivity,Celiac disease
 cholesterol,Cholesterol,Cholesterol
-darker_hair0,"Hair colour (natural, before greying)",Darker hair
-darker_skin0,Skin colour,Skin color
+darker_hair0,"Hair color (natural, before greying)",Darker hair
+darker_skin0,Skin color,Skin color
 depressed_for_1w,Ever depressed for a whole week,Weeklong depression
 depression_feelings,Recent feelings of depression,Recent depression
 depression_stress_trauma,Depression possibly related to stressful or traumatic event,Stress depression
@@ -137,7 +137,7 @@ ever_smoked,Ever smoked,Ever smoked
 F_age_first_birth,Age at first live birth,First birth age
 F_irregular_menstrual_cycle,Length of menstrual cycle,Irregular menstrual cycle
 F_length_menstrual_cycle,Length of menstrual cycle,Menstrual cycle length
-F_log_oestradiol,Oestradiol (female only),Oestradiol (F)
+F_log_oestradiol,Estradiol (female only),Estradiol (F)
 F_log_testosterone,Testosterone (female only),Testosterone (F)
 F_menarche,Age when periods started (menarche),Menarche
 fall_1y,Falls in the last year,Falls (1yr)
@@ -149,8 +149,8 @@ fracture_5y,Fractured/broken bones in last 5 years,Fractured bones (5yr)
 FVC,"Forced vital capacity (FVC), Best measure",FVC
 geek_time,Time spent watching television (TV) or using computer,Duration TV/PC
 glasses,Wears glasses or contact lenses,Wear glasses/contacts
-haematocrit_perc,Haematocrit percentage,Haematocrit %
-haemoglobin,Haemoglobin concentration,[Hb]
+haematocrit_perc,Hematocrit percentage,Hematocrit %
+haemoglobin,Hemoglobin concentration,[Hb]
 hand_grip_strength,Hand grip strength (mean of both),Hand grip strength
 hard_falling_asleep,Trouble falling asleep,Trouble falling asleep
 headaches_for_3m,Headaches for 3+ months,Headaches (3+ mo)
@@ -180,7 +180,7 @@ log_eosinophil_perc,Eosinophil percentage,Eosinophil %
 log_fat_free_mass,Whole body fat-free mass,Fat-free mass
 log_fat_mass,Whole body fat mass,Fat mass
 log_glucose,Glucose,Glucose
-log_HbA1c,Glycated haemoglobin (HbA1c),HbA1c
+log_HbA1c,Glycated hemoglobin (HbA1c),HbA1c
 log_HDL,HDL cholesterol,HDL
 log_heel_BMD,Heel bone mineral density (BMD),Heel BMD
 log_heel_BUA,"Heel Broadband ultrasound attenuation, direct entry",Heel BUA
@@ -216,9 +216,9 @@ log_water_mass,Whole body water mass,Water mass
 logMAR,logMAR in round (left/right),MAR
 lymphocyte_perc,Lymphocyte percentage,Lymphocyte %
 M_less_hair,Hair/balding pattern,Balding
-M_log_oestradiol,Oestradiol (male only),Oestradiol (M)
+M_log_oestradiol,Estradiol (male only),Estradiol (M)
 M_log_testosterone,Testosterone (male only),Testosterone (M)
-MCH,Mean corpuscular haemoglobin,MCH
+MCH,Mean corpuscular hemoglobin,MCH
 MCV,Mean corpuscular volume,MCV
 monocyte_perc,Monocyte percentage,Monocyte %
 more_evening,Morning/evening person (chronotype),Chronotype
@@ -232,7 +232,7 @@ phosphate,Phosphate,Phosphate
 play_computer,Plays computer games,Plays PC games
 poorer_health,Overall health rating,Overall health
 protein,Total protein,Protein
-red_hair,"Hair colour (natural, before greying)",Red hair
+red_hair,"Hair color (natural, before greying)",Red hair
 reticulocyte_volume,Mean reticulocyte volume,Reticulocyte volume
 self_harm_thoughts,Ever contemplated self-harm / Recent thoughts of suicide or self-harm,Ever suicidal thoughts
 sensitive_stomach,Sensitive stomach,Sensitive stomach

@@ -83,7 +83,7 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   if (code == "geek_time") {
     description <- "Time spent watching TV or using PC"
   } else if (code == "celiac_gluten") {
-    description <- "Coeliac disease/gluten sensitivity"
+    description <- "Celiac disease/gluten sensitivity"
   }
   gini <- slice[1,paste0("gini_",ancestry)]
   
