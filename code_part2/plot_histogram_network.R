@@ -221,10 +221,10 @@ df_all$trait_group <- ""
 
 #Plot histogram in ggplot
 plot1 <- ggplot(data=df_all, aes(x=overlap)) +
-  geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.96", x=60, y = 4000, colour="black", label.size= NA, size=6) + geom_label(label="Max = 94", x=60, y = 3000, colour="black", label.size= NA, size=6) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
+  geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.96", x=80, y = 4000, colour="black", label.size= NA, size=6) + geom_label(label="Max = 94", x=80, y = 3200, colour="black", label.size= NA, size=6) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
 plot1 <- plot1 + scale_x_continuous(name="Number of Overlapping Bins", breaks=c(0, 20, 40, 60, 80, 100))
 
-ggsave(file = "Figure1A.pdf", units = c("in"), width=10, height=3.5, dpi=300, plot1)
+ggsave(file = "~/Desktop/Figure1A.pdf", units = c("in"), width=8, height=2.5, dpi=300, plot1)
 
 #Section specific to the network graph
 #Keep variable with orginal values for matrix prior to applying threshold
@@ -243,19 +243,23 @@ coul <- c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6")
 my_color <- coul[as.numeric(as.factor(traits_table$group))]
 
 #Determine final output location 
-pdf(file = "Figure1B.pdf", width = 8, height = 8)
-set.seed(1)
-#Plot with labels 
-#plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
-
-#Plot without labels
-plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex.label = NA, edge.curved=0, edge.width = 2)
-
-legend(x=-1.35, y=1.0, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
+pdf(file = "~/Desktop/Figure1B.pdf", width = 8, height = 8)
+my_range <- 1:20
+for (i in my_range) {
+  set.seed(i)
+  #Plot with labels 
+  #plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
+  
+  #Plot without labels
+  plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex.label = NA, edge.curved=0, edge.width = 2, main = paste("Seed:", as.character(i), sep = " "))
+  
+  #legend(x=-1.35, y=1.3, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
+}
 
 dev.off()
 
+plots.dir.path <- list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
+plots.png.paths <- list.files(plots.dir.path, pattern=".png", full.names = TRUE)
 
-
-
+file.copy(from=plots.png.paths, to="~/Desktop/R-images/")
 
