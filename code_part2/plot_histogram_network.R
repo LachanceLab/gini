@@ -17,7 +17,7 @@ library(igraph)
 setwd("./")
 
 #Location of the traits table 
-loc_table <- "./Desktop/Gini-PGS/traits_table.csv" #Remove in final version
+loc_table <- "./Desktop/Gini-PGS/traits_table.txt" #Remove in final version
 loc_table <- "../generated_data/traits_table.txt" 
 
 # reads traits table
@@ -90,42 +90,25 @@ traits_table$group <- traits_table$group_consolidated
 traits_table <- traits_table[, 1:(ncol(traits_table)-1)]
 
 #Load the table with top bins for each trait 
-top_bins_loc <- "./Desktop/traits_overlap.csv" #Remove this in final version
-top_bins_loc <- "../generated_data/traits_overlap.csv" 
+top_bins_loc <- "./Desktop/bin_overlap.csv" #Remove this in final version
+top_bins_loc <- "../generated_data/bin_overlap.csv" 
 top_bins_table <- import(file=top_bins_loc, header = TRUE)
 
 #Load trait names into a vector
-traits <- top_bins_table$V1
-
-#Remove  ".0" from  numbers in the traits vector - format correction
-traits_vector <- c()
-for (item in traits) {
-  end_char <- substr(item, nchar(item)-1, nchar(item))
-  if (end_char == '.0') {
-    new_item <- substr(item, 1, nchar(item)-2)
-    traits_vector <- c(traits_vector, new_item)
-  } else {
-    traits_vector <- c(traits_vector, item)
-  }
-}
-traits <- traits_vector
-rm(traits_vector, item, new_item, end_char)
-
-#Change column to updated traits vector for top_bins_table
-top_bins_table$V1 <- traits
+traits <- top_bins_table$prive_code
 
 #Filter down the traits vector using a column of the traits_table
 filtered_traits <- traits_table$prive_code
 traits <- traits[traits %in% filtered_traits]
 
 #Filter down top_bins_table using traits vector
-top_bins_table <- top_bins_table[top_bins_table$V1 %in% traits,]
+top_bins_table <- top_bins_table[top_bins_table$prive_code %in% traits,]
 
 #Match order of traits_table with top_bins_traits
 traits_table <- traits_table[match(traits, traits_table$prive_code),]
 
 #Prepare top_bins_table for construction of similarity matrix
-top_bins_table <- top_bins_table[, 2:ncol(top_bins_table)]
+top_bins_table <- top_bins_table[, 3:ncol(top_bins_table)]
 
 #Remove unnecessary values 
 rm(filtered_traits, loc_table, top_bins_loc, remove, groups_consolidated)
@@ -223,11 +206,12 @@ df_all$trait_group <- ""
 plot1 <- ggplot(data=df_all, aes(x=overlap)) +
   geom_histogram(fill = "#000000", alpha = 1.0, binwidth=1) + labs(x="Number of Overlapping Bins", y="Count") + geom_label(label="Mean = 1.96", x=80, y = 4000, colour="black", label.size= NA, size=6) + geom_label(label="Max = 94", x=80, y = 3200, colour="black", label.size= NA, size=6) + theme(axis.text=element_text(size=20), axis.title=element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA))
 plot1 <- plot1 + scale_x_continuous(name="Number of Overlapping Bins", breaks=c(0, 20, 40, 60, 80, 100))
+#print(plot1)
 
 ggsave(file = "~/Desktop/Figure1A.pdf", units = c("in"), width=8, height=2.5, dpi=300, plot1)
 
 #Section specific to the network graph
-#Keep variable with orginal values for matrix prior to applying threshold
+#Keep variable with original values for matrix prior to applying threshold
 sim <- similarity_matrix
 
 #Set threshold 
@@ -244,22 +228,14 @@ my_color <- coul[as.numeric(as.factor(traits_table$group))]
 
 #Determine final output location 
 pdf(file = "~/Desktop/Figure1B.pdf", width = 8, height = 8)
-my_range <- 1:20
-for (i in my_range) {
-  set.seed(i)
-  #Plot with labels 
-  #plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
-  
-  #Plot without labels
-  plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex.label = NA, edge.curved=0, edge.width = 2, main = paste("Seed:", as.character(i), sep = " "))
-  
-  #legend(x=-1.35, y=1.3, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
-}
+set.seed(1)
+#Plot with labels 
+#plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
+
+#Plot without labels
+plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex.label = NA, edge.curved=0, edge.width = 2)
+
+#legend(x=-1.35, y=1.3, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
 
 dev.off()
-
-plots.dir.path <- list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
-plots.png.paths <- list.files(plots.dir.path, pattern=".png", full.names = TRUE)
-
-file.copy(from=plots.png.paths, to="~/Desktop/R-images/")
 
