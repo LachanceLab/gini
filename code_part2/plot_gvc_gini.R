@@ -87,8 +87,8 @@ x1 <- traits_table$gini_United
 y1 <- traits_table$summed_gvc100_raw
 
 #plot percentage of gvc vs. gini_UK
-plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, col=trait_type)) + geom_point() + theme_bw() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
+plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, col=trait_type)) + geom_point(size = 2) + theme_bw() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
 print(plot1)
 
-ggsave(file = "~/Desktop/summedgvc_gini.jpeg", units = c("in"), width=5, height=5, dpi=300, plot1)
+ggsave(file = "FigureS1.jpeg", units = c("in"), width=5, height=5, dpi=300, plot1)
 
