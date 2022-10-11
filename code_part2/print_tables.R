@@ -85,12 +85,12 @@ big_table_gt <- gt(big_table) %>%
   tab_header(
     title = paste("The Six Summary Statistics for", nrow(big_table),"Traits"),
     subtitle = "Full table provided in Github repository"
-  ) %>%
-  tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
+  ) #%>%
+  #tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
 
 big_table_gt
-gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 2160, vheight=1620)
-gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 2160, vheight=1620, zoom=1)
+gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 6000, zoom = 1, expand=100)
+gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 6000, zoom = 1, expand=100)
 
 
 #### Makes High and Low Gini Table ####

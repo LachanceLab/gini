@@ -25,6 +25,7 @@ vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index"
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
+  # can print as pdf or as png
   if (print_mode == "png") {
     png(loc_out, width = plot_width*sf, height = plot_height*sf)
   } else if (print_mode == "pdf") {
@@ -38,6 +39,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 }
 
 ### Code ####
+# reads traits table, filters out low prevalence traits, and defines lifestyle traits
 traits_table <- as_tibble(fread(loc_table)) %>%
   filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
   select(prive_code, description, trait_type, group, group_consolidated, prevalence,
@@ -47,15 +49,14 @@ traits_table <- as_tibble(fread(loc_table)) %>%
 
 # Caps maximum portability to 0
 traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0
-# Log10 transforms F-statistic
+# Log10 transforms F-statistic (D statistic)
 traits_table[,"f_stat"] <- log10(traits_table[,"f_stat"])
 
 # Helper function for writing p-values onto plots
-digits <- 3 # how many digits to round p-values to (non-scientific notation)
 color_p_significant <- "gray5"
 color_p_nonsignificant <- "gray60"
 p_value_to_text <- function(p_value) {
-  p_text <- round(p_value,digits)
+  p_text <- round(p_value,3)
   sci <- FALSE
   # uses scientific notation when < 0.001
   if (p_value < 0.001) {
@@ -68,19 +69,16 @@ p_value_to_text <- function(p_value) {
   }
   
   # changes text to darker color if significant
-  if (p_value < 0.05) {
-    text_color = color_p_significant
-  } else {
-    text_color = color_p_nonsignificant
-  }
+  if (p_value < 0.05) {text_color = color_p_significant
+  } else { text_color = color_p_nonsignificant}
   
+  # returns p-value text and significance color 
   list(p_text,text_color)
 }
 
 ### Scatterplot Matrix ####
 
 # calculates adjusted p-values for correlation measurement between variables
-
 p_values_cor <- tibble(
   var1 = as.character(),
   var2 = as.character(),
@@ -88,6 +86,7 @@ p_values_cor <- tibble(
   unadj_p_value = as.numeric(),
   adj_p_value = as.numeric()
 )
+# loops through unique pairs of summary statistics
 for (i in 1:(length(vars) - 1)) {
   x <- vars[[i]]
   for (j in (i+1):(length(vars))) {
@@ -105,7 +104,7 @@ for (i in 1:(length(vars) - 1)) {
     )
   }
 }
-# uses False Discovery Rate to adjust p-values
+# adjust p-values for multiple-testing
 adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,p_adjust_method)
 p_values_cor$adj_p_value <- adj_p_values_cor
 
@@ -125,23 +124,22 @@ upper_corr_p <- function(data,mapping) {
   p_text <- p_text_list[[1]]
   
   # determines full text to display
-  cor_text <- formatC(cor_value,digits=digits, format="f")
+  cor_text <- formatC(cor_value,digits=3, format="f")
   #text_rline <- paste0("r = ", cor_text,"\n")
   text_rline <- paste0("r==", cor_text)
   
   
   
   # makes GGally textplot using custom text
-  #p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=10*sf) +
-  #p <- ggally_text(label=text_rline, color=p_text_list[[2]], size=6*sf) +
   p <- ggally_text(label="") +
     geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=6*sf,color=p_text_list[[2]],
-              label = text_rline, parse=TRUE ) +
+              label = text_rline, parse=TRUE ) + # correlation value
     geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
-              label = p_text, parse=TRUE ) +
+              label = p_text, parse=TRUE ) + # p-value
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
-                                      color = theme_get()$panel.background$fill, fill = "transparent"))
+                                      color = theme_get()$panel.background$fill,
+                                      fill = "transparent"))
   p
 }
 
@@ -159,9 +157,9 @@ diag_label <- function(data, mapping) {
   # makes GGally textplot using custom text
   p <- ggally_text(label="") +
     geom_text(aes(x=0.5,y=0.55), size=9*sf, hjust=0.5, vjust=0, color="black",
-              label = var_labels[[variable]][1], parse = TRUE) +
+              label = var_labels[[variable]][1], parse = TRUE) + # top line
     geom_text(aes(x=0.5,y=0.45), size=9*sf, hjust=0.5, vjust=1, color="black",
-              label = var_labels[[variable]][2], parse = TRUE) +
+              label = var_labels[[variable]][2], parse = TRUE) + # bottom line
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
                                       color = "black",
@@ -170,6 +168,8 @@ diag_label <- function(data, mapping) {
 }
 
 # Bottom-left plots: scatterplot
+
+# sets limits for each scatterplot
 get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
   vector <- vector[!is.na(vector)]
   lim_range <- diff(range(vector)) * 1.05
@@ -185,16 +185,16 @@ axis_lims <- list(
   "pcor_United"= get_axis_lims(traits_table$pcor_United,0),
   "portability_index"= get_axis_lims(traits_table$portability_index,NA,0),
   "gini_United"=c(0,1))
-# format_axis_sci <- function(x) {
-#   formatC(x,format="E", digits=1, drop0trailing=TRUE)
-# }
 lm_scatterplot <- function(data, mapping) {
+  # determines two variables being plotted
   x <- as.character(quo_get_expr(mapping[[1]]))
   y <- as.character(quo_get_expr(mapping[[2]]))
   
+  # gets axis limits
   xlims <- axis_lims[[x]]
   ylims <- axis_lims[[y]]
   
+  # extracts adjusted p-value and sets significance color
   p_value <- (p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x) ))$adj_p_value
   if (p_value < 0.05) {linealpha <- 0.9}
   else {linealpha <- 0.4}
@@ -206,6 +206,7 @@ lm_scatterplot <- function(data, mapping) {
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
+  
   # log10 scales for h^2
   if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1),
                                                  breaks = c(0.01,0.1,1),
@@ -217,7 +218,8 @@ lm_scatterplot <- function(data, mapping) {
   p
 }
 scplot_textsize <- 20
-# Plots actual scatterplot matrix
+
+# makes actual scatterplot matrix
 p_sc <- ggpairs(data = traits_table,
                 columns=vars,
                 lower = list(continuous = lm_scatterplot),
@@ -263,6 +265,7 @@ for (i in 1:2) {
   }
   
   for (j in 1:length(vars)) {
+    # uses Wilcoxon signed-rank test to determine significant differences
     var_measurement <- colnames(subtable1)[j]
     WRT1 <- wilcox.test(subtable1[[j]], subtable2[[j]], paired=FALSE)
     p_value <- WRT1$p.value
@@ -273,7 +276,7 @@ for (i in 1:2) {
       adj_p_value = NA
     )
   }
-  # Uses False Discovery Rate to adjust p-values. Adjusts within 5x1 plot
+  # Adjusts p-values for multiple-testing. Adjusts within 6x1 plot
   adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)],p_adjust_method)
   p_values_WRT$adj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)] <- adj_p_values_WRT
 }
