@@ -124,6 +124,8 @@ for (code in codes) {
 }
 
 ### comparing with gini PLR ####
+traits_table <- traits_table %>% left_join(LDP_ginis, by="prive_code")
+write.table(traits_table,loc_table,sep="\t",quote=FALSE,row.names=FALSE)
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
@@ -146,26 +148,28 @@ gini_p_theme <- theme(
   legend.text = element_text(size=25*sf),
   plot.margin = unit(1*sf*c(1,1,1,1), "cm")
 )
+low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$prive_code
+traits_table2 <- traits_table %>% filter(!(prive_code %in% low_prevalence))
 
-
-traits_table <- traits_table %>% left_join(LDP_ginis, by="prive_code")
-write.table(traits_table,loc_table,sep="\t",quote=FALSE,row.names=FALSE)
-
-cor1 <- cor.test(traits_table$gini_United, traits_table$gini_United_LDP)
+cor1 <- cor.test(traits_table2$gini_United, traits_table2$gini_United_LDP)
 r <- cor1$estimate[[1]]
 p <- cor1$p.value
-gini_PLR_LDP_p <- ggplot(traits_table, aes(x=gini_United,y=gini_United_LDP)) +
+gini_PLR_LDP_p <- ggplot(traits_table2, aes(x=gini_United,y=gini_United_LDP)) +
   geom_abline(slope=1,intercept=0, size = 1*sf) +
-  geom_point(alpha = 0.75, size = 4*sf) +
+  geom_point(alpha = 0.75, size = 4*sf, aes(color=trait_type)) +
   scale_x_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
   scale_y_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
   xlab("Gini (using PLR effect sizes)") +
   ylab("Gini (using LDpred2 effect sizes)") +
+  labs(color="Trait Type") +
+  scale_color_manual(labels=c("Binary","Quantitative"),
+                     breaks=c("binary", "quantitative"),
+                     values = c("binary"="#F8766D", "quantitative"="#00BFC4")) +
   theme_light() +
   gini_p_theme +
   annotate("text", x=0.05, y=0.95, vjust=1, hjust=0, size = 10*sf,
            #label = paste0("r = ", round(r,4), "\np = ", formatC(p,format="E",digits=2)))
            label = paste0("r==", round(r,4)), parse=TRUE)
 loc_out <- paste0(dir_out,"gini_PLR_vs_LDP.", print_mode)
-print_plot(gini_PLR_LDP_p, loc_out, print_mode, 1000, 1000, sf)
+print_plot(gini_PLR_LDP_p, loc_out, print_mode, 1200, 1000, sf)
 print(loc_out)

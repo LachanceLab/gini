@@ -89,8 +89,10 @@ big_table_gt <- gt(big_table) %>%
   #tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
 
 big_table_gt
-gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 6000, zoom = 1, expand=100)
-gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 6000, zoom = 1, expand=100)
+gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 1000, zoom = 1, cliprect=c(0,0,1000,6000))
+big_table_gt <- big_table_gt %>%
+  tab_options(table.font.size = "90%")
+gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 1000, zoom = 1, cliprect=c(0,0,1000,6000))
 
 
 #### Makes High and Low Gini Table ####

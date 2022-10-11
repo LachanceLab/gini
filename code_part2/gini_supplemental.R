@@ -160,7 +160,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
   dev.off()
 }
 sf <- 2
-print_mode <- "pdf"
+print_mode <- "png"
 
 gini_p_theme <- theme(
   plot.subtitle = element_text(size=20*sf),
