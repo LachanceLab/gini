@@ -18,7 +18,7 @@ dir_out <- "../generated_figures/"
 
 # sets scaling factors for image output. Default = 3
 sf <- 3
-print_mode <- "pdf" # set to either "png" or "pdf"
+print_mode <- "png" # set to either "png" or "pdf"
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
@@ -67,7 +67,7 @@ gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labe
   scale_color_manual(labels=c("Binary","Quantitative"),
                      breaks=c("binary", "quantitative"),
                      values = c("binary"="#F8766D", "quantitative"="#00BFC4")) +
-  scale_x_continuous(expand = c(0.075,0.075))
+  scale_x_continuous(expand = c(0.1,0.075))
 
 # Saves image onto system
 plot_width <- 1000
@@ -109,7 +109,7 @@ for (the_trait_type in trait_types) {
           panel.grid.minor = element_blank()) +
     labs(title = NULL,#title=paste("PCA of summary statistics for",the_trait_type,"traits"),
          subtitle = NULL,
-         color = "Trait Group")  +
+         color = "Trait Group") +
     scale_color_manual(labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
                        values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
