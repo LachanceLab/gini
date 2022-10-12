@@ -80,6 +80,9 @@ rm(i, group_consolidated)
 #Remove duplicate column 
 traits_table$group <- traits_table$group_consolidated
 
+#Slight edit to traits_table 
+traits_table <- traits_table %>% mutate(trait_type = ifelse(as.character(trait_type) == "binary", "Binary", as.character(trait_type))) %>% mutate(trait_type = ifelse(as.character(trait_type) == "quantitative", "Quantitative", as.character(trait_type)))
+
 #Load gvc file 
 traits_table$summed_gvc100_raw <- (traits_table$summed_gvc100_raw / traits_table$total_summed_gvc)
 
@@ -87,8 +90,8 @@ x1 <- traits_table$gini_United
 y1 <- traits_table$summed_gvc100_raw
 
 #plot percentage of gvc vs. gini_UK
-plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, col=trait_type)) + geom_point(size = 2) + theme_bw() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
+plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + labs(color = 'Trait Types') + geom_point(size = 2) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
 print(plot1)
 
-ggsave(file = "FigureS1.jpeg", units = c("in"), width=5, height=5, dpi=300, plot1)
+ggsave(file = "FigureS3.pdf", units = c("in"), width=5, height=5, dpi=300, plot1)
 
