@@ -88,10 +88,12 @@ traits_table$summed_gvc100_raw <- (traits_table$summed_gvc100_raw / traits_table
 
 x1 <- traits_table$gini_United
 y1 <- traits_table$summed_gvc100_raw
+#cor(x1, y1)
 
 #plot percentage of gvc vs. gini_UK
 plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + labs(color = 'Trait Types') + geom_point(size = 2) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
 print(plot1)
 
-ggsave(file = "FigureS3.pdf", units = c("in"), width=5, height=5, dpi=300, plot1)
+ggsave(file = "FigureS3.pdf", units = c("in"), width=6, height=5, dpi=300, plot1)
+
 
