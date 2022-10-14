@@ -98,16 +98,18 @@ bin_y <- binary$summed_gvc100_raw
 quant_x <- quant$gini_United
 quant_y <- quant$summed_gvc100_raw
 
-bin_lm <- lm(bin_y ~ bin_x)
-bin_r2 <- summary(bin_lm)$adj.r.squared
+# bin_lm <- lm(bin_y ~ bin_x)
+# bin_r2 <- summary(bin_lm)$adj.r.squared
+# 
+# quant_lm <- lm(quant_y ~ quant_x)
+# quant_r2 <- summary(quant_lm)$adj.r.squared
 
-quant_lm <- lm(quant_y ~ quant_x)
-quant_r2 <- summary(quant_lm)$adj.r.squared
-
+bin_cor <- cor(bin_x, bin_y)
+quant_cor <- cor(quant_x, quant_y)
 
 #plot percentage of gvc vs. gini_UK
-plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + geom_smooth(method = "lm") + labs(color = 'Trait Types') + geom_point(size = 2) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc") + scale_x_continuous(name=expression('Gini'[UK]), breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) + scale_y_continuous(name="Proportion of Total gvc", breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) 
-plot1 <-  plot1 + xlim(0, 1.0) + ylim(0,1.0) + annotate("text",  x=0.25, y = 1, label = paste("Binary Adj. R-squared: ", round(bin_r2, 3), sep = "")) + annotate("text",  x=0.30, y = 0.95, label = paste("Quantitative Adj. R-squared: ", round(quant_r2, 3), sep = ""))
+plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + geom_smooth(method = "lm", se = FALSE) + labs(color = 'Trait Types') + geom_point(size = 1.5) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc") + scale_x_continuous(name=expression('Gini'[UK]), breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) + scale_y_continuous(name="Proportion of Total gvc", breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) 
+plot1 <-  plot1 + xlim(0, 1.0) + ylim(0,1.0) + annotate("text",  x=0.15, y = 1, label = paste("r = ", round(bin_cor, 3), sep = ""), color = "#F8766D", alpha = 1, fontface = "bold") + annotate("text",  x=0.15, y = 0.95, label = paste("r = ", round(quant_cor, 3), sep = ""), color = "#00BFC4", alpha =1, fontface = "bold")
 print(plot1)
 
 ggsave(file = "FigureS3.pdf", units = c("in"), width=6, height=5, dpi=300, plot1)
