@@ -88,10 +88,26 @@ traits_table$summed_gvc100_raw <- (traits_table$summed_gvc100_raw / traits_table
 
 x1 <- traits_table$gini_United
 y1 <- traits_table$summed_gvc100_raw
-#cor(x1, y1)
+
+binary <- traits_table[(traits_table$trait_type == 'Binary'),]
+quant <- traits_table[(traits_table$trait_type == 'Quantitative'),]
+
+bin_x <- binary$gini_United
+bin_y <- binary$summed_gvc100_raw
+
+quant_x <- quant$gini_United
+quant_y <- quant$summed_gvc100_raw
+
+bin_lm <- lm(bin_y ~ bin_x)
+bin_r2 <- summary(bin_lm)$adj.r.squared
+
+quant_lm <- lm(quant_y ~ quant_x)
+quant_r2 <- summary(quant_lm)$adj.r.squared
+
 
 #plot percentage of gvc vs. gini_UK
-plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + labs(color = 'Trait Types') + geom_point(size = 2) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc")
+plot1 <- ggplot(data=traits_table, mapping = aes(x = x1, y = y1, color = trait_type)) + geom_smooth(method = "lm") + labs(color = 'Trait Types') + geom_point(size = 2) + theme_light() + labs(x=expression('Gini'[UK]), y="Proportion of Total gvc") + scale_x_continuous(name=expression('Gini'[UK]), breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) + scale_y_continuous(name="Proportion of Total gvc", breaks=c(0, 0.25, 0.5, 0.75, 1.0, 1.25)) 
+plot1 <-  plot1 + xlim(0, 1.0) + ylim(0,1.0) + annotate("text",  x=0.25, y = 1, label = paste("Binary Adj. R-squared: ", round(bin_r2, 3), sep = "")) + annotate("text",  x=0.30, y = 0.95, label = paste("Quantitative Adj. R-squared: ", round(quant_r2, 3), sep = ""))
 print(plot1)
 
 ggsave(file = "FigureS3.pdf", units = c("in"), width=6, height=5, dpi=300, plot1)
