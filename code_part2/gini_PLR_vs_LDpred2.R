@@ -99,8 +99,11 @@ col_AF <- "VarFreq_United"
 bin_summary_method <- "sum"
 threshold <- 100
 
+# loops through each trait with both PLR and LDpred2 effect sizes
 for (code in codes) {
   if (!(code %in% traits_table$prive_code)) {next}
+  
+  # filters effect sizes + AFs to single trait, calculates SNP gvc, and bins
   sf <- betas[which(betas[code] != 0),] %>%
     select(chrom=chr,rsID=rsid,chr_position=pos,A1=a0,A2=a1,
            effect_weight=!!as.name(code),"VarFreq_United") %>%
@@ -112,6 +115,7 @@ for (code in codes) {
   n_significant_bins <- nrow(sf)
   sf_filtered <- sf %>% filter(rank <= threshold)
   
+  # computes gini
   if (threshold <= n_significant_bins) {h2_list <- sf_filtered$h2
   } else {h2_list <- c(rep(0, (threshold - n_significant_bins)), sf$h2)}
   gini <- get_gini(h2_list)
@@ -140,6 +144,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 sf <- 2
 print_mode <- "pdf"
 
+# common theme for plots
 gini_p_theme <- theme(
   plot.subtitle = element_text(size=20*sf),
   axis.title = element_text(size=30*sf),
@@ -148,15 +153,23 @@ gini_p_theme <- theme(
   legend.text = element_text(size=25*sf),
   plot.margin = unit(1*sf*c(1,1,1,1), "cm")
 )
+# filters table to non-low prevalence quantitative and binary traits
 low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$prive_code
 traits_table2 <- traits_table %>% filter(!(prive_code %in% low_prevalence))
+traits_table3 <- traits_table2 %>% filter(trait_type=="binary")
+traits_table4 <- traits_table2 %>% filter(trait_type=="quantitative")
 
-cor1 <- cor.test(traits_table2$gini_United, traits_table2$gini_United_LDP)
-r <- cor1$estimate[[1]]
-p <- cor1$p.value
-gini_PLR_LDP_p <- ggplot(traits_table2, aes(x=gini_United,y=gini_United_LDP)) +
+# gets correlations between PLR and LDpred2 ginis for all
+cor1 <- cor.test(traits_table3$gini_United, traits_table3$gini_United_LDP)
+r1 <- cor1$estimate[[1]]
+cor2 <- cor.test(traits_table4$gini_United, traits_table4$gini_United_LDP)
+r2 <- cor2$estimate[[1]]
+
+# makes plot
+gini_PLR_LDP_p <- ggplot(traits_table2, aes(x=gini_United,y=gini_United_LDP, color=trait_type)) +
   geom_abline(slope=1,intercept=0, size = 1*sf) +
-  geom_point(alpha = 0.75, size = 4*sf, aes(color=trait_type)) +
+  geom_point(alpha = 0.75, size = 4*sf) +
+  geom_smooth(method = "lm", size = 2*sf, se=FALSE) +
   scale_x_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
   scale_y_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
   xlab("Gini (using PLR effect sizes)") +
@@ -168,8 +181,11 @@ gini_PLR_LDP_p <- ggplot(traits_table2, aes(x=gini_United,y=gini_United_LDP)) +
   theme_light() +
   gini_p_theme +
   annotate("text", x=0.05, y=0.95, vjust=1, hjust=0, size = 10*sf,
-           #label = paste0("r = ", round(r,4), "\np = ", formatC(p,format="E",digits=2)))
-           label = paste0("r==", round(r,4)), parse=TRUE)
+           label = paste0("r==", round(r1,4)), parse=TRUE, color="#F8766D") +
+  annotate("text", x=0.05, y=0.90, vjust=1, hjust=0, size = 10*sf,
+           label = paste0("r==", round(r2,4)), parse=TRUE, color="#00BFC4")
+
+# prints out
 loc_out <- paste0(dir_out,"gini_PLR_vs_LDP.", print_mode)
 print_plot(gini_PLR_LDP_p, loc_out, print_mode, 1200, 1000, sf)
 print(loc_out)

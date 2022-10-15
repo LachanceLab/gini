@@ -162,6 +162,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 sf <- 2
 print_mode <- "png"
 
+# common theme for supplemental plots
 gini_p_theme <- theme(
   plot.subtitle = element_text(size=20*sf),
   axis.title = element_text(size=30*sf),
@@ -171,10 +172,13 @@ gini_p_theme <- theme(
   plot.margin = unit(1*sf*c(1,1,1,1), "cm")
 )
 
+# reads supplemental ginis generated (if saved to system)
 ginis <- as_tibble(fread("../generated_data/ginis_extra.txt"))
+# reads traits table and gets list of low prevalence binary traits
 traits_table <- as_tibble(fread(loc_table))
 low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$prive_code
 
+# converts variables to factors and makes unique character string for parameter combination
 ginis <- ginis %>%
   filter(!(prive_code %in% low_prevalence)) %>%
   mutate(
@@ -183,6 +187,7 @@ ginis <- ginis %>%
     settings = paste(bin_size, bin_summary_method, threshold, threshold_zero_padding),
 )
 
+# filters supplemental ginis to allow bin size comparison
 ginis_binsize <- ginis %>% filter(
   bin_summary_method == "sum",
   threshold_zero_padding = TRUE,
@@ -196,9 +201,11 @@ ginis_binsize <- ginis %>% filter(
     names_prefix = "gini_"
   ) %>%
   left_join(traits_table %>% select(prive_code,short_label), by="prive_code")
+
+# gets correlation between bin size 1 gini and bin size 100k gini
 cor1 <- cor.test(ginis_binsize$gini_1, ginis_binsize$`gini_1e+05`)
 r <- cor1$estimate[[1]]
-p <- cor1$p.value
+# plots bin size comparison
 gini_bz_p <- ggplot(ginis_binsize, aes(x=gini_1,y=`gini_1e+05`)) +
   geom_abline(slope=1,intercept=0, size = 1*sf) +
   geom_point(alpha = 0.75, size = 4*sf) +
@@ -209,44 +216,10 @@ gini_bz_p <- ggplot(ginis_binsize, aes(x=gini_1,y=`gini_1e+05`)) +
   theme_light() +
   gini_p_theme +
   annotate("text", x=0.05, y=0.95, vjust=1, hjust=0, size = 10*sf,
-           #label = paste0("r = ", round(r,4), "\np = ", formatC(p,format="E",digits=2)))
            label = paste0("r==", round(r,4)), parse=TRUE)
-
+# prints bin size comparison plot
 loc_out <- paste0(dir_out,"gini_bz_scatterplot.", print_mode)
 print_plot(gini_bz_p, loc_out, print_mode, 1000, 1000, sf)
-print(loc_out)
-
-### bin summary method ####
-ginis_bsm <- ginis %>% filter(
-  bin_size == 100000,
-  threshold_zero_padding = TRUE,
-  threshold == 100,
-  ancestry == "United"
-) %>%
-  select(prive_code, ancestry, bin_summary_method, gini) %>%
-  pivot_wider(
-    names_from = bin_summary_method,
-    values_from = gini,
-    names_prefix = "gini_"
-  ) %>%
-  left_join(traits_table %>% select(prive_code,short_label), by="prive_code")
-cor1 <- cor.test(ginis_bsm$gini_sum, ginis_bsm$gini_max)
-r <- cor1$estimate[[1]]
-p <- cor1$p.value
-gini_bsm_p <- ggplot(ginis_bsm, aes(x=gini_sum,y=gini_max)) +
-  geom_abline(slope=1,intercept=0, size = 1*sf) +
-  geom_point(alpha = 0.75, size = 4*sf) +
-  scale_x_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
-  scale_y_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
-  xlab("Gini (bin summary method = sum)") +
-  ylab("Gini (bin summary method = max)") +
-  theme_light() +
-  gini_p_theme +
-  annotate("text", x=0.05, y=0.95, vjust=1, hjust=0, size = 10*sf,
-           #label = paste0("r = ", round(r,4), "\np = ", formatC(p,format="E",digits=2)))
-           label = paste0("r==", round(r,4)), parse=TRUE)
-loc_out <- paste0(dir_out,"gini_bsm_scatterplot.", print_mode)
-print_plot(gini_bsm_p, loc_out, print_mode, 1000, 1000, sf)
 print(loc_out)
 
 # comparing rank order by threshold
@@ -256,16 +229,16 @@ ginis_t <- ginis %>%
   select(prive_code, threshold, gini, n_significant_bins) %>%
   group_by(threshold) %>%
   mutate(gini_t_rank = order(order(gini, decreasing=FALSE))) %>%
-  #ungroup() %>% group_by(prive_code) %>%
-  #mutate(diff = diff(range(gini_t_rank))) %>%
   left_join(traits_table %>% select(prive_code,group_consolidated), by="prive_code")
 
+# sets color legend
 gc_scale <- list(
   labels = c("Biological Measures","Diseases","Lifestyle/Psychological","Physical Measures"),
   breaks = c("biological measures","diseases","lifestyle/psychological","physical measures"),
   values = c("biological measures"="#F8766D", "diseases"="#A3A500","lifestyle/psychological"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
 )
 
+# plots gini rank comparison by threshold
 gini_t_p1 <- ggplot(ginis_t,
        aes(x=as.factor(threshold), y=gini_t_rank, group=prive_code)) +
   geom_line(aes(color = group_consolidated), size=0.75*sf, key_glyph = "rect") +
@@ -280,6 +253,7 @@ gini_t_p1 <- ggplot(ginis_t,
   theme_light() +
   gini_p_theme
 
+# plots gini comparison by threshold
 gini_t_p2 <- ggplot(ginis_t,
        aes(x=as.factor(threshold), y=gini, group=prive_code)) +
   geom_line(aes(color = group_consolidated), size=0.75*sf, key_glyph = "rect") +
