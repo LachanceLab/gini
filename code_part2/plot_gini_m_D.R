@@ -4,6 +4,9 @@
 # and PGS Divergence
 
 ### Libraries and directories ####
+
+# plyr can often create issues since it shares function names with dplyr. If you
+# keep running into issues, close R (unloading all libraries) and retry
 detach("package:plyr", unload=TRUE)
 library(tidyverse)
 library(ggpubr)
@@ -47,11 +50,12 @@ common_theme <- theme_light() +
   plot.margin = unit(0.25*sf*c(1,1,1,1), "cm")
 )
 
-# function that reads a trait's summary file and extracts the needed columns
+# function that reads a trait's summary file and extracts the needed columns for plotting
 cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshold_padding=TRUE, bin_size=100000, bin_summary_method="sum") {
   col_AF <- paste0("VarFreq_",ancestry)
-  
   loc_sf <- paste0(dir_sfs,code,"-betasAFs.txt")
+  
+  # calculates cumulutative sum of gvc (referred to as h2 here) 
   sf <- as_tibble(fread(loc_sf)) %>%
     bin_snps(bin_size) %>%
     get_h2("effect_weight", col_AF) %>%
@@ -62,6 +66,7 @@ cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshol
     mutate(h2_csum = cumsum(h2)) %>%
     select(h2,h2_csum)
   sf$h2_cshare <- sf$h2_csum / sf$h2_csum[nrow(sf)]
+  # pads with extra bins of 0 gvc when the # of bins is less than the threshold
   if ((nrow(sf) < threshold) & (threshold_padding)) {
     sf <- sf %>%
       add_row(
@@ -70,8 +75,8 @@ cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshol
         h2_cshare = rep(0, threshold - nrow(sf)),
       ) %>% arrange(h2)
   }
-  sf <- sf %>%
-    mutate(percentile = dplyr::row_number() / nrow(sf))
+  # determines bin x-axis (rank percentile)
+  sf <- sf %>% mutate(percentile = dplyr::row_number() / nrow(sf))
   sf
 }
 # function that actually plots Lorenz curve
@@ -79,22 +84,20 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
   
   slice <- traits_table %>% filter(prive_code == code)
   description <- slice$description
-  # adjusts the long description for geek_time trait
-  if (code == "geek_time") {
-    description <- "Time spent watching TV or using PC"
-  } else if (code == "celiac_gluten") {
-    description <- "Celiac disease/gluten sensitivity"
+  # adjusts the long descriptions for better aesthetics
+  if (code == "geek_time") {description <- "Time spent watching TV or using PC"
+  } else if (code == "celiac_gluten") {description <- "Celiac disease/gluten sensitivity"
   }
   gini <- slice[1,paste0("gini_",ancestry)]
   
   if (ancestry=="United") {ancestry <- "UK"}
   
   title <- paste0(description)
+  # sets proper math formatting for plot annotation
   gini_text <- formatC(gini[[1]],digits=3, format="f")
-  #subtitle <- bquote(Gini[100][','][UK]==.(gini_text))
   text <- paste0("G[100][','][UK]==",gini_text)
   
-  
+  # makes Lorenz curve plot
   gg<-ggplot(sfile, aes(x=100*percentile, y=h2_cshare)) +
     geom_col(position = position_nudge(-0.5), fill="gray20", width=0.8) +
     geom_abline(slope=1/100,color="dodgerblue1", size=0.5*sf) +
@@ -103,20 +106,15 @@ plot_lorenz <- function(code, sfile, ancestry="United") {
     ylab(expression(paste("Cumulative sum of bin ",italic(gvc)))) +
     common_theme +
     scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
-    scale_y_continuous(limits=c(0,1), expand = c(0,0))
-  
-  xrange <- layer_scales(gg)$x$range$range
-  yrange <- layer_scales(gg)$y$range$range
-  gg <- gg +
-    annotate("text",
-             x = 0.5 * 100, #x=0.025*(100),
-             y = 0.975*(1), label = text,
+    scale_y_continuous(limits=c(0,1), expand = c(0,0)) +
+    annotate("text", x = 0.5 * 100, y = 0.975*(1), label = text,
              parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
-    
   gg
 }
 # function that plots portability
 plot_portability <- function(code) {
+  
+  # properly formats tibble with PGS accuracy to compute relative PGS accuracy
   pcor_data <- traits_table %>% filter(prive_code == code) %>%
     select(starts_with("pcor_")) %>%
     pivot_longer(
@@ -136,35 +134,29 @@ plot_portability <- function(code) {
     ) %>% left_join(distances, by="ancestry")
   pcor_data[pcor_data$ancestry=="United","ancestry"] <- "UK"
   
+  # extracts trait information (including portability slope)
   slice <- traits_table %>% filter(prive_code == code)
   m <- slice$portability_index
   description <- slice$description
-  subtitle <- paste0("m = ", formatC(m, digits=5, format="f"))
+  # properly formats annotation 
   text <- paste0("m==",formatC(m, digits=5, format="f"))
   
   gg<-ggplot(pcor_data, aes(x=prive_dist_to_UK)) +
     geom_segment(aes(x=0,y=1, xend=max(prive_dist_to_UK), yend=1 + m * max(prive_dist_to_UK)),
                  size=0.5*sf, color="dodgerblue1") +
     geom_point(aes(y = relative_pcor), size = 1.5*sf) +
-    #geom_errorbar(aes(ymin = relative_inf, ymax = relative_sup)) +
-    # geom_text_repel(aes(label = ancestry, y = relative_pcor), seed=4,
-    #                 #direction="x",
-    #                 #direction="y",
-    #                 size=4*sf) +
     scale_x_continuous(expand=expansion(mult = c(0.02, .02))) +
     common_theme +
     xlab("Genetic PC Distance to UK") +
     ylab("PGS Accuracy Relative to UK") +
     labs(title = description)
   
+  # annotation position and scales depend on existing plot scales
   xrange <- layer_scales(gg)$x$range$range
   yrange <- layer_scales(gg)$y$range$range
-  # adds some padding at the top for visibility when portability is high
-  #if (m > -0.0007) {yrange[2] <- 1.15}
-  yrange[2] <- 1.15
+  yrange[2] <- 1.15 #manually pads y-max of plot
   gg <- gg +
     scale_y_continuous(limits = c(0,yrange[2]),
-                       #limits = c(0,max(1,max(pcor_data$relative_sup))),
                        expand=expansion(mult = c(0, .01)),
                        breaks = c(0,0.25,0.5,0.75,1),
                        label = format(c(0,0.25,0.5,0.75,1))) +
@@ -189,13 +181,11 @@ plot_divergence <- function(code) {
   if (p_value < 1E-320) {
     p_text <- "< 1E-320"
     p_text <- bquote(D==.(logfstat)~~~~~p-value<10^{-320})
-    #text <- paste0("D==",logfstat,"~p-value<10^-320")
   } else {
     p_text <- formatC(p_value,format="E", digits=2)
     p_text_stem <- as.numeric(substr(p_text,1,4))
     p_text_exp <- as.numeric(substr(p_text,6,10))
     p_text <- bquote(D==.(logfstat)~~~~~p-value==.(p_text_stem)%*%10^{.(p_text_exp)})
-    #text <- paste0("D==",logfstat,"~p-value==",p_text_stem,"%*%10^",p_text_exp)
   }
   text <- paste0("D==",logfstat)
   
@@ -204,7 +194,6 @@ plot_divergence <- function(code) {
     geom_density(color='#e9ecef', alpha=0.6, position='identity') +
     common_theme +
     theme(legend.position = "bottom",
-          #legend.title=element_blank(),
           legend.title.align = 0.5,
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank()) +
@@ -212,15 +201,15 @@ plot_divergence <- function(code) {
     ylab("Density") +
     scale_x_continuous(expand=expansion(mult = c(0, 0))) +
     labs(title=paste0(description))
+  
+  # annotation position and scales depend on existing plot scales
   xrange <- layer_scales(gg)$x$range$range
   yrange <- layer_scales(gg)$y$range$range
   yrange[2] <- yrange[2] * 1.1
   gg <- gg +
-    scale_y_continuous(limits = c(0,yrange[2]),
-                       expand=expansion(mult = c(0, 0.01))) +
+    scale_y_continuous(limits = c(0,yrange[2]), expand=expansion(mult = c(0, 0.01))) +
     annotate("text",
-             x=(xrange[2]+xrange[1])/2, #x=0.975*(xrange[2]-xrange[1])+xrange[1],
-             y = 0.985*(yrange[2]-0), label = text,
+             x=(xrange[2]+xrange[1])/2, y = 0.985*(yrange[2]-0), label = text,
              parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
 }
@@ -238,6 +227,7 @@ pop_centers <- read.csv(
   stringsAsFactors = FALSE)
 ancestries <- sort(pop_centers$Ancestry)
 ancestries[9] <- "United" # in order to match other data
+# calculates average PCA distance between ancestries
 prive_PC <- pop_centers %>% select(PC1:PC16)
 prive_dist_to_UK <- as.matrix(dist(prive_PC))[,1]
 distances <- tibble(
@@ -246,7 +236,7 @@ distances <- tibble(
 ) %>% arrange(ancestry)
 distances$ancestry <- str_replace(distances$ancestry,"United Kingdom","United")
 
-# reads the PRSs and changes "United" to "UK"
+# reads the PGSs and changes "United" to "UK"
 PRSs <- as_tibble(fread(loc_PRSs)) %>% filter(ancestry != "Ashkenazi")
 PRSs[PRSs$ancestry=="United","ancestry"] <- "UK"
 

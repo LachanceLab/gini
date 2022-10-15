@@ -30,7 +30,7 @@ dir_out <- "../generated_data/"
 raw_data <- as_tibble(fread(loc_PC))
 PC_UKBB <- raw_data %>% select(paste0("V", 26:41))
 
-# Prive's code from github
+# Prive's code from their github
 all_centers <- read.csv(
   "https://raw.githubusercontent.com/privefl/UKBB-PGS/main/pop_centers.csv",
   stringsAsFactors = FALSE)

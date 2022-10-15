@@ -6,7 +6,6 @@
 ### Libraries and directories ####
 library(tidyverse)
 
-
 ## Functions ###
 
 # function that creates a dictionary used for giving SNP bins IDs
@@ -22,7 +21,7 @@ create_bin_dict = function(bin_size) {
   
   return(bin_dict)
 }
-# function that assigns each SNP a binID before binning function
+# function that assigns each SNP a binID before the actual binning function
 bin_snps = function(data, bin_size) {
   bin_dict <- create_bin_dict(bin_size)
   data_snp_bins <- data[0,] %>%
@@ -52,8 +51,8 @@ get_data_binned = function(data_snp_bins, method="sum") {
     )
   return(data_binned)
 }
-# function that calculates and appends individual SNP gvc (called h2) using betas
-# and allele frequencies
+# function that calculates and appends individual SNP gvc (called h2 in early stages
+# of project) using betas and allele frequencies
 get_h2 <- function(data_AF, col_beta, col_AF) {
   pop_data <- data_AF %>%
     mutate(
@@ -66,7 +65,7 @@ get_h2 <- function(data_AF, col_beta, col_AF) {
     )
   return(pop_data)
 }
-# function that computes the gini of a list of values in ascending order
+# function that computes the gini of a list of values in ascending order (can't be all zeros either)
 get_gini <- function(list) {
   # Adapted from: https://github.com/oliviaguest/gini
   n <- length(list)

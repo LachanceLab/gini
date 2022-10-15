@@ -1,7 +1,7 @@
 # plot_scatterplot_matrix_density.R
 
-# Plots the scatterplot matrix and the dual density plots
-
+# Plots the scatterplot matrix, the dual density plots, and the scatterplots
+# between the six summary statistics and prevalence
 
 ### Libraries and directories ####
 library(tidyverse)
@@ -39,6 +39,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 }
 
 ### Code ####
+
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
 traits_table <- as_tibble(fread(loc_table)) %>%
   filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
@@ -109,6 +110,7 @@ adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,p_adjust_method)
 p_values_cor$adj_p_value <- adj_p_values_cor
 
 ## Matrix subplot functions
+
 # Top-right plots: correlation and p-value between measurements
 upper_corr_p <- function(data,mapping) {
   # extracts x and y from ggpairs data argument
@@ -125,7 +127,6 @@ upper_corr_p <- function(data,mapping) {
   
   # determines full text to display
   cor_text <- formatC(cor_value,digits=3, format="f")
-  #text_rline <- paste0("r = ", cor_text,"\n")
   text_rline <- paste0("r==", cor_text)
   
   
@@ -318,22 +319,18 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
       labs(fill="Trait Type") +
       scale_fill_manual(labels=c("Binary","Quantitative"), 
                         breaks=c("binary", "quantitative"),
-                        #values = c("binary"="gray70", "quantitative"="gray10"))
                         values = c("binary"="#F8766D", "quantitative"="#00BFC4"))
   }
   # log10 scales for h^2
   if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1))}
   else {p <- p + xlim(xlims)}
   # Adds p-value to plot
+  # pads top to allow space for p-value
   yrange <- layer_scales(p)$y$range$range
   padding <- 1.20
-  #yrange[2] <- yrange[2] * padding # pads top to allow space for p-value
-  yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1] # pads top to allow space for p-value
+  yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1]
   p <- p +
     scale_y_continuous(limits = yrange, expand=expansion(mult = c(0, .05))) +
-    # geom_text(data=NULL, label=text, parse=TRUE,
-    #           aes(x=ifelse(x=="ldpred2_h2",0.01,min(xlims)), y=max(yrange)*((0.95+padding)/(2*padding))),
-    #           vjust=0, hjust=0, color=p_text_list[[2]], size = 4*sf) +
     annotate("text",
              x = ifelse(x=="ldpred2_h2",0.1,mean(xlims)),
              y=diff(yrange)*((0.95+padding)/(2*padding)),
@@ -450,6 +447,7 @@ for (i in 1:length(vars)) {
   prevalence_plots[[i]] <- p
 }
 
+# combines plots into one figure
 pscp <- ggmatrix(plots=prevalence_plots,
                 nrow=1,
                 ncol=length(vars),
@@ -464,8 +462,8 @@ pscp <- ggmatrix(plots=prevalence_plots,
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
+# prints figure
 loc_out <- paste0(dir_out,"prevalence_scatterplot.", print_mode)
 print_plot(pscp, loc_out, print_mode, ddplot_width+100, ddplot_height, sf)
-
 print("Saved prevalence scatterplot")
 

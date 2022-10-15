@@ -2,7 +2,7 @@
 
 # This script creates the traits table from which most proceeding analyses take
 # their data from. This includes joining all of Prive et al.'s trait info into
-# one, and calculating gini, portability, and PRS divergence for each trait
+# one, and calculating Gini, portability, and PRS divergence for each trait
 
 ### Libraries and directories ####
 library(tidyverse)
@@ -29,8 +29,8 @@ dir_prive_data <- "../prive_data/"
 # location to the genetic recombination map in hg19 format, created by liftover.py
 loc_map <- paste0("../other_data/aau1043_datas3_hg19")
 
-# location to a file we generated that vastly speeds up the process of binning
-# can be obtained from our github under ~/generated_data/
+# location to a file we generated that speeds up the process of binning
+# can be obtained from our github under ~/code_part1/
 loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
 # directory where summary files with betas+AFs for each trait are stored
 dir_summary_files <- "../generated_data/betas_and_AFs/"
@@ -44,7 +44,7 @@ dir_out <- "../generated_data/"
 loc_phenotype_description <- paste0(dir_prive_data,"phenotype-description.csv")
 loc_phenotype_info <- paste0(dir_prive_data,"phenotype-info.csv")
 loc_pcor <-paste0(dir_prive_data,"pred-cor-PLR.csv")
-loc_short_labels <- "trait_short_labels.csv"
+loc_short_labels <- ("../code_part1/trait_short_labels.csv")
 
 ## Joining trait descriptions ####
 
@@ -63,6 +63,7 @@ coef_to_liab <- function (K_pop, K_gwas = 0.5) {
 prive_info <- as_tibble(fread(loc_phenotype_info))
 prive_description <- as_tibble(fread(loc_phenotype_description))
 short_labels <- as_tibble(fread(loc_short_labels))
+# defines table containing all info related to each trait
 traits_table <- prive_description %>%
   filter(phenotype %in% codes) %>%
   left_join(short_labels %>% select(-description), by="phenotype") %>%
@@ -73,6 +74,7 @@ traits_table <- prive_description %>%
   rowwise() %>% mutate(
          N_total = sum(N,N_case,N_control,na.rm=TRUE),
          liab_coef = coef_to_liab(prevalence, prevalence))
+# the descriptions column in the short_labels file has Americanized spellings
 traits_table$description <- short_labels$description
 
 # consolidates trait groups into fewer categories
@@ -94,11 +96,11 @@ for (i in 1:nrow(traits_table)) {
     }
   }
 }
+# manually adds trait to lifestyle/psychological category
 psychological_codes <- c("fluid_intelligence")
 traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidated"] <- "lifestyle/psychological"
 
 ## Joining Prive et al.'s partial correlation values ####
-
 pcors <- as_tibble(fread(loc_pcor))
 pcors$pop <- gsub('United Kingdom', 'United', pcors$pop)
 pcors <- pcors %>%
@@ -111,12 +113,13 @@ pcors <- pcors %>%
   )
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
-## Generating gini for each trait ####
+## Generating gini and recombination rate for each trait ####
+# (in early stages of the project, gvc was just referred to as h2)
 
 # loads a file that contains the max base pair position for each chromosome
 chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
 
-# expands traits_table for gini calculation
+# expands traits_table for gini calculation, obtains list of ancestries
 pop_centers <- read.csv(
   "https://raw.githubusercontent.com/privefl/UKBB-PGS/main/pop_centers.csv",
   stringsAsFactors = FALSE)
@@ -130,14 +133,14 @@ for (ancestry in ancestries) {
 traits_table$cMperMb <- as.numeric(NA)
 
 # settings used for calculating gini
-bin_size <- 100000              # bp size of bins
-bin_summary_method <- "sum"     # how heritability is combined for a bin
+bin_size <- 100000              # base pair (bp) size of bins
+bin_summary_method <- "sum"     # how gvc is combined within a bin
 threshold_zero_padding <- TRUE  # whether traits with less than 100 significant
-                                # bins are padded with 0 heritability bins
-threshold <- 100                # top # of bins (by heritability) to include
+                                # bins are padded with 0 gvc bins
+threshold <- 100                # top # of bins (by gvc) to include
 average_window <- bin_size      # size of averaging window for recombination rate
 
-# loads recombination map
+# loads recombination map, filters out X chromosome, converts chr to number
 rec_map <- as_tibble(fread(loc_map)) %>% filter(Chr != "chrX")
 rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
 
@@ -151,38 +154,47 @@ top100bin_SNPs <- tibble(
   A2 = as.character(),
   prive_code = as.character()
 )
+# loops through each trait
 for (i in 1:nrow(traits_table)) {
+  # reads summary file (effect sizes + allele frequencies) for a trait
   code <- traits_table$prive_code[i]
   filename <- paste0(code,"-betasAFs.txt")
   loc_summary_file <- paste0(dir_summary_files,filename)
   
   summary_file <- as_tibble(fread(loc_summary_file)) %>%
-    bin_snps(bin_size)
+    bin_snps(bin_size) # sets a bin ID to each SNP based on chromosome position
+                       # and bin size
   n_snps <- nrow(summary_file)
   
+  # loops through each ancestry
   for (ancestry in ancestries) {
+    # extracts ancestry-specific allele frequencies
     col_AF <- paste0("VarFreq_",ancestry)
     col_gini <- paste0("gini_",ancestry)
     pop_data <- summary_file %>% drop_na() %>%
       get_h2("effect_weight", col_AF)
     
+    # summarizes gvc within each bin
     pop_data_binned <- get_data_binned(pop_data, bin_summary_method)
-    
     n_significant_bins <- nrow(pop_data_binned)
     
+    # pads bin list with extra 0 gvc bins if # of bins is less than threshold
     if (threshold < n_significant_bins) {
       h2_list <- (pop_data_binned %>% filter(rank <= threshold))$h2
     } else {
       h2_list <- c(rep(0, (threshold - n_significant_bins)), pop_data_binned$h2)
     }
+    # obtains gini from list of bin gvc's
     pop_gini <- get_gini(h2_list)
     
+    # adds gini-related info to traits table
     traits_table[i, "n_snps"] <- n_snps
     traits_table[i, "n_significant_bins"] <- n_significant_bins
     traits_table[i,col_gini] <- pop_gini
     
+    # extra info extracted from UK-specific data for future analyses
     if (ancestry == "United") {
-      # extracts significant SNPs
+      # extracts the significant SNPs (within top 100 bins)
       pop_data_binned <- pop_data_binned %>%
         arrange(-h2) %>%
         filter(row_number() <= threshold) %>%
@@ -199,42 +211,54 @@ for (i in 1:nrow(traits_table)) {
         filter(bin_ID %in% pop_data_binned$bin_ID) %>%
         arrange(bin_ID)
       
+      # loops through chromosome
       recombination_vector <- c()
       for (chr_i in 1:22) {
+        # extracts recombination map and significant SNPs for chromosome
         rec_map_chr <- rec_map %>% filter(Chr == chr_i)
         pop_data_chr <- pop_data %>% filter(chrom == chr_i)
+        # skips to next chromosome if no significant SNPs found in chromosome
         if (nrow(pop_data_chr) == 0) {next}
+        # loops through each significant SNP
         for (j in 1:nrow(pop_data_chr)) {
+          # sets window size around SNP to average out recombination in
           start_region <- (pop_data_chr$chr_position[j]) - average_window/2
           end_region <- (pop_data_chr$chr_position[j]) + average_window/2 - 1
           rec_map_bins <- rec_map_chr %>% filter(Begin <= end_region,
                                                  End > start_region)
-          
+          # manually sets recombination rate to 0 or NA if no recombination data
+          # found in window surrounding SNP
           if (nrow(rec_map_bins) == 0) {SNP_cMperMb <- NA}
           else if (max(rec_map_bins$cMperMb) == 0) {SNP_cMperMb <- 0}
           else {
+            # calculates proportion of window size occupied by each region in
+            # the recombination rate map
             rec_map_bins$Begin[1] <- start_region
             rec_map_bins$End[nrow(rec_map_bins)] <- end_region
             rec_map_bins$bp_range <- (rec_map_bins$End - rec_map_bins$Begin)
             rec_map_bins$bp_range <- rec_map_bins$bp_range / sum(rec_map_bins$bp_range)
             
+            # calculates recombination rate as an arithmetic mean weighted by
+            # proportion of window size occupied by recombination region
             SNP_cMperMb <- sum(rec_map_bins$bp_range * rec_map_bins$cMperMb) / sum(rec_map_bins$bp_range)
-            
-            
           }
           recombination_vector <- c(recombination_vector,SNP_cMperMb)
         }
       }
       
+      # sets trait recombination rate as arithmetic mean of significant SNPs'
+      # recombination rate weighted by gvc
       pop_data$cMperMb <- recombination_vector
       trait_cMperMb <- sum(pop_data$h2 * pop_data$cMperMb, na.rm=TRUE) / sum(pop_data$h2)
       traits_table$cMperMb[i] <- trait_cMperMb
     }
   }
+  # prints progress to console
   print(paste0("Trait ", code,
                " :: Gini_United = ", round(traits_table$gini_United[i],3),
                " :: Rec Rate = ", round(traits_table$cMperMb[i],3)))
 }
+# saves list of significant SNPs
 loc_out <- paste0(dir_out,"top100bin_SNPs.txt")
 write.table(top100bin_SNPs, loc_out, row.names = FALSE, quote = FALSE, sep="\t")
 # saves a version of this file with just rsIDs for PLINK to use later
@@ -244,7 +268,7 @@ write.table(top100bin_SNPs %>% select(rsID, A2) %>% distinct(),
 
 ## Calculating portability indices ####
 
-# obtains mean PC distance between ancestries
+# obtains mean PC distance between ancestries, similar to Prive et al.
 prive_PC <- pop_centers %>% select(PC1:PC16)
 prive_dist_to_UK <- as.matrix(dist(prive_PC))[,1]
 distances <- tibble(
@@ -272,6 +296,7 @@ for (code in codes) {
       relative_pcor = pcor / (traits_table %>% filter(prive_code == code))$pcor_United[1]
     ) %>% left_join(distances, by="population")
   
+  # extracts best fit line slope, standard error, and p-value
   lin_model <- lm((temp$relative_pcor - 1) ~ 0 + temp$prive_dist_to_UK)
   portability_index <- summary(lin_model)$coefficients[1,1]
   portability_index_SE <- summary(lin_model)$coefficients[1,2]
@@ -288,13 +313,13 @@ traits_table$portability_index <- portability_indices
 traits_table$portability_index_SE <- portability_index_SEs
 traits_table$portability_index_P <- portability_index_Ps
 
-## Calculating F_statistic (PRS divergence) ####
+## Calculating F_statistic (PGS divergence) ####
 
 # THIS IS DONE IN THE NEXT TWO SCRIPTS:
 # encode_sampled_genotypes.sh
 # calculate_divergence.R
 
 
-## Saving the traits_table
+## Saving the traits_table to system
 loc_out <- paste0(dir_out,"traits_table.txt")
 write.table(traits_table,loc_out,sep="\t",quote=FALSE,row.names=FALSE)

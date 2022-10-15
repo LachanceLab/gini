@@ -38,14 +38,10 @@ betas <- tibble(
   A1=as.character(),
   A2=as.character()
 )
-for (code in codes) {
-  betas[,as.character(code)] <- as.numeric()
-}
+for (code in codes) {betas[,as.character(code)] <- as.numeric()}
 temp <- as_tibble(fread(paste0(dir_AFs,"pop_ALL_AFs_chr22.frq.strat")))
 col_ancestries <- paste0("VarFreq_",levels(as.factor(temp$CLST)))
-for (col_ancestry in col_ancestries) {
-  betas[,col_ancestry] <- as.numeric()
-}
+for (col_ancestry in col_ancestries) {betas[,col_ancestry] <- as.numeric()}
 
 # defines function for cases where the reference alleles are mismatched between
 # PLINK's allele frequencies and Prive et al.'s betas
