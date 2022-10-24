@@ -17,7 +17,6 @@ library(igraph)
 setwd("./")
 
 #Location of the traits table 
-loc_table <- "./Desktop/Gini-PGS/traits_table.txt" #Remove in final version
 loc_table <- "../generated_data/traits_table.txt" 
 
 # reads traits table
@@ -157,11 +156,11 @@ plot_network <- function(threshold) {
 }
 
 
-#Determine final output location - Generate Sup. Figure 1
+#Determine final output location - Generate Sup. Figure 2
 pdf(file = "FigureS2.pdf", width = 8, height = 8)
 par(mfrow = c(2, 2))
 
-#Loop through thresholds
+#Loop through thresholds - Can be changed to desired thresholds
 threshold_vector <- c(5, 10, 15, 20)
 for (num in threshold_vector) {
   plot_network(num)
