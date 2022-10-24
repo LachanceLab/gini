@@ -17,7 +17,6 @@ library(igraph)
 setwd("./")
 
 #Location of the traits table 
-loc_table <- "./Desktop/Gini-PGS/traits_table.txt" #Remove in final version
 loc_table <- "../generated_data/traits_table.txt" 
 
 # reads traits table
@@ -90,7 +89,6 @@ traits_table$group <- traits_table$group_consolidated
 traits_table <- traits_table[, 1:(ncol(traits_table)-1)]
 
 #Load the table with top bins for each trait 
-top_bins_loc <- "./Desktop/bin_overlap.csv" #Remove this in final version
 top_bins_loc <- "../generated_data/bin_overlap.csv" 
 top_bins_table <- import(file=top_bins_loc, header = TRUE)
 
@@ -208,7 +206,7 @@ plot1 <- ggplot(data=df_all, aes(x=overlap)) +
 plot1 <- plot1 + scale_x_continuous(name="Number of Overlapping Bins", breaks=c(0, 20, 40, 60, 80, 100))
 #print(plot1)
 
-ggsave(file = "~/Desktop/Figure1A.pdf", units = c("in"), width=8, height=2.5, dpi=300, plot1)
+ggsave(file = "Figure1A.pdf", units = c("in"), width=8, height=2.5, dpi=300, plot1)
 
 #Section specific to the network graph
 #Keep variable with original values for matrix prior to applying threshold
@@ -227,7 +225,7 @@ coul <- c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6")
 my_color <- coul[as.numeric(as.factor(traits_table$group))]
 
 #Determine final output location 
-pdf(file = "~/Desktop/Figure1B.pdf", width = 8, height = 8)
+pdf(file = "Figure1B.pdf", width = 8, height = 8)
 set.seed(1)
 #Plot with labels 
 #plot(network, vertex.color = my_color, vertex.size=3, vertex.label.color="black", edge.color="black", vertex.label = traits_table$description, vertex.label.cex=0.5, edge.curved=0, edge.width = 2)
@@ -235,7 +233,7 @@ set.seed(1)
 #Plot without labels
 plot(network, vertex.color = my_color, vertex.size=3, edge.color="black", vertex.label = NA, edge.curved=0, edge.width = 2)
 
-#legend(x=-1.35, y=1.3, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
+legend(x=-1.35, y=1.3, legend=levels(as.factor(traits_table$group)), fill = coul, border = "black")
 
 dev.off()
 
