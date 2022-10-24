@@ -12,7 +12,6 @@ library(data.table)
 setwd("./")
 
 #Location of the traits table 
-loc_table <- "./Desktop/Gini-PGS/traits_table.txt" #Remove in final version
 loc_table <- "../generated_data/traits_table.txt" 
 
 # reads traits table
@@ -83,7 +82,7 @@ traits_table$group <- traits_table$group_consolidated
 #Slight edit to traits_table 
 traits_table <- traits_table %>% mutate(trait_type = ifelse(as.character(trait_type) == "binary", "Binary", as.character(trait_type))) %>% mutate(trait_type = ifelse(as.character(trait_type) == "quantitative", "Quantitative", as.character(trait_type)))
 
-#Load gvc file 
+#Calculate gvc proportion and correlation
 traits_table$summed_gvc100_raw <- (traits_table$summed_gvc100_raw / traits_table$total_summed_gvc)
 
 x1 <- traits_table$gini_United
