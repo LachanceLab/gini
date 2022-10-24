@@ -17,7 +17,6 @@ library(igraph)
 setwd("./")
 
 #Location of the traits table 
-loc_table <- "./Desktop/Gini-PGS/traits_table.txt" #Remove in final version
 loc_table <- "../generated_data/traits_table.txt" 
 
 # reads traits table
@@ -90,7 +89,6 @@ traits_table$group <- traits_table$group_consolidated
 traits_table <- traits_table[, 1:(ncol(traits_table)-1)]
 
 #Load the table with top bins for each trait 
-top_bins_loc <- "./Desktop/Gini-PGS/bin_overlap.csv" #Remove this in final version
 top_bins_loc <- "../generated_data/bin_overlap.csv" 
 top_bins_table <- import(file=top_bins_loc, header = TRUE)
 
@@ -221,6 +219,7 @@ plot4 <- ggplot(data=df4,aes(x=overlap)) + scale_x_continuous(name="", breaks=c(
   geom_histogram(fill = "#00B0F6", alpha = 1.0, binwidth=1) + xlim(-1,100) + ggtitle("Physical measures") + theme(axis.text=element_text(size=10), axis.title=element_text(size=10), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(colour = "black", size=0.25, fill=NA)) + annotate("text",  x=Inf, y = Inf, label = paste("Mean = ", round(mean_physical,2)), vjust=4, hjust=1.5) + annotate("text",  x=Inf, y = Inf, label = "Max = 94", vjust=6, hjust=2)
 #print(plot4)
 
+#Arrange into 4 row plot
 g <- ggarrange(plot1, plot2, plot3, plot4, ncol = 1, nrow=4)
 print(g)
 
