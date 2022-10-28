@@ -167,7 +167,6 @@ r2 <- cor2$estimate[[1]]
 
 # makes plot
 gini_PLR_LDP_p <- ggplot(traits_table2, aes(x=gini_United,y=gini_United_LDP, color=trait_type)) +
-  #geom_abline(slope=1,intercept=0, size = 1*sf) +
   geom_point(alpha = 0.75, size = 4*sf) +
   geom_smooth(method = "lm", size = 2*sf, se=FALSE) +
   scale_x_continuous(expand=c(0.01,0.01), limits=c(0,1)) +

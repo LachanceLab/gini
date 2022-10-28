@@ -1,6 +1,6 @@
 # print_tables.R
 
-# This script produces the tables found in the publication
+# This script produces the tables found in the publication and supplemental
 
 ### Libraries and directories ####
 library(tidyverse)
@@ -37,8 +37,10 @@ traits_table <- as_tibble(fread(loc_table))
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 rounding_decimals <- 3
 
+# makes list of low prevalence binary traits to exclude from table
 low_prevalence <- (traits_table %>% filter(prevalence < 0.01))$description
 
+# defines Table S1
 big_table <- traits_table %>%
   filter(!(description %in% low_prevalence)) %>%
   select(description, trait_type, group_consolidated, all_of(vars)) %>%
@@ -49,6 +51,7 @@ big_table <- traits_table %>%
   group_by(trait_type) %>%
   arrange(group_consolidated, description)
 
+# converts Table S1 into a GT table
 big_table_gt <- gt(big_table) %>%
   gt_theme() %>%
   summary_rows(
@@ -85,19 +88,20 @@ big_table_gt <- gt(big_table) %>%
   tab_header(
     title = paste("The Six Summary Statistics for", nrow(big_table),"Traits"),
     subtitle = "Full table provided in Github repository"
-  ) #%>%
-  #tab_footnote(footnote = "* = binary trait with low prevalence (< 0.01), unreliable results")
+  )
 
+# saves Table S1 to system
 big_table_gt
 gtsave(big_table_gt, "table_big_table.png", dir_out, vwidth = 1000, zoom = 1, cliprect=c(0,0,1000,6000))
-big_table_gt <- big_table_gt %>%
-  tab_options(table.font.size = "90%")
+# for some reason, text gets cutoff when printed as a PDF
+big_table_gt <- big_table_gt %>% tab_options(table.font.size = "90%") 
 gtsave(big_table_gt, "table_big_table.pdf", dir_out, vwidth = 1000, zoom = 1, cliprect=c(0,0,1000,6000))
 
 
 #### Makes High and Low Gini Table ####
 n_show <- 10 # shows top n_show highest and top n_show lowest
 
+# temporary table with just the gini, trait, and rank 
 temp <- traits_table %>%
   filter(prevalence > 0.01 | trait_type=="quantitative") %>%
   arrange(gini_United) %>%
@@ -105,8 +109,10 @@ temp <- traits_table %>%
          rank = row_number()) %>%
   select(rank, description,gini_United)
 
+# total number of traits (should be 177)
 N_total <- nrow(temp)
 
+# makes Table 1
 table1 <- temp %>%
   filter(rank <= n_show) %>%
   add_row(
@@ -118,6 +124,7 @@ table1 <- temp %>%
   ) %>%
   mutate(rank = ifelse(rank==0,"",as.character(rank)))
 
+# converts Table 1 into a GT table
 table1gt <- gt(table1) %>%
   gt_theme() %>%
   cols_label(
@@ -133,6 +140,7 @@ table1gt <- gt(table1) %>%
     title = paste0(n_show," Lowest and ",n_show," Highest Gini Traits")
   )
 
+# saves Table 1 to system
 table1gt
 gtsave(table1gt, paste0("table1_ALL",n_show,".png"), dir_out, vwidth = 2160, vheight=1620)
 print(paste("Made gini table for",the_trait_type,"traits"))
@@ -141,17 +149,19 @@ print(paste("Made gini table for",the_trait_type,"traits"))
 #### Makes High and Low Divergence Table ####
 n_show <- 10 # shows top n_show highest and top n_show lowest
 
+# temporary table with just the divergence, trait, and rank
 temp <- traits_table %>%
   filter(prevalence > 0.01 | trait_type=="quantitative") %>%
   mutate(f_stat = log10(f_stat)) %>%
   arrange(f_stat) %>%
   mutate(f_stat = as.character(formatC(f_stat,rounding_decimals,format="f")),
          rank = row_number()) %>%
-  select(rank, description,
-         f_stat)
+  select(rank, description, f_stat)
 
+# total number of traits (should be 177)
 N_total <- nrow(temp)
 
+# makes Table 2
 table2 <- temp %>%
   filter(rank <= n_show) %>%
   add_row(
@@ -163,6 +173,7 @@ table2 <- temp %>%
   ) %>%
   mutate(rank = ifelse(rank==0,"",as.character(rank)))
 
+# converts Table 2 into a GT table
 table2gt <- gt(table2) %>%
   gt_theme() %>%
   cols_label(
@@ -178,6 +189,7 @@ table2gt <- gt(table2) %>%
     title = paste0(n_show," Lowest and ",n_show," Highest Divergence Traits")
   )
 
+# saves Table 2 to system
 table2gt
 gtsave(table2gt, paste0("table2_ALL",n_show,".png"), dir_out, vwidth = 1160, vheight=1620)
 print(paste("Made divergence table"))
