@@ -43,15 +43,18 @@ dir_out <- "../generated_data/"
 # sets location to files used later in the script
 loc_phenotype_description <- paste0(dir_prive_data,"phenotype-description.csv")
 loc_phenotype_info <- paste0(dir_prive_data,"phenotype-info.csv")
-loc_pcor <-paste0(dir_prive_data,"pred-cor-PLR.csv")
-loc_short_labels <- ("../code_part1/trait_short_labels.csv")
+loc_pcor <- paste0(dir_prive_data,"pred-cor-PLR.csv")
+loc_short_labels <- ("../code_part1/traits_list.txt")
+#loc_short_labels <- ("../code_part1/trait_short_labels.csv")
 
 ## Joining trait descriptions ####
 
-# not all traits listed in Prive et al.'s tables had betas computed, so we are
-# going to restrict the tables to just the taits that do have them
-filenames <- dir(dir_summary_files)
-codes <- str_replace(filenames,"-betasAFs.txt","")
+# not all traits listed in Prive et al.'s tables had betas/PGS computed, so we
+# are going to restrict the tables to just the traits that do have them
+pcors <- as_tibble(fread(loc_pcor))
+codes <- pcors$pheno %>% unique
+#filenames <- dir(dir_summary_files)
+#codes <- str_replace(filenames,"-betasAFs.txt","")
 
 # coef_to_liab function from package bigsnpr
 coef_to_liab <- function (K_pop, K_gwas = 0.5) {
@@ -66,7 +69,7 @@ short_labels <- as_tibble(fread(loc_short_labels))
 # defines table containing all info related to each trait
 traits_table <- prive_description %>%
   filter(phenotype %in% codes) %>%
-  left_join(short_labels %>% select(-description), by="phenotype") %>%
+  left_join(short_labels %>% select(-group, -description), by="phenotype") %>%
   left_join(prive_info, by=c("phenotype"="pheno")) %>%
   dplyr::rename("prive_code"="phenotype") %>%
   mutate(trait_type = ifelse(is.na(N),"binary","quantitative"),
@@ -74,8 +77,15 @@ traits_table <- prive_description %>%
   rowwise() %>% mutate(
          N_total = sum(N,N_case,N_control,na.rm=TRUE),
          liab_coef = coef_to_liab(prevalence, prevalence))
+
+# filter traits to just those with prevalence > 1% (binary only) and respective
+# panUKB GWAS data
+traits_table <- traits_table %>%
+  filter((prevalence > 0.01) | (trait_type=="quantitative")) %>%
+  filter(!is.na(wget))
+
 # the descriptions column in the short_labels file has Americanized spellings
-traits_table$description <- short_labels$description
+#traits_table$description <- short_labels$description
 
 # consolidates trait groups into fewer categories
 groups_consolidated <- list(
@@ -101,7 +111,6 @@ psychological_codes <- c("fluid_intelligence")
 traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidated"] <- "lifestyle/psychological"
 
 ## Joining Prive et al.'s partial correlation values ####
-pcors <- as_tibble(fread(loc_pcor))
 pcors$pop <- gsub('United Kingdom', 'United', pcors$pop)
 pcors <- pcors %>%
   rename(Nsize = N) %>%
