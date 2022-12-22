@@ -2,6 +2,8 @@
 *.RData
 *.png
 generated_figures/
+generated_data/
+!generated_data/traits_table.txt
 prive_data/
 other_data/
 *.Rout
