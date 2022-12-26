@@ -1,11 +1,12 @@
 *.Rhistory
 *.RData
+*.Rout
+*.out
+*.err
+
 *.png
 generated_figures/
 generated_data/
 !generated_data/traits_table.txt
-prive_data/
-other_data/
-*.Rout
-*.out
-*.err
+input_data/PGS-effects-PLR.csv
+

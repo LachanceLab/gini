@@ -19,7 +19,7 @@ dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
 sf <- 2
 p_adjust_method <- "fdr" # used in p.adjust()
-print_mode <- "pdf" # set to either "png" or "pdf"
+print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
 vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
 
@@ -41,7 +41,8 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-traits_table <- as_tibble(fread(loc_table)) %>%
+#traits_table <- as_tibble(fread(loc_table)) %>%
+traits_table <- traits_table %>%
   filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
   select(prive_code, description, trait_type, group, group_consolidated, prevalence,
          all_of(vars)) %>%

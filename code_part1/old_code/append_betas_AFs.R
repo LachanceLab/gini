@@ -14,12 +14,11 @@ setwd("./")
 
 # sets location to allele frequencies generated in previous PLINK script
 dir_AFs <- "../generated_data/allele_frequencies/"
-# sets location to Prive et al.'s list of SNPs and their betas, from:
-# 'PGS-effects-PLR.csv.gz' <-- unzip first
-# https://figshare.com/articles/dataset/Effect_sizes_for_215_polygenic_scores/14074760/2?file=31619351
-loc_betas <- "../prive_data/PGS-effects-PLR.csv"
 # sets directory where all the betas+appended AFs will be saved to
 dir_out <- "../generated_data/betas_and_AFs/"
+# sets location to Prive et al.'s list of SNPs and their betas, check input_data
+# README for more information
+loc_betas <- "../input_data/PGS-effects-PLR.csv"
 
 
 ### Code ----
