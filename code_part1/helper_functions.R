@@ -51,14 +51,13 @@ get_data_binned = function(data_snp_bins, method="sum") {
     )
   return(data_binned)
 }
-# function that calculates and appends individual SNP gvc (called h2 in early stages
-# of project) using betas and allele frequencies
-get_h2 <- function(data_AF, col_beta, col_AF) {
+# function that calculates and appends individual SNP gvc using betas and allele frequencies
+get_gvc <- function(data_AF, col_beta, col_AF) {
   pop_data <- data_AF %>%
     mutate(
-      h2 = 2 * data_AF[[col_beta]]**2 * data_AF[[col_AF]] * (1 - data_AF[[col_AF]]) 
+      gvc = 2 * data_AF[[col_beta]]**2 * data_AF[[col_AF]] * (1 - data_AF[[col_AF]]) 
     ) %>%
-    arrange(h2) %>%
+    arrange(gvc) %>%
     mutate(
       rank = nrow(data_AF) - row_number() + 1,
       rank_percentile = rank / max(rank)
@@ -68,6 +67,7 @@ get_h2 <- function(data_AF, col_beta, col_AF) {
 # function that computes the gini of a list of values in ascending order (can't be all zeros either)
 get_gini <- function(list) {
   # Adapted from: https://github.com/oliviaguest/gini
+  list <- sort(list)
   n <- length(list)
   numerator <- 0
   for (i in 1:n) {numerator <- numerator + (2*i - n - 1)*list[i]}

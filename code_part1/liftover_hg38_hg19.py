@@ -4,7 +4,7 @@
 
 # 4 - liftover.py
 
-# Converts the genetic map in `../other_data/aau1043_datas3` from GRCh38 to GRCh37 to match existing data
+# Converts the genetic map in `../input_data/aau1043_datas3` from GRCh38 to GRCh37 to match existing data
 # Must be unzipped from the supplemental files (aau1043_datas3.gz) of:
 # https://doi.org/10.1126/science.aau1043
 # Script outputs to the same directory as the input file
