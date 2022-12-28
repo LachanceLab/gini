@@ -191,6 +191,7 @@ for (i in 1:nrow(traits_table)) {
   
   # gets gvc for each SNP
   sf <- get_gvc(sf, col_beta, col_AF)
+  sum_gvc_all <- sum(sf$gvc)
   
   # pads bin list with extra 0 gvc bins if # of bins is less than threshold
   if ((threshold < nrow(sf)) | !(threshold_zero_padding)) {
@@ -199,9 +200,12 @@ for (i in 1:nrow(traits_table)) {
     gvc_list <- c(rep(0, (threshold - nrow(sf))), sf$gvc)
   }
   
+  sum_gvc_top <- sum(gvc_list)
   # calculates gini
   gini <- get_gini(gvc_list)
   traits_table[i,"gini_panUKB"] <- gini
+  traits_table[i,"sum_gvc_all"] <- sum_gvc_all
+  traits_table[i,"sum_gvc_top"] <- sum_gvc_top
   
   # extracts the top significant SNPs
   sf_top <- sf %>% filter(rank <= threshold) %>%
@@ -327,6 +331,11 @@ traits_table$portability_index_P <- portability_index_Ps
 # encode_sampled_genotypes.sh
 # calculate_divergence.R
 
+## temporary solution: import old divergence statistics:
+traits_table2 <- as_tibble(fread("../generated_data/traits_table_ASHG.txt"))
+traits_table2 <- traits_table2 %>% select(prive_code, f_stat) %>%
+  mutate(log_F = log10(f_stat))
+traits_table <- traits_table %>% left_join(traits_table2, by="prive_code")
 
 ## Saving the traits_table to system
 loc_out <- paste0(dir_out,"traits_table.txt")

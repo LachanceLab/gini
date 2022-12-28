@@ -21,7 +21,7 @@ sf <- 2
 p_adjust_method <- "fdr" # used in p.adjust()
 print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
-vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
+vars <- c("ldpred2_h2","cMperMb","gini_panUKB","pcor_United","portability_index", "log_F")
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
@@ -41,8 +41,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-#traits_table <- as_tibble(fread(loc_table)) %>%
-traits_table <- traits_table %>%
+traits_table <- as_tibble(fread(loc_table)) %>%
   filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
   select(prive_code, description, trait_type, group, group_consolidated, prevalence,
          all_of(vars)) %>%
@@ -50,9 +49,9 @@ traits_table <- traits_table %>%
   
 
 # Caps maximum portability to 0
-traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0
+#traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0
 # Log10 transforms F-statistic (D statistic)
-traits_table[,"f_stat"] <- log10(traits_table[,"f_stat"])
+#traits_table[,"f_stat"] <- log10(traits_table[,"f_stat"])
 
 # Helper function for writing p-values onto plots
 color_p_significant <- "gray5"
@@ -149,10 +148,10 @@ upper_corr_p <- function(data,mapping) {
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
   "cMperMb" = c("Recombination","Rate~(R)"),
-  "gini_United" = c("Gini","(G[list(100,UK)])"),
+  "gini_panUKB" = c("Gini","(G[list(100,UK)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
-  "f_stat" = c("Divergence","(D)"))
+  "log_F" = c("Divergence","(D)"))
 diag_label <- function(data, mapping) {
   variable <- as.character(quo_get_expr(mapping[[1]]))
   
@@ -181,12 +180,12 @@ get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
   lims
 }
 axis_lims <- list(
-  "f_stat" = get_axis_lims(traits_table$f_stat),
+  "log_F" = get_axis_lims(traits_table$log_F),
   "cMperMb"= get_axis_lims(traits_table$cMperMb),
   "ldpred2_h2" = c(0,1),
   "pcor_United"= get_axis_lims(traits_table$pcor_United,0),
   "portability_index"= get_axis_lims(traits_table$portability_index,NA,0),
-  "gini_United"=c(0,1))
+  "gini_panUKB"=c(0,1))
 lm_scatterplot <- function(data, mapping) {
   # determines two variables being plotted
   x <- as.character(quo_get_expr(mapping[[1]]))
