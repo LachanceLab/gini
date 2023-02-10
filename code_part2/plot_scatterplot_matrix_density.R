@@ -13,7 +13,7 @@ library(rlang)
 setwd("./")
 
 # sets location of trait_table generated in part1
-loc_table <- "../generated_data/traits_table.txt"
+loc_table <- "../generated_data/traits_table2.txt"
 # sets directory for generated figures
 dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
@@ -42,16 +42,20 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
 traits_table <- as_tibble(fread(loc_table)) %>%
-  filter(prevalence >= 0.01 | trait_type=="quantitative") %>%
-  select(prive_code, description, trait_type, group, group_consolidated, prevalence,
-         all_of(vars)) %>%
+  mutate(cMperMb = log10(cMperMb))
+traits_table2 <- traits_table %>%
+  #filter(PGS_trait_type != GWAS_trait_type) %>%
+  filter(PGS_trait_type == "quantitative",
+         GWAS_trait_type == "quantitative") %>%
+  select(prive_code, description, PGS_trait_type, GWAS_trait_type, group,
+         group_consolidated, prevalence, all_of(vars)) %>%
   mutate(lifestyle = group_consolidated == "lifestyle/psychological")
   
 
 # Caps maximum portability to 0
-#traits_table[which(traits_table$portability_index > 0),"portability_index"] <- 0
+#traits_table2[which(traits_table2$portability_index > 0),"portability_index"] <- 0
 # Log10 transforms F-statistic (D statistic)
-#traits_table[,"f_stat"] <- log10(traits_table[,"f_stat"])
+#traits_table2[,"f_stat"] <- log10(traits_table2[,"f_stat"])
 
 # Helper function for writing p-values onto plots
 color_p_significant <- "gray5"
@@ -92,8 +96,8 @@ for (i in 1:(length(vars) - 1)) {
   x <- vars[[i]]
   for (j in (i+1):(length(vars))) {
     y <- vars[[j]]
-    cor1 <- cor.test(as.data.frame(traits_table)[,x],
-                     as.data.frame(traits_table)[,y])
+    cor1 <- cor.test(as.data.frame(traits_table2)[,x],
+                     as.data.frame(traits_table2)[,y])
     cor_value <- cor1$estimate[[1]]
     p_value <- cor1$p.value
     p_values_cor <- p_values_cor %>% add_row(
@@ -180,11 +184,11 @@ get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
   lims
 }
 axis_lims <- list(
-  "log_F" = get_axis_lims(traits_table$log_F),
-  "cMperMb"= get_axis_lims(traits_table$cMperMb),
+  "log_F" = get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$log_F),
+  "cMperMb"= get_axis_lims((traits_table %>% filter(GWAS_trait_type=="quantitative"))$cMperMb),
   "ldpred2_h2" = c(0,1),
-  "pcor_United"= get_axis_lims(traits_table$pcor_United,0),
-  "portability_index"= get_axis_lims(traits_table$portability_index,NA,0),
+  "pcor_United"= get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$pcor_United,0),
+  "portability_index"= get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$portability_index,NA,0),
   "gini_panUKB"=c(0,1))
 lm_scatterplot <- function(data, mapping) {
   # determines two variables being plotted
@@ -203,7 +207,8 @@ lm_scatterplot <- function(data, mapping) {
   p <- ggplot(data=data, mapping=mapping) +
     geom_line(stat="smooth", method="lm", color="dodgerblue1", formula=y~x, size=1*sf, alpha=linealpha) +
     geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
-    geom_point(alpha=0.75,shape=19, size=1.75*sf) +
+    geom_point(#aes(color=GWAS_trait_type),
+               alpha=0.75,shape=19, size=1.75*sf, ) +
     xlim(xlims) +
     ylim(ylims) +
     theme_light()
@@ -221,7 +226,7 @@ lm_scatterplot <- function(data, mapping) {
 scplot_textsize <- 20
 
 # makes actual scatterplot matrix
-p_sc <- ggpairs(data = traits_table,
+p_sc <- ggpairs(data = traits_table2,
                 columns=vars,
                 lower = list(continuous = lm_scatterplot),
                 diag = list(continuous = diag_label),
@@ -257,12 +262,12 @@ for (i in 1:2) {
   if (i==1) {
     var_comparison <- "group"
     # restricts to just quantitative to demonstrate relationships accurately
-    subtable1 <- traits_table %>% filter(trait_type=="quantitative") %>% filter(lifestyle) %>% select(vars)
-    subtable2 <- traits_table %>% filter(trait_type=="quantitative") %>% filter(!lifestyle) %>% select(vars)
+    subtable1 <- traits_table2 %>% filter(lifestyle) %>% select(vars)
+    subtable2 <- traits_table2 %>% filter(!lifestyle) %>% select(vars)
   } else if (i==2) {
     var_comparison <- "type"
-    subtable1 <- traits_table %>% filter(trait_type=="binary") %>% select(vars)
-    subtable2 <- traits_table %>% filter(trait_type=="quantitative") %>% select(vars)
+    subtable1 <- traits_table %>% filter(PGS_trait_type=="binary", GWAS_trait_type=="binary") %>% select(vars)
+    subtable2 <- traits_table2 %>% select(vars)
   }
   
   for (j in 1:length(vars)) {
@@ -291,8 +296,8 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   # gets adjusted p-values from Wilcoxon Ranked Test already done
   if (the_var_comparison=="group") {
     col_var <- "lifestyle"
-    data <- data %>% filter(trait_type=="quantitative")}
-  else if (the_var_comparison=="type") {col_var <- "trait_type"}
+    #data <- data %>% filter(GWAS_trait_type=="quantitative")
+  } else if (the_var_comparison=="type") {col_var <- "GWAS_trait_type"}
   
   adj_p_value <- (p_values_WRT %>%
                     filter(var_measurement==the_var_measurement,
@@ -348,7 +353,8 @@ for (var_comparison in c("group","type")) {
   for (i in 1:length(vars)) {
     var_measurement <- vars[i]
     
-    density_plot <- dual_density(data=traits_table,
+    density_plot <- dual_density(data=ifelse(var_comparison=="group",traits_table2,
+                                             traits_table %>% filter(PGS_trait_type==GWAS_trait_type)),
                                  mapping = aes(x=!!as.name(var_measurement)),
                                  var_comparison, var_measurement)
     
@@ -419,7 +425,7 @@ for (i in 1:length(vars)) {
   p_text_list <- p_value_to_text(adj_p_value)
   text <- p_text_list[[1]]
   
-  p <- ggplot(traits_table %>% filter(trait_type=="binary"),
+  p <- ggplot(traits_table %>% filter(PGS_trait_type == "binary", GWAS_trait_type=="binary"),
               aes(x = !!as.name(var_measurement), y = log10(prevalence))) +
     geom_line(stat="smooth", method="lm", color="#F8766D", formula=y~x, size=1*sf, alpha=linealpha) +
     geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +

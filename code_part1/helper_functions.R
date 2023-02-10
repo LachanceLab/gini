@@ -5,6 +5,7 @@
 
 ### Libraries and directories ####
 library(tidyverse)
+library(gwas.winners.curse)
 
 ## Functions ###
 
@@ -75,4 +76,15 @@ get_gini <- function(list) {
   
   G <- numerator/denominator
   return(G)
+}
+# function that pads a list with extra zeros in the beginning to meet some threshold
+# number of elements N, or returns a list of the N highest values in the list
+pad_zeros <- function(list, threshold) {
+  list <- sort(list)
+  if (length(list) >= threshold) {
+    list_out <- list[(length(list)-threshold+1):length(list)]
+  } else {
+    list_out <- c(rep(0, threshold - length(list)), list)
+  }
+  return(list_out)
 }

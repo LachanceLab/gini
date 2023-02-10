@@ -10,4 +10,5 @@ generated_data/
 !generated_data/traits_table.txt
 input_data/PGS-effects-PLR.csv
 input_data/aau1043_datas*
+input_data/ldscores/*
 
