@@ -8,7 +8,10 @@
 generated_figures/
 generated_data/
 !generated_data/traits_table.txt
+!generated_data/top_indep_SNPs.txt
+!generated_data/top_indep_SNPs_rsIDs.txt
 input_data/PGS-effects-PLR.csv
 input_data/aau1043_datas*
 input_data/ldscores/*
+input_data/ldscores_OLD
 

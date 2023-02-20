@@ -29,3 +29,7 @@ Click on each folder on Github to see further README information
 - `R: webshot`
 - `R: webshot: PhantomJS`
 - `R: gt`
+
+
+## Contact
+The bulk of this code was written by Nuno R. G. Carvalho. Feel free to contact regarding any questions.
