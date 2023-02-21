@@ -112,6 +112,7 @@ for (i in 1:nrow(traits_table)) {
       
       if (adj_status == "") {
         col_traitLD <- paste0("traitLD_unadj_",pop)
+        traitLD <- log10(traitLD)
       } else {
         col_traitLD <- paste0("traitLD_adj_",pop)
       }

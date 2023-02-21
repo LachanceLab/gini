@@ -13,7 +13,7 @@ library(rlang)
 setwd("./")
 
 # sets location of trait_table generated in part1
-loc_table <- "../generated_data/traits_table2.txt"
+loc_table <- "../generated_data/traits_table.txt"
 # sets directory for generated figures
 dir_out <- "../generated_figures/"
 # sets scaling factors for image output. Default = 2
@@ -21,7 +21,7 @@ sf <- 2
 p_adjust_method <- "fdr" # used in p.adjust()
 print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
-vars <- c("ldpred2_h2","cMperMb","gini_panUKB","pcor_United","portability_index", "log_F")
+vars <- c("ldpred2_h2","traitLD_unadj_EUR","gini_panUKB","pcor_United","portability_index", "log_F")
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
@@ -41,8 +41,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-traits_table <- as_tibble(fread(loc_table)) %>%
-  mutate(cMperMb = log10(cMperMb))
+traits_table <- as_tibble(fread(loc_table)) #%>% mutate(cMperMb = log10(cMperMb))
 traits_table2 <- traits_table %>%
   #filter(PGS_trait_type != GWAS_trait_type) %>%
   filter(PGS_trait_type == "quantitative",
@@ -151,7 +150,8 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  "cMperMb" = c("Recombination","Rate~(R)"),
+  #"cMperMb" = c("Recombination","Rate~(R)"),
+  "traitLD_unadj_EUR" = c("Trait~LD","Scores~(L[EUR])"),
   "gini_panUKB" = c("Gini","(G[list(100,UK)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
@@ -185,7 +185,8 @@ get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
 }
 axis_lims <- list(
   "log_F" = get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$log_F),
-  "cMperMb"= get_axis_lims((traits_table %>% filter(GWAS_trait_type=="quantitative"))$cMperMb),
+  #"cMperMb"= get_axis_lims((traits_table %>% filter(GWAS_trait_type=="quantitative"))$cMperMb),
+  "traitLD_unadj_EUR"= get_axis_lims((traits_table %>% filter(GWAS_trait_type=="quantitative"))$traitLD_unadj_EUR),
   "ldpred2_h2" = c(0,1),
   "pcor_United"= get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$pcor_United,0),
   "portability_index"= get_axis_lims((traits_table %>% filter(PGS_trait_type=="quantitative"))$portability_index,NA,0),
@@ -248,7 +249,7 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","Recombination Rate","Gini","PGS Accuracy","Portability","Divergence")
+column_labels <- c("Heritability","Trait LD Score","Gini","PGS Accuracy","Portability","Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
 # for each of the 6 measurements
@@ -352,11 +353,17 @@ for (var_comparison in c("group","type")) {
   density_plots <- list()
   for (i in 1:length(vars)) {
     var_measurement <- vars[i]
+    #print(paste(var_comparison, var_measurement))
     
-    density_plot <- dual_density(data=ifelse(var_comparison=="group",traits_table2,
-                                             traits_table %>% filter(PGS_trait_type==GWAS_trait_type)),
-                                 mapping = aes(x=!!as.name(var_measurement)),
-                                 var_comparison, var_measurement)
+    if (var_comparison=="group") {
+      density_plot <- dual_density(data=traits_table2,
+                                   mapping = aes(x=!!as.name(var_measurement)),
+                                   var_comparison, var_measurement)
+    } else {
+      density_plot <- dual_density(data=traits_table %>% filter(PGS_trait_type==GWAS_trait_type),
+                                   mapping = aes(x=!!as.name(var_measurement)),
+                                   var_comparison, var_measurement)
+    }
     
     density_plots[[i]] <- density_plot
   }
