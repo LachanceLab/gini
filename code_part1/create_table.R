@@ -7,8 +7,8 @@
 ### Libraries and directories ####
 library(tidyverse)
 library(data.table)
-source("../code_part1/helper_functions.R")
-source("../code_part1/winners_curse_functions.R")
+source("../code_part1/helper_functions/helper_functions.R")
+source("../code_part1/helper_functions/winners_curse_functions.R")
 
 # sets working directory
 setwd("./")

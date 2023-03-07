@@ -85,7 +85,7 @@ r2_cutoff=0.2
 
 # runs Rscript to filter full summary statistics to just independent SNPs
 echo [${i} ${phenotype}] Filtering GWAS summary file for independent SNPs
-Rscript filter_GWAS_independent.R ${phenotype}
+Rscript helper_functions/filter_GWAS_independent.R ${phenotype}
 
 # removes all trait-specific files except for filtered GWAS summary statistics
 rm -v ${dir_sf}${phenotype}_raw_sf.*

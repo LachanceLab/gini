@@ -1,3 +1,9 @@
+# 7 - reformat_ldscores.sh
+
+# Cleans up the raw full LD scores from PanUKBB.
+
+cd "../input_data/ldscores/"
+
 for pop in EUR AFR AMR CSA EAS MID; do
   echo $pop
   awk 'BEGIN {

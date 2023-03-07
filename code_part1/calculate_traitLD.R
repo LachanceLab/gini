@@ -1,11 +1,13 @@
-# calculate_traitLD - calculates a weighted average LD score for SNPs associated with a trait
+# calculate_traitLD.R
+
+# calculates a weighted average LD score for SNPs associated with a trait, as
+# well as metrics of population-differences in LD scores
 
 
 ## libraries and directories
 
 library(tidyverse)
 library(data.table)
-
 
 dir_generated_data <- "../generated_data/"
 dir_sf <- paste0(dir_generated_data,"panUKB_sf/")
