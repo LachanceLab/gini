@@ -18,7 +18,7 @@ pops <- c("EUR","AFR","AMR","CSA","EAS","MID")
 ldscores_already_ajdusted <- TRUE
 # set to TRUE if code has already been run once, meaning that the top independent
 # SNPs file already contains the ld-scores for each SNP
-top_SNPs_already_appended <- FALSE
+top_SNPs_already_appended <- TRUE
 
 ## Functions
 
@@ -78,8 +78,14 @@ if (!top_SNPs_already_appended) {
     
   }
   
-  #fwrite(top_indep_SNPs, loc_top_indep_SNPs, sep="\t")
+  fwrite(top_indep_SNPs, loc_top_indep_SNPs, sep="\t")
 }
+
+SNP_LD_gvc <- tibble(
+  SNP = as.character(),
+  gvc = as.numeric(),
+  ld_score_adj_EUR = as.numeric()
+)
 
 for (i in 1:nrow(traits_table)) {
   code <- traits_table$prive_code[i]
@@ -103,27 +109,62 @@ for (i in 1:nrow(traits_table)) {
               by=c("chrom","chr_position","A1","A2")) %>%
     select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_")))
   
+  SNP_LD_gvc <- SNP_LD_gvc %>% add_row(
+    sf_top %>% select(SNP, gvc, ld_score_adj_EUR = ld_score_adj_EUR)
+  )
+  
   for (pop in pops) {
     for (adj_status in c("","_adj")) {
       col_ldscore <- paste0("ld_score",adj_status,"_",pop)
       sf_top_pop <- sf_top %>%
         select(gvc,ld_score = !!as.name(col_ldscore)) %>% drop_na()
       traitLD <- weighted.mean(sf_top_pop$ld_score, sf_top_pop$gvc)
-      
+
       if (adj_status == "") {
         col_traitLD <- paste0("traitLD_unadj_",pop)
         traitLD <- log10(traitLD)
       } else {
         col_traitLD <- paste0("traitLD_adj_",pop)
       }
-      
+
       traits_table[i,col_traitLD] <- traitLD
       print(paste(i, code, pop, col_traitLD, round(traitLD,2)))
     }
   }
   
 }
+
+### LD_differential
+LD_table <- traits_table %>%
+  select(prive_code, starts_with("traitLD_unadj_")) %>%
+  pivot_longer(
+    cols = paste0("traitLD_unadj_",pops),
+    names_to = "pop",
+    names_prefix = "traitLD_unadj_",
+    values_to="traitLD_unadj") %>%
+  group_by(prive_code) %>%
+  summarize(traitLD_unadj_mean = mean(traitLD_unadj),
+            traitLD_unadj_sd = sd(traitLD_unadj),
+            traitLD_unadj_max = max(traitLD_unadj),
+            traitLD_unadj_min = min(traitLD_unadj),
+            traitLD_unadj_range = traitLD_unadj_max - traitLD_unadj_min,
+            traitLD_unadj_ratio = traitLD_unadj_max / traitLD_unadj_min
+            )
+
+traits_table <- traits_table %>% left_join(LD_table, by="prive_code")
+
+traits_table %>% group_by(group_consolidated) %>%
+  summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean),
+            traitLD_unadj_range = mean(traitLD_unadj_range),
+            traitLD_unadj_ratio = mean(traitLD_unadj_ratio))
+
+
 fwrite(traits_table, loc_traits_table, sep="\t")
 
+
+cor.test(log10(SNP_LD_gvc$gvc), (SNP_LD_gvc$ld_score_adj_EUR))
+ggplot(SNP_LD_gvc, aes(x=ld_score_adj_EUR, y=log10(gvc))) +
+  geom_point(alpha=0.05) +
+  geom_smooth(method="lm")
 
 #traits_table <- traits_table %>% select(-starts_with("traitLD_"))
