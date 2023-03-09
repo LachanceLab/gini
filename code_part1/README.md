@@ -8,8 +8,8 @@ The code in this folder is used to create a master traits table containing all t
 2. `download_clump_panUKB.sh`: Bash script that extracts panUKB GWAS summary statistics for each trait, uses PLINK to LD prune for independent GWAS hits, and saves the file using the Rscript in `filter_GWAS_independent.R`.
 3. `liftover_hg38_hg19.py`: Converts the genetic map in `../input_data/aau1043_datas3` from GRCh38 to GRCh37 to match existing data. Used in supplementary analyses
 4. `create_table.R`: Creates a table containing all relevant trait information: PGS accuracy, heritability, Gini coefficient, recombination rate, portability index, and PGS divergence.
-5. `encode_sampled_genotypes.sh`: Runs a PLINK command that encodes the genotypes of the sampled indviduals for the top 100 bin SNPs so that `calculate_divergence.R` can easily run
-6. `calculate_divergence.R`: Calculates the PRS for each sampled individual and calculates the level of divergence in PRS using the ANOVA F-stat
+5. `calculate_divergence.sh`: Computes PGS for all traits on a subset of the UKB population using PLINK2
+6. `calculate_divergence.R`: Combines the chromosome-specific PGS data from `calculate_divergence.sh` and computes an ANOVA by ancestry on PGS for each trait
 7. `reformat_ldscores.sh`: Cleans up the raw full LD scores from PanUKBB found in `~/input_data/ldscores/`.
 8. `calculate_traitLD.R`: calculates a weighted average LD score for SNPs associated with a trait, as well as metrics of population-differences in LD scores
 

@@ -17,6 +17,7 @@ Click on each folder on Github to see further README information
 
 ### Analysis
 - `PLINK 1.9`
+- `PLINK 2`
 - `Python`
 - `Python: liftOver`
 - `R`
