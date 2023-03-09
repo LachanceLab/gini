@@ -150,15 +150,15 @@ LD_table <- traits_table %>%
             traitLD_unadj_max = max(traitLD_unadj),
             traitLD_unadj_min = min(traitLD_unadj),
             traitLD_unadj_range = traitLD_unadj_max - traitLD_unadj_min,
-            traitLD_unadj_ratio = traitLD_unadj_max / traitLD_unadj_min
-            )
+            traitLD_unadj_ratio = traitLD_unadj_max / traitLD_unadj_min,
+            traitLD_unadj_CoV = traitLD_unadj_sd / traitLD_unadj_mean)
 
 traits_table <- traits_table %>% left_join(LD_table, by="prive_code")
 
 traits_table %>% group_by(group_consolidated) %>%
   summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean),
             traitLD_unadj_range = mean(traitLD_unadj_range),
-            traitLD_unadj_ratio = mean(traitLD_unadj_ratio))
+            traitLD_unadj_CoV = mean(traitLD_unadj_CoV))
 
 
 fwrite(traits_table, loc_traits_table, sep="\t")
