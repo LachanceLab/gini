@@ -28,7 +28,8 @@ loc_bfile=${dir_1kG}'phase3kG'
 loc_LD_IIDs='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/EUR_IDs.txt'
 
 # sets directory where panUKB GWAS summary statistics will be saved
-dir_sf='../generated_data/panUKB_sf/'
+dir_generated_data='../generated_data/'
+dir_sf=${dir_generated_data}'panUKB_sf/'
 # sets path to the traits_list.txt file
 loc_traits_list='../input_data/traits_list.txt'
 
@@ -99,23 +100,23 @@ echo DONE WITH ALL TRAITS
 
 ####
 # Make list of all unique SNPs in the above summary files
-output_file="../generated_data/all_sf_SNPs.txt"
+loc_out_SNPs=${dir_generated_data}"all_sf_SNPs.txt"
 
 # Loop through each file in the directory
 for file in "${dir_sf}"*.txt; do
   echo ${file}
   # Extract the chromosome and position columns and append to output file
-  awk 'BEGIN {FS="\t"; OFS=" "} NR>1 {print $3, $4, $4, 1}' "${file}" >> "${output_file}"
+  awk 'BEGIN {FS="\t"; OFS=" "} NR>1 {print $3, $4, $4, 1}' "${file}" >> "${loc_out_SNPs}"
 done
 
 # Remove duplicate rows from the output file
-sort "${output_file}" | uniq > "${output_file}.tmp"
-mv "${output_file}.tmp" "${output_file}"
+sort "${loc_out_SNPs}" | uniq > "${loc_out_SNPs}.tmp"
+mv "${loc_out_SNPs}.tmp" "${loc_out_SNPs}"
 
 ####
 # Groups 1kG samples by continent
 loc_sample_info=${dir_1kG}'20130606_sample_info.txt'
-loc_out=${dir_1kG}'1kG_continent_IDs.txt'
+loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
 
 awk -F"\t" 'BEGIN{OFS=" "}
     NR>1 {
@@ -124,5 +125,19 @@ awk -F"\t" 'BEGIN{OFS=" "}
         else if ($2=="CDX" || $2=="CHB" || $2=="CHS" || $2=="JPT" || $2=="KHV") {continent="EAS"}
         else if ($2=="CEU" || $2=="FIN" || $2=="GBR" || $2=="IBS" || $2=="TSI") {continent="EUR"}
         else if ($2=="CLM" || $2=="MXL" || $2=="PEL" || $2=="PUR") {continent="AMR"}
-        print $1, $1, continent
-    }' ${loc_sample_info} > ${loc_out}
+        print 0, $1, continent
+    }' ${loc_sample_info} > ${loc_out_IDs}
+    
+    
+####
+# Gets continent-specific allele frequencies within 1kG for significant SNPs
+~/plink1_9/plink \
+--bfile ${loc_bfile} \
+--allow-extra-chr \
+--extract range ${loc_out_SNPs} \
+--keep ${loc_out_IDs} \
+--within ${loc_out_IDs} \
+--freq \
+--out ${dir_generated_data}AFs_1kG_sfSNPs
+
+
