@@ -174,7 +174,7 @@ for (i in 1:nrow(traits_table)) {
   sf <- sf_raw <- as_tibble(fread(loc_summary_file)) %>%
     group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup() %>%
     filter(chr != "X") %>%
-    mutate(chr = as.numeric(chrom))
+    mutate(chr = as.numeric(chr))
   n_sig_SNPs <- nrow(sf)
   
   # filters to SNPs with known allele frequencies

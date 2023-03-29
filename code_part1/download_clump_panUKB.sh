@@ -95,3 +95,18 @@ done
 
 echo DONE WITH ALL TRAITS
 
+
+# Make list of all unique SNPs in the above summary files
+output_file="../generated_data/all_sf_SNPs.txt"
+
+# Loop through each file in the directory
+for file in "${dir_sf}"*.txt; do
+  echo ${file}
+  # Extract the chromosome and position columns and append to output file
+  awk 'BEGIN {FS="\t"; OFS=" "} NR>1 {print $3, $4, $4, 1}' "${file}" >> "${output_file}"
+done
+
+# Remove duplicate rows from the output file
+sort "${output_file}" | uniq > "${output_file}.tmp"
+mv "${output_file}.tmp" "${output_file}"
+
