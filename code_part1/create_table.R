@@ -140,6 +140,7 @@ threshold <- 100                # top # of bins (by gvc) to include
 average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
 
+pops <- c("AFR","AMR","CSA","EAS","EUR","MID")
 # loads recombination map, filters out X chromosome, converts chr to number
 rec_map <- as_tibble(fread(loc_map)) #%>% filter(Chr != "chrX")
 #rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
@@ -161,6 +162,17 @@ pop_ginis <- tibble(
   af_pop = as.character(),
   gini = as.numeric()
 )
+# loads up 1kG allele frequencies
+loc_1kG <- paste0(dir_out,"AFs_1kG_sfSNPs.frq.strat")
+AFs_1kG <- as_tibble(fread(loc_1kG)) %>% select(-MAC, -NCHROBS) %>%
+  pivot_wider(
+    names_from = "CLST",
+    names_prefix = "AF_1kG_",
+    values_from = "MAF",
+  ) %>% 
+  separate(SNP, c(NA,"BP"),sep=":", remove=FALSE) %>%
+  mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
+
 # loops through each trait
 for (i in 1:nrow(traits_table)) {
   
@@ -174,13 +186,15 @@ for (i in 1:nrow(traits_table)) {
   sf <- sf_raw <- as_tibble(fread(loc_summary_file)) %>%
     group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup() %>%
     filter(chr != "X") %>%
-    mutate(chr = as.numeric(chr))
-  n_sig_SNPs <- nrow(sf)
+    mutate(chr = as.numeric(chr)) %>%
+    select(-ends_with("MID")) # removed since not found in 1kG
   
-  # filters to SNPs with known allele frequencies
-  sf <- sf %>% filter(if_all(starts_with("af_"), ~!is.na(.)),
-                      pval < pval_cutoff)
-  n_sig_SNPs_allpops <- nrow(sf)
+  if (!("AF_1kG_EUR" %in% colnames(sf))) {
+    sf <- sf_raw <- sf %>%
+      left_join(AFs_1kG %>% select(CHR, BP, starts_with("AF_1kG_")),
+                by=c("chr"="CHR","pos"="BP"))
+  }
+  n_sig_SNPs <- nrow(sf)
   
   # gets list of populations GWASs were done on
   beta_pops <- substring(colnames(sf %>% select(starts_with("beta_"))),6)
@@ -188,7 +202,7 @@ for (i in 1:nrow(traits_table)) {
   trait_type <- "binary"
   if (length(af_pops) == 0) {
     trait_type <- "quantitative"
-    af_pops <- substring(colnames(sf %>% select(starts_with("af_"))),4)
+    af_pops <- substring(colnames(sf %>% select(starts_with("af_", ignore.case = FALSE))),4)
   }
   af_pops <- af_pops[af_pops != "meta_hq"]
   
@@ -201,8 +215,6 @@ for (i in 1:nrow(traits_table)) {
     col_se <- "se_EUR"
   }
   
-  traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
-  traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   # gets list of populations GWASs were done on
   GWAS_pops <- substring(colnames(sf %>% select(starts_with("beta_"))),6)
   
@@ -245,6 +257,22 @@ for (i in 1:nrow(traits_table)) {
       sf[,col_AF] <- (n_cases * sf[,af_cases_pop] + n_controls * sf[,af_controls_pop]) / n_total
     }
     
+    if (pop != "meta") {
+      col_1kG_AF <- paste0("AF_1kG_",pop)
+      sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_1kG_AF]
+    }
+  }
+  
+  
+  # filters to SNPs with known allele frequencies
+  sf <- sf %>% filter(if_all(starts_with("af_", ignore.case = FALSE), ~!is.na(.)),
+                      pval < pval_cutoff)
+  n_sig_SNPs_allpops <- nrow(sf)
+  
+  traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
+  traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
+  
+  for (pop in af_pops) { 
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
         select(discovery.beta = !!enquo(col_beta),
@@ -259,10 +287,8 @@ for (i in 1:nrow(traits_table)) {
     sf <- get_gvc(sf, col_beta, col_AF)
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sum_gvc_all <- sum(sf$gvc)
-      sf_raw <- sf_raw%>%
-        select(-starts_with("WC_beta."),
-               -starts_with("AF."),
-               -starts_with("gvc.")) %>%
+      sf_raw <- sf_raw %>%
+        select(-c("WC_beta","AF","gvc")) %>%
         left_join(sf %>% select(SNP, WC_beta = !!enquo(col_beta), AF = !!enquo(col_AF), gvc),
                   by="SNP")
       write.table(sf_raw, loc_summary_file, sep="\t", quote=FALSE, row.names = FALSE)
@@ -424,10 +450,10 @@ traits_table$portability_index_P <- portability_index_Ps
 # calculate_divergence.R
 
 ## temporary solution: import old divergence statistics:
-traits_table2 <- as_tibble(fread("../generated_data/traits_table_ASHG.txt"))
-traits_table2 <- traits_table2 %>% select(prive_code, f_stat) %>%
-  mutate(log_F = log10(f_stat))
-traits_table <- traits_table %>% left_join(traits_table2, by="prive_code")
+# traits_table2 <- as_tibble(fread("../generated_data/traits_table_ASHG.txt"))
+# traits_table2 <- traits_table2 %>% select(prive_code, f_stat) %>%
+#   mutate(log_F = log10(f_stat))
+# traits_table <- traits_table %>% left_join(traits_table2, by="prive_code")
 
 ## Saving the traits_table to system
 loc_out <- paste0(dir_out,"traits_table.txt")
