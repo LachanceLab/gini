@@ -22,7 +22,8 @@ dir_plink="~/plink1_9"
 # sets path to 1000 Genomes binary files (or another prefered LD panel, preferably
 # composed of just Europeans). Leave as just the prefix before the chromosome
 # number and the file extensions
-loc_bfile='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/phase3kG'
+dir_1kG='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/'
+loc_bfile=${dir_1kG}'phase3kG'
 # sets path to text file containing FID and IID of individuals to use in LD panel
 loc_LD_IIDs='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/EUR_IDs.txt'
 
@@ -96,6 +97,7 @@ done
 echo DONE WITH ALL TRAITS
 
 
+####
 # Make list of all unique SNPs in the above summary files
 output_file="../generated_data/all_sf_SNPs.txt"
 
@@ -110,3 +112,17 @@ done
 sort "${output_file}" | uniq > "${output_file}.tmp"
 mv "${output_file}.tmp" "${output_file}"
 
+####
+# Groups 1kG samples by continent
+loc_sample_info=${dir_1kG}'20130606_sample_info.txt'
+loc_out=${dir_1kG}'1kG_continent_IDs.txt'
+
+awk -F"\t" 'BEGIN{OFS=" "}
+    NR>1 {
+        if ($2=="ACB" || $2=="ASW" || $2=="ESN" || $2=="GWD" || $2=="LWK" || $2=="MSL" || $2=="YRI") {continent="AFR"}
+        else if ($2=="BEB" || $2=="GIH" || $2=="ITU" || $2=="PJL" || $2=="STU") {continent="SAS"}
+        else if ($2=="CDX" || $2=="CHB" || $2=="CHS" || $2=="JPT" || $2=="KHV") {continent="EAS"}
+        else if ($2=="CEU" || $2=="FIN" || $2=="GBR" || $2=="IBS" || $2=="TSI") {continent="EUR"}
+        else if ($2=="CLM" || $2=="MXL" || $2=="PEL" || $2=="PUR") {continent="AMR"}
+        print $1, $1, continent
+    }' ${loc_sample_info} > ${loc_out}
