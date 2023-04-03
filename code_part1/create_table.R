@@ -187,6 +187,7 @@ for (i in 1:nrow(traits_table)) {
     group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup() %>%
     filter(chr != "X") %>%
     mutate(chr = as.numeric(chr)) %>%
+    unique() %>%
     select(-ends_with("MID")) # removed since not found in 1kG
   
   if (!("AF_1kG_EUR" %in% colnames(sf))) {
@@ -248,7 +249,6 @@ for (i in 1:nrow(traits_table)) {
       n_controls <- 0
     }
     
-    #n_controls <- rowSums(slice %>% select(starts_with("n_controls_")), na.rm=TRUE)
     n_total <- n_cases + n_controls
     
     if (!(col_AF %in% colnames(sf))) {
@@ -291,7 +291,7 @@ for (i in 1:nrow(traits_table)) {
         select(-c("WC_beta","AF","gvc")) %>%
         left_join(sf %>% select(SNP, WC_beta = !!enquo(col_beta), AF = !!enquo(col_AF), gvc),
                   by="SNP")
-      write.table(sf_raw, loc_summary_file, sep="\t", quote=FALSE, row.names = FALSE)
+      fwrite(sf_raw, loc_summary_file, sep="\t")
     }
     
     gvc_list <- pad_zeros(sf$gvc, threshold)
@@ -388,7 +388,7 @@ traits_table <- traits_table %>% left_join(pop_ginis2, by = "prive_code")
 # saves list of significant SNPs
 top_indep_SNPs <- top_indep_SNPs %>% distinct()
 loc_out <- paste0(dir_out,"top_indep_SNPs.txt")
-write.table(top_indep_SNPs, loc_out, row.names = FALSE, quote = FALSE, sep="\t")
+fwrite(top_indep_SNPs, loc_out, sep="\t")
 # saves a version of this file with just rsIDs for PLINK to use later
 loc_out <- paste0(dir_out,"top_indep_SNPs_rsIDs.txt")
 write.table(top_indep_SNPs %>% select(SNP, A2) %>% distinct(),
@@ -446,15 +446,9 @@ traits_table$portability_index_P <- portability_index_Ps
 ## Calculating F_statistic (PGS divergence) ####
 
 # THIS IS DONE IN THE NEXT TWO SCRIPTS:
-# encode_sampled_genotypes.sh
+# calculate_divergence.sh
 # calculate_divergence.R
-
-## temporary solution: import old divergence statistics:
-# traits_table2 <- as_tibble(fread("../generated_data/traits_table_ASHG.txt"))
-# traits_table2 <- traits_table2 %>% select(prive_code, f_stat) %>%
-#   mutate(log_F = log10(f_stat))
-# traits_table <- traits_table %>% left_join(traits_table2, by="prive_code")
 
 ## Saving the traits_table to system
 loc_out <- paste0(dir_out,"traits_table.txt")
-write.table(traits_table,loc_out,sep="\t",quote=FALSE,row.names=FALSE)
+fwrite(traits_table,loc_out,sep="\t")

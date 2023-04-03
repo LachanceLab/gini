@@ -5,8 +5,6 @@
 loc_bfile_prefix="/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/UKB_BED_AFTER_QC_removed182IDs_chr"
 # sets path to list of IIDs sampled to be used in calculation, generated in assign_ancestries_to_IIDs.R
 loc_keep="../generated_data/pop_sampled_IIDs.txt"
-# set path to list of GWAS SNP weights
-dir_betas="../generated_data/betas_and_AFs/"
 # sets directory where encoded genotype files will be outputted to
 dir_out="../generated_data/polygenic_scores/"
 

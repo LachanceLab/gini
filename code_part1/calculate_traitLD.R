@@ -1,4 +1,4 @@
-# calculate_traitLD.R
+# 8 - calculate_traitLD.R
 
 # calculates a weighted average LD score for SNPs associated with a trait, as
 # well as metrics of population-differences in LD scores
@@ -14,13 +14,13 @@ dir_sf <- paste0(dir_generated_data,"panUKB_sf/")
 dir_input_data <- "../input_data/"
 dir_ldscores <- paste0(dir_input_data, "ldscores/")
 
-pops <- c("EUR","AFR","AMR","CSA","EAS","MID")
+pops <- c("EUR","AFR","AMR","CSA","EAS")
 # set to TRUE if code has already been run once, meaning that the LD scores
 # have already been adjusted for AF (saves time)
 ldscores_already_ajdusted <- TRUE
 # set to TRUE if code has already been run once, meaning that the top independent
 # SNPs file already contains the ld-scores for each SNP
-top_SNPs_already_appended <- TRUE
+top_SNPs_already_appended <- FALSE
 
 ## Functions
 
@@ -164,9 +164,9 @@ traits_table %>% group_by(group_consolidated) %>%
 fwrite(traits_table, loc_traits_table, sep="\t")
 
 
-cor.test(log10(SNP_LD_gvc$gvc), (SNP_LD_gvc$ld_score_adj_EUR))
-ggplot(SNP_LD_gvc, aes(x=ld_score_adj_EUR, y=log10(gvc))) +
-  geom_point(alpha=0.05) +
-  geom_smooth(method="lm")
+# cor.test(log10(SNP_LD_gvc$gvc), (SNP_LD_gvc$ld_score_adj_EUR))
+# ggplot(SNP_LD_gvc, aes(x=ld_score_adj_EUR, y=log10(gvc))) +
+#   geom_point(alpha=0.05) +
+#   geom_smooth(method="lm")
 
 #traits_table <- traits_table %>% select(-starts_with("traitLD_"))
