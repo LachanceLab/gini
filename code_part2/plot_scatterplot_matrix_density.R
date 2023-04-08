@@ -153,7 +153,7 @@ var_labels <- list(
   #"cMperMb" = c("Recombination","Rate~(R)"),
   #"traitLD_unadj_EUR" = c("Trait~LD","Scores~(L[EUR])"),
   "traitLD_unadj_CoV" = c("Trait~LD","CV"),
-  "gini_panUKB" = c("Gini","(G[list(100,UK)])"),
+  "gini_panUKB" = c("Gini","(G[list(100)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
   "log_F" = c("Divergence","(D)"))

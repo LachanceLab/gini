@@ -12,26 +12,26 @@ library(tidyverse)
 library(ggpubr)
 library(ggrepel)
 library(data.table)
-source("../code_part1/helper_functions.R")
+source("../code_part1/helper_functions/helper_functions.R")
 
 # sets working directory
 setwd("./")
 
 # Sets the directory of the summary files with appended allele frequencies
-dir_sfs <- "../generated_data/betas_and_AFs/"
+dir_sfs <- "../generated_data/panUKB_sf/"
 # location to a file we generated that vastly speeds up the process of binning
 # can be obtained from our github under ~/generated_data/
 loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
-# Sets the location of the sampled individuals' PRSs
-loc_PRSs <- "../generated_data/pop_sampled_PRSs.txt"
+# Sets the location of the sampled individuals' PGSs
+loc_PGSs <- "../generated_data/pop_sampled_PGSs.txt"
 # sets the location of the traits table
 loc_table <- "../generated_data/traits_table.txt"
-# sets directory of outputted figuresN
+# sets directory of outputted figures
 dir_out <- "../generated_figures/"
 
 # sets scaling factors for image output. Default = 2
 sf <- 2
-print_mode <- "pdf" # set to either "png" or "pdf"
+print_mode <- "png" # set to either "png" or "pdf"
 
 ### Functions ####
 
@@ -47,63 +47,48 @@ common_theme <- theme_light() +
   axis.text = element_text(size=11*sf),
   legend.title = element_text(size=12*sf),
   legend.text = element_text(size=10*sf),
-  plot.margin = unit(0.25*sf*c(1,1,1,1), "cm")
+  plot.margin = unit(0.25*sf*c(1,1.2,1,1), "cm")
 )
 
 # function that reads a trait's summary file and extracts the needed columns for plotting
-cleanup_data_lorenz <- function(code, ancestry="United", threshold=100, threshold_padding=TRUE, bin_size=100000, bin_summary_method="sum") {
-  col_AF <- paste0("VarFreq_",ancestry)
-  loc_sf <- paste0(dir_sfs,code,"-betasAFs.txt")
+cleanup_data_lorenz <- function(code, threshold=100) {
+  loc_sf <- paste0(dir_sfs,code,"_sf_indep.txt")
   
-  # calculates cumulutative sum of gvc (referred to as h2 here) 
   sf <- as_tibble(fread(loc_sf)) %>%
-    bin_snps(bin_size) %>%
-    get_h2("effect_weight", col_AF) %>%
-    get_data_binned(bin_summary_method) %>%
-    arrange(-h2) %>%
-    filter(row_number() <= threshold) %>%
-    arrange(h2) %>%
-    mutate(h2_csum = cumsum(h2)) %>%
-    select(h2,h2_csum)
-  sf$h2_cshare <- sf$h2_csum / sf$h2_csum[nrow(sf)]
-  # pads with extra bins of 0 gvc when the # of bins is less than the threshold
-  if ((nrow(sf) < threshold) & (threshold_padding)) {
+    select(gvc) %>% drop_na() %>%
+    arrange(-gvc) %>%
+    filter(row_number() <= threshold) %>% arrange(gvc) %>%
+    mutate(gvc_csum = cumsum(gvc))
+  sf$gvc_cshare <- sf$gvc_csum / sf$gvc_csum[nrow(sf)]
+  if (nrow(sf) < threshold) {
     sf <- sf %>%
       add_row(
-        h2 = rep(0, threshold - nrow(sf)),
-        h2_csum = rep(0, threshold - nrow(sf)),
-        h2_cshare = rep(0, threshold - nrow(sf)),
+        gvc = rep(0, threshold - nrow(sf)),
+        gvc_csum = rep(0, threshold - nrow(sf)),
+        gvc_cshare = rep(0, threshold - nrow(sf)),
       ) %>% arrange(h2)
   }
-  # determines bin x-axis (rank percentile)
   sf <- sf %>% mutate(percentile = dplyr::row_number() / nrow(sf))
-  sf
 }
 # function that actually plots Lorenz curve
-plot_lorenz <- function(code, sfile, ancestry="United") {
+plot_lorenz <- function(code, sfile) {
   
   slice <- traits_table %>% filter(prive_code == code)
   description <- slice$description
-  # adjusts the long descriptions for better aesthetics
-  if (code == "geek_time") {description <- "Time spent watching TV or using PC"
-  } else if (code == "celiac_gluten") {description <- "Celiac disease/gluten sensitivity"
-  }
-  gini <- slice[1,paste0("gini_",ancestry)]
-  
-  if (ancestry=="United") {ancestry <- "UK"}
+  gini <- slice$gini_panUKB
   
   title <- paste0(description)
   # sets proper math formatting for plot annotation
   gini_text <- formatC(gini[[1]],digits=3, format="f")
-  text <- paste0("G[100][','][UK]==",gini_text)
+  text <- paste0("G[100]==",gini_text)
   
   # makes Lorenz curve plot
-  gg<-ggplot(sfile, aes(x=100*percentile, y=h2_cshare)) +
+  gg <- ggplot(sfile, aes(x=100*percentile, y=gvc_cshare)) +
     geom_col(position = position_nudge(-0.5), fill="gray20", width=0.8) +
     geom_abline(slope=1/100,color="dodgerblue1", size=0.5*sf) +
     labs(title=title) +
-    xlab(expression(paste("Percentile of summed ",italic(gvc)," for each bin"))) +
-    ylab(expression(paste("Cumulative sum of bin ",italic(gvc)))) +
+    xlab(expression(paste("Percentile of SNP ",italic(gvc)))) +
+    ylab(expression(paste("Cumulative sum of SNP ",italic(gvc)))) +
     common_theme +
     scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
     scale_y_continuous(limits=c(0,1), expand = c(0,0)) +
@@ -138,6 +123,7 @@ plot_portability <- function(code) {
   slice <- traits_table %>% filter(prive_code == code)
   m <- slice$portability_index
   description <- slice$description
+  if (code == "haemoglobin") {description <- "Hemoglobin concentration"}
   # properly formats annotation 
   text <- paste0("m==",formatC(m, digits=5, format="f"))
   
@@ -161,7 +147,7 @@ plot_portability <- function(code) {
                        breaks = c(0,0.25,0.5,0.75,1),
                        label = format(c(0,0.25,0.5,0.75,1))) +
     annotate("text",
-             x=0.5*(xrange[2]-xrange[1]), #x=0.975*(xrange[2]-xrange[1]),
+             x=0.5*(xrange[2]-xrange[1]),
              y = 0.985*(yrange[2]-0), label = text,
              parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
@@ -170,27 +156,16 @@ plot_portability <- function(code) {
 plot_divergence <- function(code) {
   
   # extracts info about trait
-  PRS_trait <- PRSs %>% select(Ancestry = ancestry, PRS = all_of(code))
+  PGS_trait <- PGSs %>% select(Ancestry = "pop", PGS = all_of(code))
   slice <- traits_table %>% filter(prive_code == code)
   description <- slice$description[1]
-  f_stat <- slice$f_stat[1]
-  p_value <- slice$p_value_f[1]
-  logfstat <- formatC(log10(f_stat),digits=2, format="f")
-  
-  # converts p-value to more legible text
-  if (p_value < 1E-320) {
-    p_text <- "< 1E-320"
-    p_text <- bquote(D==.(logfstat)~~~~~p-value<10^{-320})
-  } else {
-    p_text <- formatC(p_value,format="E", digits=2)
-    p_text_stem <- as.numeric(substr(p_text,1,4))
-    p_text_exp <- as.numeric(substr(p_text,6,10))
-    p_text <- bquote(D==.(logfstat)~~~~~p-value==.(p_text_stem)%*%10^{.(p_text_exp)})
-  }
+  if (code == "darker_skin0") {description <- "Skin color"}
+  log_F <- slice$log_F[1]
+  logfstat <- formatC(log_F,digits=2, format="f")
   text <- paste0("D==",logfstat)
   
   # plots divergence
-  gg<-ggplot(PRS_trait, aes(x=PRS, fill=Ancestry)) +
+  gg<-ggplot(PGS_trait, aes(x=PGS, fill=Ancestry)) +
     geom_density(color='#e9ecef', alpha=0.6, position='identity') +
     common_theme +
     theme(legend.position = "bottom",
@@ -237,35 +212,27 @@ distances <- tibble(
 distances$ancestry <- str_replace(distances$ancestry,"United Kingdom","United")
 
 # reads the PGSs and changes "United" to "UK"
-PRSs <- as_tibble(fread(loc_PRSs)) %>% filter(ancestry != "Ashkenazi")
-PRSs[PRSs$ancestry=="United","ancestry"] <- "UK"
-
-# settings used for plotting Lorenz. Deviation from these (other than ancestry)
-# will lead to the displayed Gini score on the plot being incorrect
-ancestry <- "United"
-threshold <- 100
-threshold_padding <- FALSE
-bin_size <- 100000
-bin_summary_method <- "sum"
+PGSs <- as_tibble(fread(loc_PGSs)) %>% filter(pop != "Ashkenazi")
+PGSs[PGSs$pop=="United","pop"] <- "UK"
 
 ## makes Lorenz plots
-low_gini_code <- low_gini_code <- "geek_time"
-low_gini_sf <- cleanup_data_lorenz(low_gini_code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
-low_gini_plot <- plot_lorenz(low_gini_code, low_gini_sf, ancestry)
+low_gini_code <- "neuroticism"
+low_gini_sf <- cleanup_data_lorenz(low_gini_code)
+low_gini_plot <- plot_lorenz(low_gini_code, low_gini_sf)
 
-high_gini_code <- "celiac_gluten" # 275.1
-high_gini_sf <- cleanup_data_lorenz(high_gini_code, ancestry, threshold, threshold_padding, bin_size, bin_summary_method)
-high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf, ancestry)
+high_gini_code <- "log_bilirubin"
+high_gini_sf <- cleanup_data_lorenz(high_gini_code)
+high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf)
 
 ## makes portability plots
-low_m_code <- "log_bilirubin"
+low_m_code <- "cholesterol"
 low_m_plot <- plot_portability(low_m_code)
 
 high_m_code <- "haemoglobin"
 high_m_plot <- plot_portability(high_m_code)
 
 ## makes divergence plots
-low_D_code <- "208" #250.1
+low_D_code <- "log_platelet_crit"
 low_D_plot <- plot_divergence(low_D_code) +
   theme(legend.justification = c(0,1),
         legend.position = c(0.01, 0.99),
@@ -276,12 +243,17 @@ high_D_plot <- plot_divergence(high_D_code) +
   theme(legend.position = "none")
 
 ## arranges all plots together
-plots <- list(low_gini_plot , high_gini_plot,
-              low_m_plot , high_m_plot,
-              low_D_plot, high_D_plot)
+# plots <- list(low_gini_plot , high_gini_plot,
+#               low_m_plot , high_m_plot,
+#               low_D_plot, high_D_plot)
+# 
+# ncol = 2
+# nrow = 3
+plots <- list(low_gini_plot , high_m_plot, low_D_plot,
+              high_gini_plot, low_m_plot, high_D_plot)
 
-ncol = 2
-nrow = 3
+ncol = 3
+nrow = 2
 gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow)
 
 # plot save settings for each plot (in pixels)
