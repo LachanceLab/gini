@@ -41,20 +41,13 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-traits_table <- as_tibble(fread(loc_table)) #%>% mutate(cMperMb = log10(cMperMb))
+traits_table <- as_tibble(fread(loc_table))
 traits_table2 <- traits_table %>%
-  #filter(PGS_trait_type != GWAS_trait_type) %>%
   filter(PGS_trait_type == "quantitative",
          GWAS_trait_type == "quantitative") %>%
   select(prive_code, description, PGS_trait_type, GWAS_trait_type, group,
          group_consolidated, prevalence, all_of(vars)) %>%
   mutate(lifestyle = group_consolidated == "lifestyle/psychological")
-  
-
-# Caps maximum portability to 0
-#traits_table2[which(traits_table2$portability_index > 0),"portability_index"] <- 0
-# Log10 transforms F-statistic (D statistic)
-#traits_table2[,"f_stat"] <- log10(traits_table2[,"f_stat"])
 
 # Helper function for writing p-values onto plots
 color_p_significant <- "gray5"
@@ -150,8 +143,6 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  #"cMperMb" = c("Recombination","Rate~(R)"),
-  #"traitLD_unadj_EUR" = c("Trait~LD","Scores~(L[EUR])"),
   "traitLD_unadj_CoV" = c("Trait~LD","CV"),
   "gini_panUKB" = c("Gini","(G[list(100)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
@@ -186,7 +177,6 @@ get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
 }
 axis_lims <- list(
   "log_F" = get_axis_lims(traits_table2$log_F),
-  #"cMperMb"= get_axis_lims((traits_table %>% filter(GWAS_trait_type=="quantitative"))$cMperMb),
   "traitLD_unadj_CoV"= get_axis_lims(traits_table2$traitLD_unadj_CoV),
   "ldpred2_h2" = c(0,1),
   "pcor_United"= get_axis_lims(traits_table2$pcor_United,0),
@@ -354,7 +344,6 @@ for (var_comparison in c("group","type")) {
   density_plots <- list()
   for (i in 1:length(vars)) {
     var_measurement <- vars[i]
-    #print(paste(var_comparison, var_measurement))
     
     if (var_comparison=="group") {
       density_plot <- dual_density(data=traits_table2,
@@ -365,10 +354,8 @@ for (var_comparison in c("group","type")) {
                                    mapping = aes(x=!!as.name(var_measurement)),
                                    var_comparison, var_measurement)
     }
-    
     density_plots[[i]] <- density_plot
   }
-  
   ddp <- ggmatrix(plots=density_plots,
                   nrow=1,
                   ncol=length(vars),

@@ -34,28 +34,30 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 ### Code ###
 vars <- c("Heritability"="ldpred2_h2",
-          "Recombination Rate"="cMperMb",
-          "Gini"="gini_United",
+          #"Recombination Rate"="cMperMb",
+          "Trait LD CV"="traitLD_unadj_CoV",
+          "Gini"="gini_panUKB",
           "PGS Accuracy"="pcor_United",
           "Portability"="portability_index",
-          "Divergence"="f_stat")
+          "Divergence"="log_F")
 
 # reads traits table, filters out low prevalence binary traits,
 traits_table <- as_tibble(fread(loc_table)) %>%
-  filter(prevalence > 0.01 | trait_type=="quantitative") %>%
-  mutate(group_consolidated = ifelse(group=="psychiatric disorders","lifestyle/psychological",group_consolidated))
+  filter(PGS_trait_type == GWAS_trait_type)
+  #filter(PGS_trait_type == "quantitative", GWAS_trait_type == "quantitative")
+
 
 # makes PCA for all traits, comparing binary vs quantitative traits
-matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, trait_type, all_of(unname(vars)))
+matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, GWAS_trait_type, all_of(unname(vars)))
 colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
 matrix$Divergence <- log10(matrix$Divergence)
 matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
 
 # plots PCA for all traits, comparing binary vs quantitative traits
-gg <- custom_ggbiplot(matrix.pca, groups = matrix$trait_type, ellipse=TRUE, labels=matrix$short_label,
+gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE, labels=matrix$short_label,
                 varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
                labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
-  geom_text(aes(label="", color=matrix$trait_type), key_glyph = "rect") + # empty geom
+  geom_text(aes(label="", color=matrix$GWAS_trait_type), key_glyph = "rect") + # empty geom
   theme_light() +
   theme(legend.position = "bottom",
         text = element_text(size = 29*sf),
@@ -96,7 +98,7 @@ for (the_trait_type in trait_types) {
   }
   
   # selects just traits of trait type
-  matrix_filtered <- matrix %>% filter(trait_type == the_trait_type)
+  matrix_filtered <- matrix %>% filter(GWAS_trait_type == the_trait_type)
   
   # makes PCA
   matrix.pca <- prcomp(matrix_filtered[names(vars)], center=TRUE, scale. = TRUE)
