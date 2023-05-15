@@ -124,8 +124,14 @@ plot_portability <- function(code) {
   m <- slice$portability_index
   description <- slice$description
   if (code == "haemoglobin") {description <- "Hemoglobin concentration"}
-  # properly formats annotation 
-  text <- paste0("m==",formatC(m, digits=5, format="f"))
+  # properly formats annotation
+  if ((m < 0.001) & (m != 0)) {
+    exponent <- floor(log10(abs(m)))
+    base <- signif(m, digits = 3) / 10^exponent
+    text <- paste0("m==",base,"%*%10^",exponent)
+  } else {
+    text <- paste0("m==",round(m,3))
+  }
   
   gg<-ggplot(pcor_data, aes(x=prive_dist_to_UK)) +
     geom_segment(aes(x=0,y=1, xend=max(prive_dist_to_UK), yend=1 + m * max(prive_dist_to_UK)),
@@ -194,7 +200,7 @@ plot_divergence <- function(code) {
 traits_table <- as_tibble(fread(loc_table))
 
 # loads a file that contains the max base pair position for each chromosome
-chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
+# chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
 
 # reads pop_centers, which contains PC distance information
 pop_centers <- read.csv(
