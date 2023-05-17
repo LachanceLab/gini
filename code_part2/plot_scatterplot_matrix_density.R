@@ -143,7 +143,7 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  "traitLD_unadj_CoV" = c("Trait~LD","CV"),
+  "traitLD_unadj_CoV" = c("Trait~LD~CV","(CV)"),
   "gini_panUKB" = c("Gini","(G[list(100)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
@@ -182,6 +182,12 @@ axis_lims <- list(
   "pcor_United"= get_axis_lims(traits_table2$pcor_United,0),
   "portability_index"= get_axis_lims(traits_table2$portability_index,NA,0),
   "gini_panUKB"=c(0,1))
+gg_pca_scale <- list(
+  labels = c("Biological Measures","Diseases","Lifestyle/Psychological","Physical Measures"),
+  breaks = c("biological measures","diseases","lifestyle/psychological","physical measures"),
+  values = c("biological measures"="#F8766D", "diseases"="#A3A500","lifestyle/psychological"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
+)
+gg_pca_scale_subset <- c(1,3,4)
 lm_scatterplot <- function(data, mapping) {
   # determines two variables being plotted
   x <- as.character(quo_get_expr(mapping[[1]]))
@@ -200,10 +206,15 @@ lm_scatterplot <- function(data, mapping) {
     geom_line(stat="smooth", method="lm", color="dodgerblue1", formula=y~x, size=1*sf, alpha=linealpha) +
     geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
     geom_point(aes(color=group_consolidated),
-               alpha=0.75,shape=19, size=2*sf, ) +
+               alpha=0.75,shape=19, size=2*sf) +
+    geom_text(aes(label="", color=data$group_consolidated), key_glyph = "rect") + # empty geom
     xlim(xlims) +
     ylim(ylims) +
-    theme_light()
+    theme_light() +
+    scale_color_manual(name="Trait Group",
+                       labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
+                       breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
+                       values=gg_pca_scale[["values"]][gg_pca_scale_subset])
   
   # log10 scales for h^2
   if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1),
@@ -223,10 +234,14 @@ p_sc <- ggpairs(data = traits_table2,
                 lower = list(continuous = lm_scatterplot),
                 diag = list(continuous = diag_label),
                 upper = list(continuous = upper_corr_p),
-                axisLabels = "show"
+                axisLabels = "show",
+                legend=c(2,1)
 ) +
   theme(strip.text.x = element_blank(),
         strip.text.y = element_blank(),
+        legend.position="bottom",
+        legend.key.size = unit(1,"cm"),
+        legend.text = element_text(size = scplot_textsize*sf),
         text = element_text(size = scplot_textsize*sf),
         axis.text.x = element_text(size=(scplot_textsize*0.5)*sf),
         axis.text.y = element_text(size=(scplot_textsize*0.5)*sf))

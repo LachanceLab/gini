@@ -266,5 +266,5 @@ gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow)
 plot_width <- 1100
 plot_height <- 1100
 
-loc_out <- paste0(dir_out,"figure_2.", print_mode)
+loc_out <- paste0(dir_out,"gini_m_D.", print_mode)
 ggsave(loc_out,width=ncol*plot_width*sf,height=nrow*plot_height*sf,units="px")

@@ -43,18 +43,18 @@ gini_p_theme <- theme(
 traits_table <- as_tibble(fread(loc_table))
 
 pop_ginis2 <- traits_table %>%
-  select(prive_code, trait_type, portability_index,
-         starts_with("gini_")) #%>% filter(trait_type == "quantitative")
+  select(prive_code, GWAS_trait_type, group_consolidated, portability_index,
+         starts_with("gini_")) %>% filter(GWAS_trait_type == "quantitative")
 #pops <- substring(colnames(traits_table %>% select(starts_with("gini_"))),6)[-1]
-pops <- c("meta","EUR","AMR","MID","CSA","AFR","EAS")
+pops <- c("meta","EUR","AMR","CSA","AFR","EAS") # "MID" ommitted
 
 gini_UK_plots <- list()
 for (i in 2:length(pops)) {
   pop2 <- pops[i]
   col_pop2 <- paste0("gini_",pop2)
   cor <- cor.test(pop_ginis2[,"gini_panUKB"][[1]], pop_ginis2[,col_pop2][[1]])
-  #p<-ggplot(data=pop_ginis2, aes(x = !!as.name(col_pop2), y = gini_panUKB, color=portability_index)) + #, color=trait_type)) +
-  p<-ggplot(data=pop_ginis2, aes(x = !!as.name(col_pop2), y = gini_panUKB, color=trait_type)) +
+  #p<-ggplot(data=pop_ginis2, aes(x = !!as.name(col_pop2), y = gini_panUKB, color=portability_index)) + #, color=GWAS_trait_type)) +
+  p<-ggplot(data=pop_ginis2, aes(x = !!as.name(col_pop2), y = gini_panUKB, color=GWAS_trait_type)) +
     geom_abline(slope=1,intercept=0, size=1*sf) +
     geom_point(alpha=0.75, size=4*sf) +
     scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
@@ -82,3 +82,38 @@ ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 3, nrow = 2)
 loc_out <- paste0(dir_out,"gini_by_pop.", print_mode)
 print_plot(ukginis, loc_out, print_mode, 4*500, 2*500, sf)
 print(loc_out)
+
+####
+library(GGally)
+ggpairs(pop_ginis2,
+        mapping=aes(color=group_consolidated),
+        columns = paste0("gini_",pops[-1]))
+####
+code <- "log_age_first_sex"
+filename <- paste0(code,"_sf_indep.txt")
+loc_summary_file <- paste0(dir_sf,filename)
+sf <- as_tibble(fread(loc_summary_file))
+col_afs <- paste0("af_",pops)
+sf2 <- sf
+for (pop in pops) {
+  col_AF <- paste0("af_",pop)
+  if (pop != "meta") {
+    col_1kG_AF <- paste0("AF_1kG_",pop)
+    sf2[is.na(sf2[[col_AF]]),col_AF] <- sf2[is.na(sf2[[col_AF]]),col_1kG_AF]
+  }
+}
+sf3 <- sf2 %>%
+  mutate(across(all_of(col_afs), ~ .x * (1 - .x)))
+ggpairs(sf3,
+        mapping=aes(alpha=0.01),
+        columns = col_afs)
+
+#
+top_indep_SNPs <- as_tibble(fread("../generated_data/top_indep_SNPs.txt"))
+top_trait <- top_indep_SNPs %>% filter(prive_code==code)
+sf4 <- sf2 %>% filter(SNP %in% top_trait$SNP)
+sf5 <- sf4 %>%
+  mutate(across(all_of(col_afs), ~ .x * (1 - .x)))
+ggpairs(sf5,
+        mapping=aes(alpha=0.01),
+        columns = col_afs)
