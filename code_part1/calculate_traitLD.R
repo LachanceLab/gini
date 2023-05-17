@@ -20,7 +20,7 @@ pops <- c("EUR","AFR","AMR","CSA","EAS")
 ldscores_already_ajdusted <- TRUE
 # set to TRUE if code has already been run once, meaning that the top independent
 # SNPs file already contains the ld-scores for each SNP
-top_SNPs_already_appended <- FALSE
+top_SNPs_already_appended <- TRUE
 
 ## Functions
 
@@ -110,6 +110,9 @@ for (i in 1:nrow(traits_table)) {
                 select(chrom, chr_position, A1, A2, starts_with("ld_score_")),
               by=c("chrom","chr_position","A1","A2")) %>%
     select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_")))
+  
+  # comment out \/ if you want to include SNPs without LD score data for all populations
+  sf_top <- sf_top %>% drop_na()
   
   SNP_LD_gvc <- SNP_LD_gvc %>% add_row(
     sf_top %>% select(SNP, gvc, ld_score_adj_EUR = ld_score_adj_EUR)

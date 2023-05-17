@@ -207,7 +207,7 @@ for (i in 1:nrow(traits_table)) {
   }
   af_pops <- af_pops[af_pops != "meta_hq"]
   
-  # defines columns to use in gvc calculations
+  # defines columns to use in gvc calculations later
   if ("meta" %in% beta_pops) {
     col_beta <- "beta_meta"
     col_se <- "se_meta"
@@ -216,20 +216,6 @@ for (i in 1:nrow(traits_table)) {
     col_se <- "se_EUR"
   }
   
-  # gets list of populations GWASs were done on
-  GWAS_pops <- substring(colnames(sf %>% select(starts_with("beta_"))),6)
-  
-  # defines columns to use in gvc calculations
-  col_AF <- "af_EUR"
-  if ("meta" %in% GWAS_pops) {
-    col_beta <- "beta_meta"
-    col_se <- "se_meta"
-  } else {
-    col_beta <- "beta_EUR"
-    col_se <- "se_EUR"
-  }
-  
-  ##
   for (pop in af_pops) {
     col_AF <- paste0("af_",pop)
     
@@ -264,7 +250,7 @@ for (i in 1:nrow(traits_table)) {
   }
   
   
-  # filters to SNPs with known allele frequencies
+  # filters to SNPs with known allele frequencies and below pval cutoff
   sf <- sf %>% filter(if_all(starts_with("af_", ignore.case = FALSE), ~!is.na(.)),
                       pval < pval_cutoff)
   n_sig_SNPs_allpops <- nrow(sf)
@@ -272,7 +258,9 @@ for (i in 1:nrow(traits_table)) {
   traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   
-  for (pop in af_pops) { 
+  for (pop in af_pops) {
+    col_AF <- paste0("af_",pop)
+    
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
         select(discovery.beta = !!enquo(col_beta),
@@ -392,7 +380,7 @@ fwrite(top_indep_SNPs, loc_out, sep="\t")
 # saves a version of this file with just rsIDs for PLINK to use later
 loc_out <- paste0(dir_out,"top_indep_SNPs_rsIDs.txt")
 write.table(top_indep_SNPs %>% select(SNP, A2) %>% distinct(),
-            loc_out, row.names = FALSE, col.names = FALSE, quote = FALSE, sep="\t")
+           loc_out, row.names = FALSE, col.names = FALSE, quote = FALSE, sep="\t")
 
 ## Calculating portability indices ####
 
