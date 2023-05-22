@@ -259,7 +259,8 @@ for (i in 1:nrow(traits_table)) {
   traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   
   for (pop in af_pops) {
-    col_AF <- paste0("af_",pop)
+    #col_AF <- paste0("af_",pop)
+    col_AF <- paste0("AF_1kG_",pop)
     
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
