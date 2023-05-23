@@ -117,17 +117,6 @@ mv "${loc_out_SNPs}.tmp" "${loc_out_SNPs}"
 # Groups 1kG samples by continent
 loc_sample_info=${dir_1kG}'20130606_sample_info.txt'
 loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
-
-awk -F"\t" 'BEGIN{OFS=" "}
-    NR>1 {
-        if ($2=="ACB" || $2=="ASW" || $2=="ESN" || $2=="GWD" || $2=="LWK" || $2=="MSL" || $2=="YRI") {continent="AFR"}
-        else if ($2=="BEB" || $2=="GIH" || $2=="ITU" || $2=="PJL" || $2=="STU") {continent="SAS"}
-        else if ($2=="CDX" || $2=="CHB" || $2=="CHS" || $2=="JPT" || $2=="KHV") {continent="EAS"}
-        else if ($2=="CEU" || $2=="FIN" || $2=="GBR" || $2=="IBS" || $2=="TSI") {continent="EUR"}
-        else if ($2=="CLM" || $2=="MXL" || $2=="PEL" || $2=="PUR") {continent="AMR"}
-        print 0, $1, continent
-    }' ${loc_sample_info} > ${loc_out_IDs}
-    
     
 ####
 # Gets continent-specific allele frequencies within 1kG for significant SNPs
