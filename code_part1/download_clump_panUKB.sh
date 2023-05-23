@@ -5,7 +5,7 @@
 # Rscript in filter_GWAS_independent.R.
 
 ### Directories and paths ###
-pwd- P
+pwd -P
 # sets directory to plink 1.9
 dir_plink="~/plink1_9"
 # sets path to 1000 Genomes binary files (or another prefered LD panel, preferably
@@ -31,7 +31,7 @@ IFS=$'\n'
 phenotypes=()
 while read -r line; do phenotypes+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $37 == "TRUE") {print $1}' $loc_traits_list)"
 aws_links=()
-while read -r line; do aws_links+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $37 == "TRUE") {print $15}' $loc_traits_list)"
+while read -r line; do aws_links+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $37 == "TRUE") {print $31}' $loc_traits_list)"
 
 # Loops through each trait
 length=${#phenotypes[@]}
@@ -52,11 +52,11 @@ rm -v ${dir_sf}${phenotype}_raw_sf.tsv.bgz
 
 # transforms summary file to allow PLINK to properly interact with it
 echo [${i} ${phenotype}] Transforming summary file for PLINK
-index=$(awk -F'\t' '{for (i=1; i<=NF; i++) if ($i == "pval_meta") print i; exit}' ${dir_sf}${phenotype}_raw_sf.tsv)
+index=$(awk -F'\t' '{for (i=1; i<=NF; i++) if ($i == "neglog10_pval_meta") print i; exit}' ${dir_sf}${phenotype}_raw_sf.tsv)
 # if index is empty (no meta GWAS was done), it instead looks for pval_EUR
-if [ -z "$index" ]; then index=$(awk -F'\t' '{for (i=1; i<=NF; i++) if ($i == "pval_EUR") print i; exit}' ${dir_sf}${phenotype}_raw_sf.tsv); fi
+if [ -z "$index" ]; then index=$(awk -F'\t' '{for (i=1; i<=NF; i++) if ($i == "neglog10_pval_EUR") print i; exit}' ${dir_sf}${phenotype}_raw_sf.tsv); fi
 
-awk -F'\t' -v col="$index" '{if (NR == 1) {print "SNP\tpval\t"$0} else if ($col != "NA"){print $1":"$2"\t"exp($col)"\t"$0}}' ${dir_sf}${phenotype}_raw_sf.tsv > ${dir_sf}${phenotype}_sf.tsv
+awk -F'\t' -v col="$index" '{if (NR == 1) {print "SNP\tpval\t"$0} else if ($col != "NA"){print $1":"$2"_"$3"_"$4"\t"10^-$col"\t"$0}}' ${dir_sf}${phenotype}_raw_sf.tsv > ${dir_sf}${phenotype}_sf.tsv
 
 # runs --clump in PLINK to LD prune GWAS summary results
 echo [${i} ${phenotype}] Running --clump in PLINK
@@ -105,7 +105,6 @@ mv "${loc_out_SNPs}.tmp" "${loc_out_SNPs}"
 
 ####
 # Groups 1kG samples by continent
-loc_sample_info=${dir_1kG}'20130606_sample_info.txt'
 loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
     
 ####

@@ -1,8 +1,6 @@
 pheno <- commandArgs(trailingOnly = TRUE)[1]
 #sink(paste0("filter_GWAS_independent.Rout"))
 
-#print("hello")
-#print(pheno)
 library(data.table)
 
 pval_cutoff <- 0.0001
