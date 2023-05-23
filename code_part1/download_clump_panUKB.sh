@@ -1,12 +1,3 @@
-#PBS -N download_clump_panUKB
-#PBS -l nodes=1:ppn=1
-#PBS -l pmem=16gb
-#PBS -l walltime=48:00:00
-#PBS -A GT-jlachance6
-#PBS -q inferno
-#PBS -j oe
-#PBS -o download_clump_panUKB.out
-
 # 2 - download_clump_panUKB.sh
 
 # Bash script that extracts panUKB GWAS summary statistics for each trait, uses
