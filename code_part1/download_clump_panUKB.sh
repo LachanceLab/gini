@@ -5,9 +5,7 @@
 # Rscript in filter_GWAS_independent.R.
 
 ### Directories and paths ###
-
-# sets working directory
-cd $PBS_O_WORKDIR
+pwd- P
 # sets directory to plink 1.9
 dir_plink="~/plink1_9"
 # sets path to 1000 Genomes binary files (or another prefered LD panel, preferably
@@ -30,9 +28,9 @@ module load r/4.2.1-tidy
 # Reads traits_list and extracts phenotype name and AWS summary file link
 IFS=$'\n'
 phenotypes=()
-while read -r line; do phenotypes+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $21 == "TRUE") {print $1}' $loc_traits_list)"
+while read -r line; do phenotypes+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $37 == "TRUE") {print $1}' $loc_traits_list)"
 aws_links=()
-while read -r line; do aws_links+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $21 == "TRUE") {print $15}' $loc_traits_list)"
+while read -r line; do aws_links+=("$line"); done <<< "$(awk -F'\t' '(NR>1 && $37 == "TRUE") {print $15}' $loc_traits_list)"
 
 # Loops through each trait
 length=${#phenotypes[@]}
