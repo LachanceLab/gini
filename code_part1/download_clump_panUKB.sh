@@ -14,7 +14,7 @@ dir_plink="~/plink1_9"
 dir_1kG='/storage/coda1/p-jlachance6/0/shared/1kG_phase3_GRCh37/'
 loc_bfile=${dir_1kG}'1kG_phase3_GRCh37_ALL'
 # sets path to text file containing FID and IID of individuals to use in LD panel
-loc_LD_IIDs='/storage/coda1/p-jlachance6/0/shared/1kG_phase3_GRCh37/EUR_IDs.txt'
+loc_LD_IIDs='/storage/coda1/p-jlachance6/0/shared/1kG_phase3_GRCh37/EUR_IIDs.txt'
 
 # sets directory where panUKB GWAS summary statistics will be saved
 dir_generated_data='../generated_data/'
