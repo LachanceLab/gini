@@ -6,7 +6,7 @@ pheno <- commandArgs(trailingOnly = TRUE)[1]
 library(data.table)
 
 pval_cutoff <- 0.0001
-dir_sf <- "/storage/home/hcoda1/1/ncarvalho6/gini_shared/UKBB-Genetic-Architecture/generated_data/panUKB_sf/"
+dir_sf <- "../generated_data/panUKB_sf/"
 
 loc_sf <- paste0(dir_sf,pheno,"_sf.tsv")
 loc_clumped <- paste0(dir_sf,pheno,"_sf.clumped")
