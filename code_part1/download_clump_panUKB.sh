@@ -19,6 +19,7 @@ loc_LD_IIDs='/storage/coda1/p-jlachance6/0/shared/1kG_phase3_GRCh37/EUR_IDs.txt'
 # sets directory where panUKB GWAS summary statistics will be saved
 dir_generated_data='../generated_data/'
 dir_sf=${dir_generated_data}'panUKB_sf/'
+mkdir -p $dir_sf
 # sets path to the traits_list.txt file
 loc_traits_list='../input_data/traits_list.txt'
 
