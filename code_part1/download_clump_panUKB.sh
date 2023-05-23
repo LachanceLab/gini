@@ -22,8 +22,8 @@ dir_plink="~/plink1_9"
 # sets path to 1000 Genomes binary files (or another prefered LD panel, preferably
 # composed of just Europeans). Leave as just the prefix before the chromosome
 # number and the file extensions
-dir_1kG='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/'
-loc_bfile=${dir_1kG}'phase3kG'
+dir_1kG='/storage/coda1/p-jlachance6/0/shared/1kG_phase3_GRCh37/'
+loc_bfile=${dir_1kG}'1kG_phase3_GRCh37_ALL'
 # sets path to text file containing FID and IID of individuals to use in LD panel
 loc_LD_IIDs='/storage/home/hcoda1/1/ncarvalho6/scratch/12-19_1000G_phase3/EUR_IDs.txt'
 

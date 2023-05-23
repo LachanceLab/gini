@@ -53,3 +53,5 @@ done
 wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel
 # Extracts just the FID, IID, and continent code
 awk 'BEGIN {OFS=" "} NR>1 {print "0", $1, $3}' integrated_call_samples_v3.20130502.ALL.panel > 1kG_continent_IDs.txt
+# Extracts the FID and IID of EUR samples only
+awk '$3 == "EUR" {print $1, $2}' 1kG_continent_IDs.txt > EUR_IIDs.txt

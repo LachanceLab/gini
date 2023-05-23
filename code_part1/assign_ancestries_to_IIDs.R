@@ -17,10 +17,10 @@ setwd("./")
 
 # sets location of phenotype file containing UKB IIDs and their first 16
 # principal components (or more)
-loc_PC <- "/directory/ukb_IID_16PCs.txt"
+loc_PC <- "/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/ukb_IID_16PCs.txt"
 # sets location of file with list of IIDs to remove (due to withdrawing consent
 # from study) and of directory where ancestry-IID files will be created
-loc_remove <- "/directory/IIDS_to_remove.csv"
+loc_remove <- "/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/IDS_NOTTOUSE_w17984_20220222_228.csv"
 dir_out <- "../generated_data/"
 
 

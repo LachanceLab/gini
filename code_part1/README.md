@@ -4,6 +4,7 @@ The code in this folder is used to create a master traits table containing all t
 
 ### Scripts and the order to run them in
 
+0. `harmonize_1kG.sh`: Used to download 1000 Genomes Project Phase3 data, filtered to PanUKBB SNPs. Also generates list of samples by population as well as EUR-only samples.
 1. `assign_ancestries_to_IIDs.R`: Assigns an ancestry to each individual in the sample using Prive et al's code.
 2. `download_clump_panUKB.sh`: Bash script that extracts panUKB GWAS summary statistics for each trait, uses PLINK to LD prune for independent GWAS hits, and saves the file using the Rscript in `filter_GWAS_independent.R`.
 3. `liftover_hg38_hg19.py`: Converts the genetic map in `../input_data/aau1043_datas3` from GRCh38 to GRCh37 to match existing data. Used in supplementary analyses
