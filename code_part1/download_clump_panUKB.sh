@@ -61,7 +61,7 @@ awk -F'\t' -v col="$index" '{if (NR == 1) {print "SNP\tpval\t"$0} else if ($col 
 # runs --clump in PLINK to LD prune GWAS summary results
 echo [${i} ${phenotype}] Running --clump in PLINK
 
-pval_cutoff=0.0001
+pval_cutoff=0.00001
 r2_cutoff=0.2
 
 ~/plink1_9/plink \

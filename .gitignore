@@ -3,6 +3,7 @@
 *.Rout
 *.out
 *.err
+*.sbatch
 
 *.png
 generated_figures/

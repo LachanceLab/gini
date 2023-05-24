@@ -17,4 +17,4 @@ sf <- full_sf[full_sf$pval < pval_cutoff,]
 indep_sf <- sf[sf$SNP %in% independent_SNPs]
 
 loc_out <- paste0(dir_sf,pheno,"_sf_indep.txt")
-write.table(indep_sf, loc_out, quote=FALSE, row.names=FALSE)
+write.table(indep_sf, loc_out, quote=FALSE, row.names=FALSE, sep="\t")
