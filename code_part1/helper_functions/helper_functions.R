@@ -5,7 +5,7 @@
 
 ### Libraries and directories ####
 library(tidyverse)
-library(gwas.winners.curse)
+#library(gwas.winners.curse)
 
 ## Functions ###
 

@@ -118,4 +118,5 @@ loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
 --freq \
 --out ${dir_generated_data}AFs_1kG_sfSNPs
 
-
+# Removes .nosex file (not needed)
+rm ${dir_generated_data}AFs_1kG_sfSNPs.nosex
