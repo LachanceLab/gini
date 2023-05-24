@@ -16,9 +16,6 @@ setwd("./")
 # sets directory where necessary input files are stored.
 # Read input_data/README.md for more information on necessary files
 dir_input_data <- "../input_data/"
-# directory where summary files with betas+AFs for each trait are stored
-# (might be unused in the future?)
-#dir_summary_files <- "../generated_data/betas_and_AFs/"
 # directory where panUKB GWAS summary statistics were saved to
 dir_sf <- "../generated_data/panUKB_sf/"
 # directory where the traits_table and other intermediate output files will be
@@ -27,9 +24,6 @@ dir_out <- "../generated_data/"
 
 # location to the genetic recombination map in hg19 format, created by liftover.py
 loc_map <- paste0(dir_input_data,"aau1043_datas3_hg19")
-# location to a file we generated that speeds up the process of binning
-# can be obtained from our github under ~/code_part1/
-#loc_chr_max_bps <- paste0(dir_input_data,"chr_max_bps.txt")
 
 
 
@@ -47,14 +41,6 @@ loc_short_labels <-  paste0(dir_input_data,"traits_list.txt")
 # are going to restrict the tables to just the traits that do have them
 pcors <- as_tibble(fread(loc_pcor))
 codes <- pcors$pheno %>% unique
-#filenames <- dir(dir_summary_files)
-#codes <- str_replace(filenames,"-betasAFs.txt","")
-
-# coef_to_liab function from package bigsnpr
-coef_to_liab <- function (K_pop, K_gwas = 0.5) {
-  z <- stats::dnorm(stats::qnorm(min(K_pop, 1 - K_pop)))
-  (K_pop * (1 - K_pop)/z)^2/(K_gwas * (1 - K_gwas))
-}
 
 # reads prive's phenotype description and info files
 prive_info <- as_tibble(fread(loc_phenotype_info))
@@ -69,9 +55,7 @@ traits_table <- prive_description %>%
   mutate(PGS_trait_type = ifelse(is.na(N),"binary","quantitative"),
          GWAS_trait_type = ifelse(!is.na(n_controls_EUR),"binary","quantitative"),
          prevalence = ifelse(is.na(N),N_case / (N_case+N_control),as.numeric(NA))) %>%
-  rowwise() %>% mutate(
-         N_total = sum(N,N_case,N_control,na.rm=TRUE),
-         liab_coef = coef_to_liab(prevalence, prevalence))
+  rowwise() %>% mutate(N_total = sum(N,N_case,N_control,na.rm=TRUE))
 
 # filter traits to just those with prevalence > 1% (binary only) and respective
 # panUKB GWAS data (should have 163 traits remaining)
@@ -115,32 +99,18 @@ pcors <- pcors %>%
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
 ## Generating gini and recombination rate for each trait ####
-# (in early stages of the project, gvc)
-
-# loads a file that contains the max base pair position for each chromosome
-#chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
 
 # expands traits_table for gini calculation, obtains list of ancestries
 pop_centers <- read.csv(
   "https://raw.githubusercontent.com/privefl/UKBB-PGS/main/pop_centers.csv",
   stringsAsFactors = FALSE)
-#ancestries <- sort(pop_centers$Ancestry)
-#ancestries[9] <- "United" # in order to match other data
-# for (ancestry in ancestries) {
-#   col_gini <- paste0("gini_",ancestry)
-#   traits_table[col_gini] <- as.numeric(NA)
-# }
-# creates empty column for recombination rate (in units of cM per Mb)
 traits_table$cMperMb <- as.numeric(NA)
 
 # settings used for calculating gini
-threshold_zero_padding <- TRUE  # whether traits with less than 100 significant
-                                # bins are padded with 0 gvc bins
 threshold <- 100                # top # of bins (by gvc) to include
 average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
 
-pops <- c("AFR","AMR","CSA","EAS","EUR","MID")
 # loads recombination map, filters out X chromosome, converts chr to number
 rec_map <- as_tibble(fread(loc_map)) #%>% filter(Chr != "chrX")
 #rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
@@ -171,6 +141,7 @@ AFs_1kG <- as_tibble(fread(loc_1kG)) %>% select(-MAC, -NCHROBS) %>%
     values_from = "MAF",
   ) %>% 
   separate(SNP, c(NA,"BP"),sep=":", remove=FALSE) %>%
+  separate(BP, c("BP", NA, NA), sep="_", remove=TRUE) %>%
   mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
 
 # loops through each trait
@@ -216,6 +187,7 @@ for (i in 1:nrow(traits_table)) {
     col_se <- "se_EUR"
   }
   
+  # extracts sample size
   for (pop in af_pops) {
     col_AF <- paste0("af_",pop)
     
@@ -249,18 +221,15 @@ for (i in 1:nrow(traits_table)) {
     }
   }
   
-  
-  # filters to SNPs with known allele frequencies and below pval cutoff
-  sf <- sf %>% filter(if_all(starts_with("af_", ignore.case = FALSE), ~!is.na(.)),
-                      pval < pval_cutoff)
+  col_afs <- paste0("af_",af_pops)
+  sf <- sf %>% filter(if_all(all_of(col_afs), ~!is.na(.)), pval < pval_cutoff)
   n_sig_SNPs_allpops <- nrow(sf)
   
   traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   
   for (pop in af_pops) {
-    #col_AF <- paste0("af_",pop)
-    col_AF <- paste0("AF_1kG_",pop)
+    col_AF <- paste0("af_",pop)
     
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
@@ -277,7 +246,7 @@ for (i in 1:nrow(traits_table)) {
     if (pop == "meta" | all(af_pops == c("EUR"))) {
       sum_gvc_all <- sum(sf$gvc)
       sf_raw <- sf_raw %>%
-        select(-c("WC_beta","AF","gvc")) %>%
+        select(-any_of(c("WC_beta","AF","gvc"))) %>%
         left_join(sf %>% select(SNP, WC_beta = !!enquo(col_beta), AF = !!enquo(col_AF), gvc),
                   by="SNP")
       fwrite(sf_raw, loc_summary_file, sep="\t")

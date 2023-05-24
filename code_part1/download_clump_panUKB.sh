@@ -112,6 +112,7 @@ loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
 ~/plink1_9/plink \
 --bfile ${loc_bfile} \
 --allow-extra-chr \
+--keep-allele-order \
 --extract range ${loc_out_SNPs} \
 --keep ${loc_out_IDs} \
 --within ${loc_out_IDs} \
