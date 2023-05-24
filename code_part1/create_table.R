@@ -25,7 +25,8 @@ dir_out <- "../generated_data/"
 # location to the genetic recombination map in hg19 format, created by liftover.py
 loc_map <- paste0(dir_input_data,"aau1043_datas3_hg19")
 
-
+# Set to TRUE if you want to calculate rec_rate (old analysis)
+calculate_rec_rate <- FALSE
 
 ### Code ----
 
@@ -111,10 +112,12 @@ threshold <- 100                # top # of bins (by gvc) to include
 average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
 
-# loads recombination map, filters out X chromosome, converts chr to number
-rec_map <- as_tibble(fread(loc_map)) #%>% filter(Chr != "chrX")
-#rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
-rec_map$Chr <- substring(rec_map$Chr,4,5)
+if (calculate_rec_rate) {
+  # loads recombination map, filters out X chromosome, converts chr to number
+  rec_map <- as_tibble(fread(loc_map)) #%>% filter(Chr != "chrX")
+  #rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
+  rec_map$Chr <- substring(rec_map$Chr,4,5)
+}
 
 # loops through each trait and calculates its gini, its recombination rate,
 # and keeps track of the SNPs in the top 100 bins in each trait for the UK
@@ -287,6 +290,8 @@ for (i in 1:nrow(traits_table)) {
     ##########
     ##########
     ##########
+    
+    if (!calculate_rec_rate) {next}
     
     # calculates recombination rate
     recombination_vector <- c()
