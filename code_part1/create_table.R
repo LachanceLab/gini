@@ -137,15 +137,15 @@ pop_ginis <- tibble(
 )
 # loads up 1kG allele frequencies
 loc_1kG <- paste0(dir_out,"AFs_1kG_sfSNPs.frq.strat")
-AFs_1kG <- as_tibble(fread(loc_1kG)) %>% select(-MAC, -NCHROBS) %>%
-  pivot_wider(
-    names_from = "CLST",
-    names_prefix = "AF_1kG_",
-    values_from = "MAF",
-  ) %>% 
-  separate(SNP, c(NA,"BP"),sep=":", remove=FALSE) %>%
-  separate(BP, c("BP", NA, NA), sep="_", remove=TRUE) %>%
-  mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
+# AFs_1kG <- as_tibble(fread(loc_1kG)) %>% select(-MAC, -NCHROBS) %>%
+#   pivot_wider(
+#     names_from = "CLST",
+#     names_prefix = "AF_1kG_",
+#     values_from = "MAF",
+#   ) %>% 
+#   separate(SNP, c(NA,"BP"),sep=":", remove=FALSE) %>%
+#   separate(BP, c("BP", NA, NA), sep="_", remove=TRUE) %>%
+#   mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
 
 # loops through each trait
 for (i in 1:nrow(traits_table)) {
@@ -179,12 +179,18 @@ for (i in 1:nrow(traits_table)) {
     trait_type <- "quantitative"
     af_pops <- substring(colnames(sf %>% select(starts_with("af_", ignore.case = FALSE))),4)
   }
-  af_pops <- af_pops[af_pops != "meta_hq"]
+  #af_pops <- af_pops[af_pops != "meta"]
   
+  n_pops_pass_qc <- 
   # defines columns to use in gvc calculations later
-  if ("meta" %in% beta_pops) {
+  if ("meta_hq" %in% beta_pops) {
+    col_beta <- "beta_meta_hq"
+    col_se <- "se_meta_hq"
+    meta2use <- "meta_hq"
+  } else if ("meta" %in% beta_pops) {
     col_beta <- "beta_meta"
     col_se <- "se_meta"
+    meta2use <- "meta"
   } else {
     col_beta <- "beta_EUR"
     col_se <- "se_EUR"
@@ -194,14 +200,17 @@ for (i in 1:nrow(traits_table)) {
   for (pop in af_pops) {
     col_AF <- paste0("af_",pop)
     
+    # uses meta cases/controls ratio for meta_hq
     n_pop <- switch(pop,
                     "meta" = "full_cohort_both_sexes",
-                    "meta_hq" = "hq_cohort_both_sexes",
+                    "meta_hq" = "full_cohort_both_sexes", #"hq_cohort_both_sexes",
                     pop)
+    # in case that meta_hq doesn't have n_cases, it uses meta instead
+    #if (is.na(slice[1,paste0("n_cases_",n_pop)][[1]])) {n_pop <- "full_cohort_both_sexes"}
     
     n_cases <- slice[1,paste0("n_cases_",n_pop)][[1]]
     if (trait_type=="binary") {
-      if (pop == "meta") {
+      if ((pop == "meta_hq") | (pop == "meta")) {
         n_controls <- rowSums(slice %>% select(starts_with("n_controls_")), na.rm=TRUE)
       } else {
         n_controls <- slice[1,paste0("n_controls_",n_pop)][[1]]
@@ -218,7 +227,7 @@ for (i in 1:nrow(traits_table)) {
       sf[,col_AF] <- (n_cases * sf[,af_cases_pop] + n_controls * sf[,af_controls_pop]) / n_total
     }
     
-    if (pop != "meta") {
+    if ((pop != "meta_hq") & (pop != "meta")) {
       col_1kG_AF <- paste0("AF_1kG_",pop)
       sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_1kG_AF]
     }
@@ -234,7 +243,7 @@ for (i in 1:nrow(traits_table)) {
   for (pop in af_pops) {
     col_AF <- paste0("af_",pop)
     
-    if (pop == "meta" | all(af_pops == c("EUR"))) {
+    if (pop == meta2use | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
         select(discovery.beta = !!enquo(col_beta),
                discovery.se = !!enquo(col_se),
@@ -246,7 +255,7 @@ for (i in 1:nrow(traits_table)) {
     
     # gets gvc for each SNP
     sf <- get_gvc(sf, col_beta, col_AF)
-    if (pop == "meta" | all(af_pops == c("EUR"))) {
+    if (pop == meta2use | all(af_pops == c("EUR"))) {
       sum_gvc_all <- sum(sf$gvc)
       sf_raw <- sf_raw %>%
         select(-any_of(c("WC_beta","AF","gvc"))) %>%
@@ -257,7 +266,7 @@ for (i in 1:nrow(traits_table)) {
     
     gvc_list <- pad_zeros(sf$gvc, threshold)
     
-    if (pop == "meta" | all(af_pops == c("EUR"))) {sum_gvc_top <- sum(gvc_list)}
+    if (pop == meta2use | all(af_pops == c("EUR"))) {sum_gvc_top <- sum(gvc_list)}
     
     # calculates gini
     gini <- get_gini(gvc_list)
