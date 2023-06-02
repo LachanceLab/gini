@@ -1,7 +1,7 @@
 # UKBB Genetic Architecture & PGS Performance
 Different genetic architectures of complex traits and their relevance to polygenic score performance
 
-bioXriv link (preprint): https://www.biorxiv.org/content/10.1101/2022.10.29.514295v1
+bioRxiv link (preprint): https://www.biorxiv.org/content/10.1101/2022.10.29.514295v1
  
 ## Contents
 

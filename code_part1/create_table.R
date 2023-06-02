@@ -164,6 +164,7 @@ for (i in 1:nrow(traits_table)) {
     unique() %>%
     select(-ends_with("MID")) # removed since not found in 1kG
   
+  # appends 1kG AFs to summary files if not already present
   if (!("AF_1kG_EUR" %in% colnames(sf))) {
     sf <- sf_raw <- sf %>%
       left_join(AFs_1kG %>% select(CHR, BP, starts_with("AF_1kG_")),
@@ -181,7 +182,7 @@ for (i in 1:nrow(traits_table)) {
   }
   #af_pops <- af_pops[af_pops != "meta"]
   
-  n_pops_pass_qc <- 
+  #n_pops_pass_qc <- 
   # defines columns to use in gvc calculations later
   if ("meta_hq" %in% beta_pops) {
     col_beta <- "beta_meta_hq"
@@ -208,8 +209,11 @@ for (i in 1:nrow(traits_table)) {
     # in case that meta_hq doesn't have n_cases, it uses meta instead
     #if (is.na(slice[1,paste0("n_cases_",n_pop)][[1]])) {n_pop <- "full_cohort_both_sexes"}
     
+    # extracts number of cases
     n_cases <- slice[1,paste0("n_cases_",n_pop)][[1]]
+    # extracts number of controls
     if (trait_type=="binary") {
+      # for meta/meta_hq, sums all population controls
       if ((pop == "meta_hq") | (pop == "meta")) {
         n_controls <- rowSums(slice %>% select(starts_with("n_controls_")), na.rm=TRUE)
       } else {
@@ -218,31 +222,33 @@ for (i in 1:nrow(traits_table)) {
     } else {
       n_controls <- 0
     }
-    
+    # gets total number of cases/controls
     n_total <- n_cases + n_controls
     
+    # adds pop-specific case+control AFs based on weighted average AFs
     if (!(col_AF %in% colnames(sf))) {
       af_cases_pop <- paste0("af_cases_",pop)
       af_controls_pop <- paste0("af_controls_",pop)
       sf[,col_AF] <- (n_cases * sf[,af_cases_pop] + n_controls * sf[,af_controls_pop]) / n_total
     }
     
+    # for non-meta pops, fills in NA values with 1kG AFs
     if ((pop != "meta_hq") & (pop != "meta")) {
       col_1kG_AF <- paste0("AF_1kG_",pop)
       sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_1kG_AF]
     }
   }
-  
+  # filters to SNPs with AF-data for every pop and under p-val cutoff
   col_afs <- paste0("af_",af_pops)
   sf <- sf %>% filter(if_all(all_of(col_afs), ~!is.na(.)), pval < pval_cutoff)
   n_sig_SNPs_allpops <- nrow(sf)
   
   traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
-  
+  # loops through meta + all populations
   for (pop in af_pops) {
     col_AF <- paste0("af_",pop)
-    
+    # when meta/meta_hq, uses Winner's Curse correction for its beta
     if (pop == meta2use | all(af_pops == c("EUR"))) {
       sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
         select(discovery.beta = !!enquo(col_beta),
@@ -252,25 +258,26 @@ for (i in 1:nrow(traits_table)) {
       sf[,col_beta] <- sf_WC$debiased.beta.mle
     }
     
-    
     # gets gvc for each SNP
     sf <- get_gvc(sf, col_beta, col_AF)
+    # for meta/met_hq: gets the sum of gvc and joins columns of WC-corrected meta
+    # beta, meta AF, and subsequent gvc
     if (pop == meta2use | all(af_pops == c("EUR"))) {
       sum_gvc_all <- sum(sf$gvc)
       sf_raw <- sf_raw %>%
         select(-any_of(c("WC_beta","AF","gvc"))) %>%
         left_join(sf %>% select(SNP, WC_beta = !!enquo(col_beta), AF = !!enquo(col_AF), gvc),
                   by="SNP")
+      # writes appended sf to system (missing AFs not filled and meta_beta column not WC corrected)
       fwrite(sf_raw, loc_summary_file, sep="\t")
     }
-    
+    # gets top 100 SNPs by gvc, pads list of SNP gvcs with zeros if necessary
     gvc_list <- pad_zeros(sf$gvc, threshold)
-    
+    # gets the sum of gvc among top SNPs
     if (pop == meta2use | all(af_pops == c("EUR"))) {sum_gvc_top <- sum(gvc_list)}
-    
     # calculates gini
     gini <- get_gini(gvc_list)
-    
+    # adds data to table
     print(paste(code, pop, gini))
     pop_ginis <- pop_ginis %>% add_row(
       prive_code = code,
@@ -278,13 +285,15 @@ for (i in 1:nrow(traits_table)) {
       af_pop = pop,
       gini = gini
     )
+    # subsequent code only ran if the population looping is same as the column
+    # used for beta (typically meta/meta_hq)
     if (substring(col_beta,6) != pop) {next}
     
     traits_table[i,"gini_panUKB"] <- gini
     traits_table[i,"sum_gvc_all"] <- sum_gvc_all
     traits_table[i,"sum_gvc_top"] <- sum_gvc_top
     
-    # extracts the top significant SNPs
+    # extracts the top significant SNPs and adds to growing list
     sf_top <- sf %>% filter(rank <= threshold) %>%
       rename(chrom = chr, chr_position = pos, A1 = ref, A2 = alt) %>%
       select(chrom, chr_position, SNP, A1, A2, gvc)

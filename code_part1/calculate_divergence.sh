@@ -2,13 +2,14 @@
 
 # Computes PGS for all traits on a subset of the UKB population using PLINK2
 
-loc_bfile_prefix="/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/UKB_BED_AFTER_QC_removed182IDs_chr"
+loc_bfile_prefix="/storage/scratch1/1/ncarvalho6/03-06_UKB/UKB_bfiles/UKB_BED_AFTER_QC_removed182IDs_chr"
 # sets path to list of IIDs sampled to be used in calculation, generated in assign_ancestries_to_IIDs.R
 loc_keep="../generated_data/pop_sampled_IIDs.txt"
 # sets directory where encoded genotype files will be outputted to
 dir_out="../generated_data/polygenic_scores/"
+mkdir -p $dir_out
 
-loc_betas_csv="/storage/home/hcoda1/1/ncarvalho6/gini_shared/UKBB-Genetic-Architecture/input_data/PGS-effects-PLR.csv"
+loc_betas_csv="../input_data/PGS-effects-PLR.csv"
 loc_out_prefix=${dir_out}"ALL_traits-PGS_chr"
 
 loc_betas_txt="${loc_betas_csv::-3}txt"
