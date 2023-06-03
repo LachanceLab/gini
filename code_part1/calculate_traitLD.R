@@ -20,7 +20,7 @@ pops <- c("EUR","AFR","AMR","CSA","EAS")
 ldscores_already_ajdusted <- TRUE
 # set to TRUE if code has already been run once, meaning that the top independent
 # SNPs file already contains the ld-scores for each SNP
-top_SNPs_already_appended <- TRUE
+top_SNPs_already_appended <- FALSE
 
 ## Functions
 
@@ -112,7 +112,10 @@ for (i in 1:nrow(traits_table)) {
     select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_")))
   
   # comment out \/ if you want to include SNPs without LD score data for all populations
-  sf_top <- sf_top %>% drop_na()
+  col_LDs <- c(paste0("ld_score_",pops),paste0("ld_score_adj_",pops))
+  sf_top <- sf_top %>% filter(if_all(all_of(col_LDs), ~!is.na(.)))
+  n_LD_data <- nrow(sf_top)
+  traits_table[i,"n_LD_data"] <- n_LD_data
   
   SNP_LD_gvc <- SNP_LD_gvc %>% add_row(
     sf_top %>% select(SNP, gvc, ld_score_adj_EUR = ld_score_adj_EUR)
@@ -133,10 +136,9 @@ for (i in 1:nrow(traits_table)) {
       }
 
       traits_table[i,col_traitLD] <- traitLD
-      print(paste(i, code, pop, col_traitLD, round(traitLD,2)))
+      print(paste(i, code, n_LD_data, pop, col_traitLD, round(traitLD,2)))
     }
   }
-  
 }
 
 ### LD_differential
@@ -148,20 +150,20 @@ LD_table <- traits_table %>%
     names_prefix = "traitLD_unadj_",
     values_to="traitLD_unadj") %>%
   group_by(prive_code) %>%
-  summarize(traitLD_unadj_mean = mean(traitLD_unadj),
-            traitLD_unadj_sd = sd(traitLD_unadj),
-            traitLD_unadj_max = max(traitLD_unadj),
-            traitLD_unadj_min = min(traitLD_unadj),
+  summarize(traitLD_unadj_mean = mean(traitLD_unadj, na.rm=TRUE),
+            traitLD_unadj_sd = sd(traitLD_unadj, na.rm=TRUE),
+            traitLD_unadj_max = max(traitLD_unadj, na.rm=TRUE),
+            traitLD_unadj_min = min(traitLD_unadj, na.rm=TRUE),
             traitLD_unadj_range = traitLD_unadj_max - traitLD_unadj_min,
             traitLD_unadj_ratio = traitLD_unadj_max / traitLD_unadj_min,
             traitLD_unadj_CoV = traitLD_unadj_sd / traitLD_unadj_mean)
 
 traits_table <- traits_table %>% left_join(LD_table, by="prive_code")
 
-traits_table %>% group_by(group_consolidated) %>%
-  summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean),
-            traitLD_unadj_range = mean(traitLD_unadj_range),
-            traitLD_unadj_CoV = mean(traitLD_unadj_CoV))
+traits_table %>% filter(!is.na()) group_by(group_consolidated) %>%
+  summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean, na.rm=TRUE),
+            traitLD_unadj_range = mean(traitLD_unadj_range, na.rm=TRUE),
+            traitLD_unadj_CoV = mean(traitLD_unadj_CoV, na.rm=TRUE))
 
 
 fwrite(traits_table, loc_traits_table, sep="\t")
