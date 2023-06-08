@@ -53,12 +53,13 @@ get_data_binned = function(data_snp_bins, method="sum") {
   return(data_binned)
 }
 # function that calculates and appends individual SNP gvc using betas and allele frequencies
+# it is likely in your interest to remove NA beta/AF values before calling function
 get_gvc <- function(data_AF, col_beta, col_AF) {
   pop_data <- data_AF %>%
     mutate(
       gvc = 2 * data_AF[[col_beta]]**2 * data_AF[[col_AF]] * (1 - data_AF[[col_AF]]) 
     ) %>%
-    arrange(gvc) %>%
+    arrange(desc(is.na(gvc)),gvc) %>%
     mutate(
       rank = nrow(data_AF) - row_number() + 1,
       rank_percentile = rank / max(rank)

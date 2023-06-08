@@ -160,7 +160,7 @@ LD_table <- traits_table %>%
 
 traits_table <- traits_table %>% left_join(LD_table, by="prive_code")
 
-traits_table %>% filter(!is.na()) group_by(group_consolidated) %>%
+traits_table %>% group_by(group_consolidated) %>%
   summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean, na.rm=TRUE),
             traitLD_unadj_range = mean(traitLD_unadj_range, na.rm=TRUE),
             traitLD_unadj_CoV = mean(traitLD_unadj_CoV, na.rm=TRUE))
