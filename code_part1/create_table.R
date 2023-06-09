@@ -127,9 +127,10 @@ top_indep_SNPs <- tibble(
   chrom = as.character(),
   chr_position = as.numeric(),
   SNP = as.character(),
-  A1 = as.character(),
-  A2 = as.character(),
-  prive_code = as.character()
+  ref = as.character(),
+  alt = as.character(),
+  prive_code = as.character(),
+  pop = as.character()
 )
 pop_ginis <- tibble(
   prive_code = as.character(),
@@ -171,8 +172,8 @@ for (i in 1:nrow(traits_table)) {
   # appends 1kG AFs to summary files if not already present
   if (!("AF_1kG_EUR" %in% colnames(sf))) {
     sf <- sf_raw <- sf %>%
-      left_join(AFs_1kG %>% select(CHR, BP, starts_with("AF_1kG_")),
-                by=c("chr"="CHR","pos"="BP"))
+      left_join(AFs_1kG %>% select(CHR, BP, A1, A2, starts_with("AF_1kG_")),
+                by=c("chr"="CHR","pos"="BP","ref"="A2","alt"="A1"))
   }
   n_sig_SNPs <- nrow(sf)
   
@@ -242,9 +243,8 @@ for (i in 1:nrow(traits_table)) {
   traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   
-  # for the chosen meta2use column, calculates top gvc SNPs
+  # for the chosen meta2use column, uses Winner's Curse correction for its beta
   col_AF <- paste0("af_",meta2use)
-  # when meta/meta_hq, uses Winner's Curse correction for its beta
   sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
     select(discovery.beta = !!enquo(col_beta),
            discovery.se = !!enquo(col_se),
@@ -263,13 +263,36 @@ for (i in 1:nrow(traits_table)) {
   # writes appended sf to system (missing AFs not filled and meta_beta column not WC corrected)
   fwrite(sf_raw, loc_summary_file, sep="\t")
   
-  # extracts the top significant SNPs and adds to growing list
-  sf_top <- sf %>% filter(rank <= threshold)
-  sf_top_out <- sf_top %>%
-    rename(chrom = chr, chr_position = pos, A1 = ref, A2 = alt) %>%
-    select(chrom, chr_position, SNP, A1, A2) %>%
-    mutate(prive_code = code, chrom = as.character(chrom))
-  top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
+  # loops through meta + all populations
+  for (pop in af_pops) {
+    col_AF <- paste0("af_",pop)
+    # gets gvc for each SNP
+    sf_pop <- get_gvc(sf, col_beta, col_AF)
+    
+    gvc_list <- pad_zeros(sf_pop$gvc, threshold)
+    # calculates gini
+    gini <- get_gini(gvc_list)
+    # gets the sum of gvc among top SNPs
+    if (pop == meta2use) {
+      sum_gvc_top <- sum(gvc_list)
+      traits_table[i,"gini_panUKB"] <- gini
+    }
+    # adds data to table
+    print(paste(code, pop, gini))
+    pop_ginis <- pop_ginis %>% add_row(
+      prive_code = code,
+      beta_pop = substring(col_beta,6),
+      af_pop = pop,
+      gini = gini
+    )
+    # extracts the top significant SNPs and adds to growing list
+    sf_top <- sf_pop %>% filter(rank <= threshold)
+    sf_top_out <- sf_top %>%
+      rename(chrom = chr, chr_position = pos) %>%
+      select(chrom, chr_position, SNP, ref, alt) %>%
+      mutate(prive_code = code, chrom = as.character(chrom), pop=pop)
+    top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
+  }
   
   ##############################################################################
   # calculates recombination rate #
@@ -315,30 +338,6 @@ for (i in 1:nrow(traits_table)) {
     traits_table$cMperMb[i] <- trait_cMperMb
   }
   ##############################################################################
-  
-  # loops through meta + all populations
-  for (pop in af_pops) {
-    col_AF <- paste0("af_",pop)
-    # gets gvc for each SNP
-    sf_pop <- get_gvc(sf_top, col_beta, col_AF)
-    
-    gvc_list <- pad_zeros(sf_pop$gvc, threshold)
-    # calculates gini
-    gini <- get_gini(gvc_list)
-    # gets the sum of gvc among top SNPs
-    if (pop == meta2use) {
-      sum_gvc_top <- sum(gvc_list)
-      traits_table[i,"gini_panUKB"] <- gini
-    }
-    # adds data to table
-    print(paste(code, pop, gini))
-    pop_ginis <- pop_ginis %>% add_row(
-      prive_code = code,
-      beta_pop = substring(col_beta,6),
-      af_pop = pop,
-      gini = gini
-    )
-  }
 }
 # binds the population-specific Ginis to traits_table
 pop_ginis2 <- pop_ginis %>%
@@ -350,12 +349,8 @@ pop_ginis2 <- pop_ginis %>%
 traits_table <- traits_table %>% left_join(pop_ginis2, by = "prive_code")
 # saves list of significant SNPs
 top_indep_SNPs <- top_indep_SNPs %>% distinct()
-loc_out <- paste0(dir_out,"top_indep_SNPs.txt")
+loc_out <- paste0(dir_out,"top_indep_SNPs_popspecific.txt")
 fwrite(top_indep_SNPs, loc_out, sep="\t")
-# saves a version of this file with just rsIDs for PLINK to use later
-loc_out <- paste0(dir_out,"top_indep_SNPs_rsIDs.txt")
-write.table(top_indep_SNPs %>% select(SNP, A2) %>% distinct(),
-           loc_out, row.names = FALSE, col.names = FALSE, quote = FALSE, sep="\t")
 
 ## Calculating portability indices ####
 
