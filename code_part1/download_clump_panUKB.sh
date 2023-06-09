@@ -91,12 +91,13 @@ echo DONE WITH ALL TRAITS
 ####
 # Make list of all unique SNPs in the above summary files
 loc_out_SNPs=${dir_generated_data}"all_sf_SNPs.txt"
+rm -f $loc_out_SNPs
 
 # Loop through each file in the directory
 for file in "${dir_sf}"*.txt; do
   echo ${file}
   # Extract the chromosome and position columns and append to output file
-  awk 'BEGIN {FS="\t"; OFS=" "} NR>1 {print $3, $4, $4, 1}' "${file}" >> "${loc_out_SNPs}"
+  awk 'BEGIN {FS="\t"; OFS=" "} NR>1 {print $3, $4, $4, 1, $1, $5, $6}' "${file}" >> "${loc_out_SNPs}"
 done
 
 # Remove duplicate rows from the output file
@@ -113,6 +114,7 @@ loc_out_IDs=${dir_1kG}'1kG_continent_IDs.txt'
 --bfile ${loc_bfile} \
 --allow-extra-chr \
 --keep-allele-order \
+--a1-allele ${loc_out_SNPs} 7 5 \
 --extract range ${loc_out_SNPs} \
 --keep ${loc_out_IDs} \
 --within ${loc_out_IDs} \
