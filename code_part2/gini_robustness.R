@@ -211,91 +211,92 @@ for (code in qcodes) {
       }
     }
   }
-  
-  #### #### #### #### ####
-  
-  # keeps copy of sf
-  # sf_raw <- sf
-  # 
-  # for (pval_cutoff in pval_cutoffs) {
-  #   sf <- sf_raw %>% filter(pval < pval_cutoff)
-  #   
-  #   for (pop in af_pops) {
-  #     
-  #     for (AF_source in AF_sources) {
-  #       # sets col_AF
-  #       col_AF <- paste0(AF_source,pop)
-  #       if (col_AF=="AF_1kG_meta") {col_AF <- "AF_1kG_EUR"}
-  #       
-  #       for (beta_source in beta_sources) {
-  #         # sets col_beta
-  #         if (beta_source == "meta/EUR") {
-  #           col_beta <- col_fixed_beta
-  #           col_se <- col_fixed_se
-  #         } else {
-  #           col_beta <- paste0("beta_", pop)
-  #           col_se <- paste0("se_", pop)
-  #         }
-  #         
-  #         sf <- sf[!is.na(sf[[col_beta]]),]
-  #         sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
-  #           select(discovery.beta = !!enquo(col_beta),
-  #                  discovery.se = !!enquo(col_se),
-  #                  discovery.n, discovery.freq = !!enquo(col_AF))
-  #         sf_WC <- as_tibble(correct_winners_curse(as.data.frame(sf_WC), pval_cutoff))
-  #         sf[,col_beta] <- sf_WC$debiased.beta.mle
-  #         
-  #         # calculates gvc
-  #         sf <- get_gvc(sf, col_beta, col_AF)
-  #         sum_gvc_all <- sum(sf$gvc)
-  #         n_sig_SNPs_pop <- nrow(sf)
-  #         
-  #         for (threshold in thresholds) {
-  #           
-  #           for (threshold_zero_padding in threshold_zero_paddings) {
-  #             
-  #             if ((threshold == -1) | ((n_sig_SNPs_pop < threshold) & !(threshold_zero_padding))) {
-  #               gvc_list <- sf$gvc
-  #             } else {
-  #               gvc_list <- pad_zeros(sf$gvc, threshold)
-  #             }
-  #             
-  #             sum_gvc_top <- sum(gvc_list)
-  #             
-  #             # calculates gini
-  #             gini <- get_gini(gvc_list)
-  #             
-  #             if (ii %% 50 == 0) {
-  #               print("ii code pval_cutoff pop AF_source beta_source threshold TZP gini")
-  #             }
-  #             ii <- ii + 1
-  #             print(paste(ii,code,pval_cutoff,pop,AF_source,beta_source,threshold,
-  #                         threshold_zero_padding,gini, sep = "\t"))
-  #             
-  #             robustness_tbl <- robustness_tbl %>% add_row(
-  #               prive_code = code,
-  #               pop = pop,
-  #               beta_pop = substr(col_beta,6, nchar(col_beta)),
-  #               AF_source = AF_source,
-  #               threshold = threshold,
-  #               threshold_zero_padding = threshold_zero_padding,
-  #               top_SNPs = pop,
-  #               pval_cutoff = pval_cutoff,
-  #               gini = gini,
-  #               n_sig_SNPs = n_sig_SNPs,
-  #               n_sig_SNPs_pop = n_sig_SNPs_pop,
-  #               sum_gvc_top = sum_gvc_top,
-  #               sum_gvc_all = sum_gvc_all
-  #             )
-  #           }
-  #         }
-  #       }
-  #     }
-  #   }
-  # }
 }
 
 loc_out <- "../generated_data/gini_robustness_data.txt"
 fwrite(robustness_tbl, loc_out, sep="\t")
 
+robustness_tbl <- robustness_tbl %>%
+  mutate(prop_gvc_top = sum_gvc_top / sum_gvc_all) %>%
+  drop_na()
 
+# Number of traits per number of populations
+robustness_tbl %>% group_by(prive_code) %>% summarize(n_pops=n()/20) %>%
+  group_by(n_pops) %>% summarize(n_traits=n())
+
+# threshold
+robustness_tbl %>% filter(beta_source=="meta/EUR",top_SNP=="meta/EUR",
+                          pop==beta_pop, threshold %in% thresholds) %>%
+  group_by(threshold) %>%
+  summarize(gini_mean = mean(gini),gini_sd = sd(gini),
+            gini_min = min(gini), gini_max = max(gini))
+
+robustness_tbl %>%
+  filter(beta_source=="meta/EUR",top_SNP=="meta/EUR", pop==beta_pop, threshold %in% thresholds) %>%
+  group_by(threshold) %>%
+  mutate(gini_rank = order(order(gini, decreasing=FALSE))) %>%
+  left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
+ggplot(aes(x=as.factor(threshold),y=gini_rank)) +
+  geom_line(aes(group=prive_code, color=group_consolidated))
+
+# pop + top_SNP
+robustness_tbl %>%
+  filter(beta_source=="meta/EUR",threshold==100, (pop!="meta" & pop!="meta_hq")) %>%
+  group_by(top_SNP,pop) %>%
+  mutate(gini_rank = order(order(gini, decreasing=FALSE))) %>%
+ggplot(aes(x=as.factor(top_SNP),y=gini)) + # y=gini_rank
+  geom_line(aes(group=prive_code, color=pop)) +
+  facet_wrap(~pop)
+
+# pop + beta_source
+robustness_tbl %>%
+  filter(top_SNP=="meta/EUR",threshold==100, (pop!="meta" & pop!="meta_hq")) %>%
+  group_by(beta_source,pop) %>%
+  mutate(gini_rank = order(order(gini, decreasing=FALSE))) %>%
+ggplot(aes(x=as.factor(beta_source),y=gini)) +
+  geom_line(aes(group=prive_code, color=pop)) +
+  facet_wrap(~pop)
+
+###
+library(GGally)
+pops <- c("AFR","AMR","CSA","EAS","EUR")
+pops2use <- c("AFR","AMR","CSA","EAS","EUR","meta")
+
+# pop-comparison, meta beta, meta top SNPs
+robustness_tbl %>%
+  filter(top_SNP=="meta/EUR",threshold==100, pop %in% pops2use,
+         beta_source=="meta/EUR") %>%
+  select(prive_code, pop, gini) %>%
+  pivot_wider(names_from=pop, values_from=gini,names_prefix="gini_") %>%
+  left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
+ggpairs(mapping=aes(color=group_consolidated),
+        columns = paste0("gini_",pops2use))
+
+# pop-comparison, meta beta, pop-specific top SNPs
+robustness_tbl %>%
+  filter(top_SNP=="pop-specific",threshold==100, pop %in% pops2use,
+         beta_source=="meta/EUR") %>%
+  select(prive_code, pop, gini) %>%
+  pivot_wider(names_from=pop, values_from=gini,names_prefix="gini_") %>%
+  left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
+ggpairs(mapping=aes(color=group_consolidated),
+          columns = paste0("gini_",pops2use))
+
+# pop-comparison, pop-specific beta, pop-specific top SNPs
+robustness_tbl %>%
+  filter(top_SNP=="pop-specific",threshold==100, pop %in% pops2use,
+         beta_source=="pop-specific") %>%
+  select(prive_code, pop, gini) %>%
+  pivot_wider(names_from=pop, values_from=gini,names_prefix="gini_") %>%
+  left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
+  ggpairs(mapping=aes(color=group_consolidated),
+          columns = paste0("gini_",pops2use))
+# pop-comparison, pop-specific beta, meta top SNPs
+robustness_tbl %>%
+  filter(top_SNP=="meta/EUR",threshold==100, pop %in% pops2use,
+         beta_source=="pop-specific") %>%
+  select(prive_code, pop, gini) %>%
+  pivot_wider(names_from=pop, values_from=gini,names_prefix="gini_") %>%
+  left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
+  ggpairs(mapping=aes(color=group_consolidated),
+          columns = paste0("gini_",pops2use))
