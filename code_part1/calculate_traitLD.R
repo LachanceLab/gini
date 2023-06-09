@@ -49,9 +49,7 @@ loc_traits_table <- paste0(dir_generated_data,"traits_table.txt")
 traits_table <- as_tibble(fread(loc_traits_table))
 
 loc_top_indep_SNPs <- paste0(dir_generated_data,"top_indep_SNPs.txt")
-top_indep_SNPs <- as_tibble(fread(loc_top_indep_SNPs)) %>%
-  filter(chrom != "X") %>%
-  mutate(chrom = as.numeric(chrom))
+top_indep_SNPs <- as_tibble(fread(loc_top_indep_SNPs))
 
 
 if (!top_SNPs_already_appended) {
@@ -73,7 +71,7 @@ if (!top_SNPs_already_appended) {
     print(paste0(pop, ": Joining ldscores to top_indep_SNPs"))
     top_indep_SNPs <- top_indep_SNPs %>%
       left_join(ldscores %>% select(CHR,BP, A0, A1, ld_score, ld_score_adj), 
-                by=c("chrom"="CHR","chr_position"="BP", "A1"="A0","A2"="A1"))
+                by=c("chrom"="CHR","chr_position"="BP", "ref"="A0","alt"="A1"))
     
     colnames(top_indep_SNPs) <- c(colnames(top_indep_SNPs)[1:(ncol(top_indep_SNPs)-2)],
                                   paste0("ld_score_",pop),paste0("ld_score_adj_",pop))
@@ -81,6 +79,13 @@ if (!top_SNPs_already_appended) {
   }
   
   fwrite(top_indep_SNPs, loc_top_indep_SNPs, sep="\t")
+}
+# sees how many top SNPs for each pop is missing LD data within each pop
+for (pop in pops) {
+  col_ld <- paste0("ld_score_",pop)
+  print(pop)
+  top_indep_SNPs %>% group_by(pop) %>%
+    summarize(prop_NA = sum(is.na(!!as.name(col_ld))) / n()) %>% print()
 }
 
 SNP_LD_gvc <- tibble(
@@ -94,39 +99,54 @@ for (i in 1:nrow(traits_table)) {
   
   filename <- paste0(code,"_sf_indep.txt")
   loc_summary_file <- paste0(dir_sf,filename)
-  sf <- as_tibble(fread(loc_summary_file)) %>%
-    group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup()
+  sf <- as_tibble(fread(loc_summary_file))
   
-  top_indep_SNPs_trait <- top_indep_SNPs %>% filter(prive_code==code)
+  top_trait <- top_indep_SNPs %>% filter(prive_code==code)
+  # GWAS_pops <- top_trait$pop %>% unique()
+  # if ("meta_hq" %in% GWAS_pops) {meta2use <- "meta_hq"
+  # } else if ("meta" %in% GWAS_pops) {meta2use <- "meta"
+  # } else {meta2use <- "EUR"}
+  # col_beta <- paste0("beta_",meta2use)
+  # top_trait_meta <- top_trait %>% filter(pop == meta2use)
   
-  sf_top <- sf %>%
-    filter(SNP %in% top_indep_SNPs_trait$SNP) %>%
-    rename(chrom = chr, chr_position = pos, A1 = ref, A2 = alt) %>%
-    distinct() %>%
-    group_by(SNP) %>% filter(gvc == max(gvc)) %>% ungroup() %>%
-    filter(chrom != "X") %>%
-    mutate(chrom = as.numeric(chrom)) %>%
-    left_join(top_indep_SNPs_trait %>%
-                select(chrom, chr_position, A1, A2, starts_with("ld_score_")),
-              by=c("chrom","chr_position","A1","A2")) %>%
-    select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_")))
+  # sf_top <- sf %>%
+  #   filter(SNP %in% top_trait_meta$SNP) %>%
+  #   rename(chrom = chr, chr_position = pos) %>%
+  #   distinct() %>%
+  #   group_by(SNP) %>% filter(gvc == max(gvc)) %>% ungroup() %>%
+  #   filter(chrom != "X") %>%
+  #   mutate(chrom = as.numeric(chrom)) %>%
+  #   left_join(top_trait_meta %>%
+  #               select(chrom, chr_position, ref, alt, starts_with("ld_score_")),
+  #             by=c("chrom","chr_position","ref","alt")) %>%
+  #   select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_","neglog10_pval_")))
+  # 
+  # # comment out \/ if you want to include SNPs without LD score data for all populations
+  # col_LDs <- c(paste0("ld_score_",pops),paste0("ld_score_adj_",pops))
+  # sf_top <- sf_top %>% filter(if_all(all_of(col_LDs), ~!is.na(.)))
+  # n_LD_data <- nrow(sf_top)
+  # traits_table[i,"n_LD_data"] <- n_LD_data
   
-  # comment out \/ if you want to include SNPs without LD score data for all populations
-  col_LDs <- c(paste0("ld_score_",pops),paste0("ld_score_adj_",pops))
-  sf_top <- sf_top %>% filter(if_all(all_of(col_LDs), ~!is.na(.)))
-  n_LD_data <- nrow(sf_top)
-  traits_table[i,"n_LD_data"] <- n_LD_data
-  
-  SNP_LD_gvc <- SNP_LD_gvc %>% add_row(
-    sf_top %>% select(SNP, gvc, ld_score_adj_EUR = ld_score_adj_EUR)
-  )
+  #SNP_LD_gvc <- SNP_LD_gvc %>% add_row(sf_top %>% select(SNP, gvc, ld_score_adj_EUR))
   
   for (pop in pops) {
+    
+    col_AF <- paste0("af_", pop)
+    col_gvc <- paste0("gvc_", pop)
+    top_trait_pop <- top_trait %>% filter(pop == .GlobalEnv$pop)
+    sf_top_pop <- sf %>%
+      filter(SNP %in% top_trait_pop$SNP) %>%
+      rename(chrom = chr, chr_position = pos, gvc = !!enquo(col_gvc)) %>%
+      left_join(top_trait_pop %>% select(chrom,chr_position,ref,alt,starts_with("ld_score_")),
+                by=c("chrom","chr_position","ref","alt")) %>%
+      select(-starts_with(c("af_","pval_","beta_","se_", "low_confidence_","neglog10_pval_")))
+    
     for (adj_status in c("","_adj")) {
       col_ldscore <- paste0("ld_score",adj_status,"_",pop)
-      sf_top_pop <- sf_top %>%
+      sf_top_pop2 <- sf_top_pop %>%
         select(gvc,ld_score = !!as.name(col_ldscore)) %>% drop_na()
-      traitLD <- weighted.mean(sf_top_pop$ld_score, sf_top_pop$gvc)
+      n_LD_data <- nrow(sf_top_pop2)
+      traitLD <- weighted.mean(sf_top_pop2$ld_score, sf_top_pop2$gvc)
 
       if (adj_status == "") {
         col_traitLD <- paste0("traitLD_unadj_",pop)
@@ -160,18 +180,11 @@ LD_table <- traits_table %>%
 
 traits_table <- traits_table %>% left_join(LD_table, by="prive_code")
 
-traits_table %>% group_by(group_consolidated) %>%
+traits_table %>% filter(GWAS_trait_type=="quantitative") %>%
+  group_by(group_consolidated) %>%
   summarize(traitLD_unadj_mean = mean(traitLD_unadj_mean, na.rm=TRUE),
             traitLD_unadj_range = mean(traitLD_unadj_range, na.rm=TRUE),
             traitLD_unadj_CoV = mean(traitLD_unadj_CoV, na.rm=TRUE))
 
 
 fwrite(traits_table, loc_traits_table, sep="\t")
-
-
-# cor.test(log10(SNP_LD_gvc$gvc), (SNP_LD_gvc$ld_score_adj_EUR))
-# ggplot(SNP_LD_gvc, aes(x=ld_score_adj_EUR, y=log10(gvc))) +
-#   geom_point(alpha=0.05) +
-#   geom_smooth(method="lm")
-
-#traits_table <- traits_table %>% select(-starts_with("traitLD_"))
