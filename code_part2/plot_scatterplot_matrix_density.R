@@ -482,4 +482,3 @@ pscp <- ggmatrix(plots=prevalence_plots,
 loc_out <- paste0(dir_out,"prevalence_scatterplot.", print_mode)
 print_plot(pscp, loc_out, print_mode, ddplot_width+100, ddplot_height, sf)
 print("Saved prevalence scatterplot")
-

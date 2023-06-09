@@ -55,7 +55,7 @@ cleanup_data_lorenz <- function(code, threshold=100) {
   loc_sf <- paste0(dir_sfs,code,"_sf_indep.txt")
   
   sf <- as_tibble(fread(loc_sf)) %>%
-    select(gvc) %>% drop_na() %>%
+    select(gvc = gvc_meta2use) %>% drop_na() %>%
     arrange(-gvc) %>%
     filter(row_number() <= threshold) %>% arrange(gvc) %>%
     mutate(gvc_csum = cumsum(gvc))
@@ -222,11 +222,11 @@ PGSs <- as_tibble(fread(loc_PGSs)) %>% filter(pop != "Ashkenazi")
 PGSs[PGSs$pop=="United","pop"] <- "UK"
 
 ## makes Lorenz plots
-low_gini_code <- "neuroticism"
+low_gini_code <- "height"
 low_gini_sf <- cleanup_data_lorenz(low_gini_code)
 low_gini_plot <- plot_lorenz(low_gini_code, low_gini_sf)
 
-high_gini_code <- "log_bilirubin"
+high_gini_code <- "F_length_menstrual_cycle"
 high_gini_sf <- cleanup_data_lorenz(high_gini_code)
 high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf)
 
