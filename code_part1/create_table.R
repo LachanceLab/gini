@@ -113,6 +113,7 @@ traits_table$cMperMb <- as.numeric(NA)
 threshold <- 100                # top # of bins (by gvc) to include
 average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
+all_pops <- c("meta_hq","meta","EUR","AFR","AMR","CSA","EAS")
 
 if (calculate_rec_rate) {
   # loads recombination map, filters out X chromosome, converts chr to number
@@ -130,7 +131,8 @@ top_indep_SNPs <- tibble(
   ref = as.character(),
   alt = as.character(),
   prive_code = as.character(),
-  pop = as.character()
+  pop = as.character(),
+  gvc = as.numeric()
 )
 pop_ginis <- tibble(
   prive_code = as.character(),
@@ -162,20 +164,20 @@ for (i in 1:nrow(traits_table)) {
   # reads summary file for trait
   filename <- paste0(code,"_sf_indep.txt")
   loc_summary_file <- paste0(dir_sf,filename)
-  sf <- sf_raw <- as_tibble(fread(loc_summary_file)) %>%
+  sf <- as_tibble(fread(loc_summary_file)) %>%
     group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup() %>%
-    filter(chr != "X") %>%
-    mutate(chr = as.numeric(chr)) %>%
-    unique() %>%
-    select(-ends_with("MID")) # removed since not found in 1kG
+    filter(chr != "X") %>% mutate(chr = as.numeric(chr)) %>% unique() %>%
+    select(-ends_with("MID"), # removed since not found in 1kG
+           -any_of(c("WC_beta","AF","gvc")))
   
   # appends 1kG AFs to summary files if not already present
   if (!("AF_1kG_EUR" %in% colnames(sf))) {
-    sf <- sf_raw <- sf %>%
+    sf <- sf %>%
       left_join(AFs_1kG %>% select(CHR, BP, A1, A2, starts_with("AF_1kG_")),
                 by=c("chr"="CHR","pos"="BP","ref"="A2","alt"="A1"))
   }
   n_sig_SNPs <- nrow(sf)
+  traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   
   # gets list of populations GWASs were done on
   beta_pops <- substring(colnames(sf %>% select(starts_with("beta_"))),6)
@@ -191,85 +193,79 @@ for (i in 1:nrow(traits_table)) {
   } else { meta2use <- "EUR" }
   col_beta <- paste0("beta_",meta2use)
   col_se <- paste0("se_",meta2use)
-  # shuffles order of af_pops such that meta & meta_hq come last
-  af_pops2 <- c(af_pops[!grepl("meta",af_pops)],af_pops[grepl("meta",af_pops)])
-  # extracts sample size
-  for (pop in af_pops2) {
-    col_AF <- paste0("af_",pop)
-    af_cases_pop <- paste0("af_cases_",pop)
-    af_controls_pop <- paste0("af_controls_",pop)
-    
-    # for non-meta pops, fills in NA values with 1kG AFs
-    if ((pop != "meta_hq") & (pop != "meta")) {
-      col_1kG_AF <- paste0("AF_1kG_",pop)
-      if (col_AF %in% colnames(sf)) {
-        sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_1kG_AF]
-      }
-      if (af_controls_pop %in% colnames(sf)) {
-        sf[is.na(sf[[af_controls_pop]]),af_controls_pop] <- sf[is.na(sf[[af_controls_pop]]),col_1kG_AF]
-        sf[is.na(sf[[af_cases_pop]]),af_cases_pop] <- sf[is.na(sf[[af_cases_pop]]),col_1kG_AF]
+  
+  # for quantitative traits, makes backup of AFs before 1kG imputation
+  if (trait_type=="quantitative") {
+    for (pop in all_pops) {
+      col_AF_panUKB <- paste0("AF_panUKB_",pop)
+      col_AF_1kG <- paste0("AF_1kG_",pop)
+      col_AF <- paste0("af_",pop)
+      # makes backup of AFs before 1kG imputation
+      if (pop %in% af_pops) { sf[,col_AF_panUKB] <- sf[,col_AF]
+      } else if (pop!="meta_hq" & pop!="meta") {sf[,col_AF] <- as.numeric(NA)} 
+      # imputes missing AF_panUKB with AF_1kG
+      if (pop!="meta_hq" & pop!="meta") {
+        sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_AF_1kG]
       }
     }
-    
-    # uses meta cases/controls ratio for meta_hq
-    n_pop <- switch(pop,
-                    "meta" = "full_cohort_both_sexes",
-                    "meta_hq" = "full_cohort_both_sexes", #"hq_cohort_both_sexes",
-                    pop)
-    
-    # extracts number of cases
-    n_cases <- slice[1,paste0("n_cases_",n_pop)][[1]]
-    # extracts number of controls
-    if (trait_type=="binary") {
-      # for meta/meta_hq, sums all population controls
-      if ((pop == "meta_hq") | (pop == "meta")) {
-        n_controls <- rowSums(slice %>% select(starts_with("n_controls_")), na.rm=TRUE)
-      } else { n_controls <- slice[1,paste0("n_controls_",n_pop)][[1]] }
-    } else { n_controls <- 0 }
-    # gets total number of cases/controls
-    n_total <- n_cases + n_controls
-    
-    # adds pop-specific case+control AFs based on weighted average AFs
-    if (!(col_AF %in% colnames(sf))) {
-      sf[,col_AF] <- (n_cases * sf[,af_cases_pop] + n_controls * sf[,af_controls_pop]) / n_total
+  } else if (trait_type=="binary") {
+    for (pop in all_pops) {
+      col_AF_1kG <- paste0("AF_1kG_",pop)
+      col_AF <- paste0("af_",pop)
+      af_cases_pop <- paste0("af_cases_",pop)
+      af_controls_pop <- paste0("af_controls_",pop)
+      if (pop %in% af_pops) {
+        # uses meta cases/controls ratio for meta_hq
+        n_pop <- switch(pop,
+                        "meta" = "full_cohort_both_sexes",
+                        "meta_hq" = "full_cohort_both_sexes", #"hq_cohort_both_sexes",
+                        pop)
+        # extracts number of cases
+        n_cases <- slice[1,paste0("n_cases_",n_pop)][[1]]
+        # extracts number of controls, for meta/meta_hq, sums all population controls
+        if ((pop == "meta_hq") | (pop == "meta")) {
+          n_controls <- rowSums(slice %>% select(starts_with("n_controls_")), na.rm=TRUE)
+        } else { n_controls <- slice[1,paste0("n_controls_",n_pop)][[1]] }
+        # gets total number of cases/controls
+        n_total <- n_cases + n_controls
+        if (pop == meta2use) {n_total_meta <- n_total}
+        
+        # adds pop-specific case+control AFs based on weighted average AFs
+        sf[,col_AF] <- (n_cases * sf[,af_cases_pop] + n_controls * sf[,af_controls_pop]) / n_total
+      } else if (pop!="meta_hq" & pop!="meta") {sf[,col_AF] <- as.numeric(NA)} 
+      # imputes missing AF_panUKB with AF_1kG
+      if (pop!="meta_hq" & pop!="meta") {
+        sf[is.na(sf[[col_AF]]),col_AF] <- sf[is.na(sf[[col_AF]]),col_AF_1kG]
+      }
     }
-    
   }
   # filters to SNPs with AF-data for every pop and under p-val cutoff
   col_afs <- paste0("af_",af_pops)
   sf <- sf %>% filter(if_all(all_of(col_afs), ~!is.na(.)), pval < pval_cutoff)
-  n_sig_SNPs_allpops <- nrow(sf)
-  
-  traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
-  traits_table[i, "n_sig_SNPs_allpops"] <- n_sig_SNPs_allpops
   
   # for the chosen meta2use column, uses Winner's Curse correction for its beta
-  col_AF <- paste0("af_",meta2use)
-  sf_WC <- sf %>% mutate(discovery.n = n_total) %>%
+  col_AF <- "af_meta2use"
+  sf[,col_AF] <- sf[,paste0("af_",meta2use)]
+  sf_WC <- sf %>% mutate(discovery.n = n_total_meta) %>%
     select(discovery.beta = !!enquo(col_beta),
            discovery.se = !!enquo(col_se),
            discovery.n, discovery.freq = !!enquo(col_AF))
   sf_WC <- as_tibble(correct_winners_curse(as.data.frame(sf_WC), pval_cutoff))
+  col_beta <- "beta_meta2use_WC"
   sf[,col_beta] <- sf_WC$debiased.beta.mle
   # gets gvc for each SNP
-  sf <- get_gvc(sf, col_beta, col_AF)
+  sf <- get_gvc(sf, col_beta, col_AF) %>% select(-rank, -rank_percentile)
+  colnames(sf)[colnames(sf)=="gvc"] <- "gvc_meta2use"
   # for meta/meta_hq: gets the sum of gvc and joins columns of WC-corrected meta
   # beta, meta AF, and subsequent gvc
-  sum_gvc_all <- sum(sf$gvc)
-  sf_raw <- sf_raw %>%
-    select(-any_of(c("WC_beta","AF","gvc"))) %>%
-    left_join(sf %>% select(SNP, WC_beta = !!enquo(col_beta), AF = !!enquo(col_AF), gvc),
-              by="SNP")
-  # writes appended sf to system (missing AFs not filled and meta_beta column not WC corrected)
-  fwrite(sf_raw, loc_summary_file, sep="\t")
+  sum_gvc_all <- sum(sf$gvc_meta2use)
   
   # loops through meta + all populations
-  for (pop in af_pops) {
+  for (pop in c(af_pops, all_pops[-c(1:2)]) %>% unique()) {
     col_AF <- paste0("af_",pop)
     # gets gvc for each SNP
-    sf_pop <- get_gvc(sf, col_beta, col_AF)
-    
-    gvc_list <- pad_zeros(sf_pop$gvc, threshold)
+    sf <- get_gvc(sf, col_beta, col_AF) %>% select(-rank, -rank_percentile)
+    gvc_list <- pad_zeros(sf$gvc, threshold)
     # calculates gini
     gini <- get_gini(gvc_list)
     # gets the sum of gvc among top SNPs
@@ -278,7 +274,7 @@ for (i in 1:nrow(traits_table)) {
       traits_table[i,"gini_panUKB"] <- gini
     }
     # adds data to table
-    print(paste(code, pop, gini))
+    print(paste(code, pop, round(gini,4)))
     pop_ginis <- pop_ginis %>% add_row(
       prive_code = code,
       beta_pop = substring(col_beta,6),
@@ -286,13 +282,17 @@ for (i in 1:nrow(traits_table)) {
       gini = gini
     )
     # extracts the top significant SNPs and adds to growing list
-    sf_top <- sf_pop %>% filter(rank <= threshold)
+    sf_top <- sf %>% arrange(-gvc) %>% filter(row_number() <= threshold)
     sf_top_out <- sf_top %>%
       rename(chrom = chr, chr_position = pos) %>%
-      select(chrom, chr_position, SNP, ref, alt) %>%
-      mutate(prive_code = code, chrom = as.character(chrom), pop=pop)
+      mutate(prive_code = code, chrom = as.character(chrom), pop=pop) %>%
+      select(chrom, chr_position, SNP, ref, alt, prive_code, pop, gvc)
     top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
+    
+    colnames(sf)[colnames(sf)=="gvc"] <- paste0("gvc_",pop)
   }
+  # saves sf back to system (WARNING: overrides file)
+  fwrite(sf, loc_summary_file, sep="\t")
   
   ##############################################################################
   # calculates recombination rate #
@@ -348,8 +348,7 @@ pop_ginis2 <- pop_ginis %>%
   )
 traits_table <- traits_table %>% left_join(pop_ginis2, by = "prive_code")
 # saves list of significant SNPs
-top_indep_SNPs <- top_indep_SNPs %>% distinct()
-loc_out <- paste0(dir_out,"top_indep_SNPs_popspecific.txt")
+loc_out <- paste0(dir_out,"top_indep_SNPs.txt")
 fwrite(top_indep_SNPs, loc_out, sep="\t")
 
 ## Calculating portability indices ####
