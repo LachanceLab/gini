@@ -110,7 +110,7 @@ pop_centers <- read.csv(
 traits_table$cMperMb <- as.numeric(NA)
 
 # settings used for calculating gini
-threshold <- 100                # top # of bins (by gvc) to include
+threshold <- 500                # top # of SNPs (by gvc) to include
 average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
 all_pops <- c("meta_hq","meta","EUR","AFR","AMR","CSA","EAS")
@@ -167,8 +167,7 @@ for (i in 1:nrow(traits_table)) {
   sf <- as_tibble(fread(loc_summary_file)) %>%
     group_by(SNP) %>% filter(pval == min(pval)) %>% ungroup() %>%
     filter(chr != "X") %>% mutate(chr = as.numeric(chr)) %>% unique() %>%
-    select(-ends_with("MID"), # removed since not found in 1kG
-           -any_of(c("WC_beta","AF","gvc")))
+    select(-ends_with("MID")) # removed since not found in 1kG
   
   # appends 1kG AFs to summary files if not already present
   if (!("AF_1kG_EUR" %in% colnames(sf))) {
@@ -180,13 +179,14 @@ for (i in 1:nrow(traits_table)) {
   traits_table[i, "n_sig_SNPs"] <- n_sig_SNPs
   
   # gets list of populations GWASs were done on
-  beta_pops <- substring(colnames(sf %>% select(starts_with("beta_"))),6)
-  af_pops <- substring(colnames(sf %>% select(starts_with("af_cases_"))),10)
+  beta_pops <- substring(colnames(sf %>% select(starts_with("beta_"), -contains("meta2use"))),6)
+  af_pops <- substring(colnames(sf %>% select(starts_with("af_cases_"), -contains("meta2use"))),10)
   trait_type <- "binary"
   if (length(af_pops) == 0) {
     trait_type <- "quantitative"
-    af_pops <- substring(colnames(sf %>% select(starts_with("af_", ignore.case = FALSE))),4)
+    af_pops <- substring(colnames(sf %>% select(starts_with("af_", ignore.case = FALSE), -contains("meta2use"))),4)
   }
+  af_pops <- beta_pops # temporary fix
   # defines columns to use in gvc calculations later
   if ("meta_hq" %in% beta_pops) { meta2use <- "meta_hq"
   } else if ("meta" %in% beta_pops) { meta2use <- "meta"
@@ -254,8 +254,7 @@ for (i in 1:nrow(traits_table)) {
   col_beta <- "beta_meta2use_WC"
   sf[,col_beta] <- sf_WC$debiased.beta.mle
   # gets gvc for each SNP
-  sf <- get_gvc(sf, col_beta, col_AF) %>% select(-rank, -rank_percentile)
-  colnames(sf)[colnames(sf)=="gvc"] <- "gvc_meta2use"
+  sf[,"gvc_meta2use"] <- get_gvc(sf, col_beta, col_AF)
   # for meta/meta_hq: gets the sum of gvc and joins columns of WC-corrected meta
   # beta, meta AF, and subsequent gvc
   sum_gvc_all <- sum(sf$gvc_meta2use)
@@ -263,9 +262,10 @@ for (i in 1:nrow(traits_table)) {
   # loops through meta + all populations
   for (pop in c(af_pops, all_pops[-c(1:2)]) %>% unique()) {
     col_AF <- paste0("af_",pop)
+    col_gvc <- paste0("gvc_",pop)
     # gets gvc for each SNP
-    sf <- get_gvc(sf, col_beta, col_AF) %>% select(-rank, -rank_percentile)
-    gvc_list <- pad_zeros(sf$gvc, threshold)
+    sf[,col_gvc] <- get_gvc(sf, col_beta, col_AF)
+    gvc_list <- pad_zeros(sf[[col_gvc]], threshold)
     # calculates gini
     gini <- get_gini(gvc_list)
     # gets the sum of gvc among top SNPs
@@ -282,17 +282,16 @@ for (i in 1:nrow(traits_table)) {
       gini = gini
     )
     # extracts the top significant SNPs and adds to growing list
-    sf_top <- sf %>% arrange(-gvc) %>% filter(row_number() <= threshold)
+    sf_top <- sf %>% arrange(desc(!!sym(col_gvc))) %>%
+      filter(row_number() <= threshold)
     sf_top_out <- sf_top %>%
       rename(chrom = chr, chr_position = pos) %>%
       mutate(prive_code = code, chrom = as.character(chrom), pop=pop) %>%
-      select(chrom, chr_position, SNP, ref, alt, prive_code, pop, gvc)
+      select(chrom, chr_position, SNP, ref, alt, prive_code, pop, gvc=!!enquo(col_gvc))
     top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
-    
-    colnames(sf)[colnames(sf)=="gvc"] <- paste0("gvc_",pop)
   }
   # saves sf back to system (WARNING: overrides file)
-  fwrite(sf, loc_summary_file, sep="\t")
+  #fwrite(sf, loc_summary_file, sep="\t")
   
   ##############################################################################
   # calculates recombination rate #

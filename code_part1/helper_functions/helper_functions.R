@@ -58,13 +58,13 @@ get_gvc <- function(data_AF, col_beta, col_AF) {
   pop_data <- data_AF %>%
     mutate(
       gvc = 2 * data_AF[[col_beta]]**2 * data_AF[[col_AF]] * (1 - data_AF[[col_AF]]) 
-    ) %>%
-    arrange(desc(is.na(gvc)),gvc) %>%
-    mutate(
-      rank = nrow(data_AF) - row_number() + 1,
-      rank_percentile = rank / max(rank)
-    )
-  return(pop_data)
+    ) # %>%
+    # arrange(desc(is.na(gvc)),gvc) %>%
+    # mutate(
+    #   rank = nrow(data_AF) - row_number() + 1,
+    #   rank_percentile = rank / max(rank)
+    # )
+  return(pop_data$gvc) #only returns gvc column
 }
 # function that computes the gini of a list of values in ascending order (can't be all zeros either)
 get_gini <- function(list) {
