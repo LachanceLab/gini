@@ -368,12 +368,12 @@ robustness_tbl %>%
             prop_gvc_top_mean = mean(prop_gvc_top))
 
 robustness_tbl %>%
-  filter(top_SNP=="pop-specific",threshold %in% thresholds, pop %in% pops2use,
-         beta_source=="meta/EUR") %>% filter(pop == "meta") %>%
+  filter(top_SNP=="pop-specific",threshold == 500, pop %in% pops2use,
+         beta_source=="meta/EUR") %>% #filter(pop == "meta") %>%
   left_join(traits_table[,c("prive_code","group_consolidated")],by="prive_code") %>%
 ggplot(aes(x=prop_gvc_top, y=gini)) +
   geom_point(aes(color=group_consolidated), alpha=0.5) +
   geom_smooth(method='lm') +
-  facet_wrap(~threshold) +
+  facet_wrap(~pop) +
   xlim(0,1) + ylim(0,1) +
-  labs(title="gini vs prop_gvc_top at different thresholds")
+  labs(title="gini vs prop_gvc_top for different populations")

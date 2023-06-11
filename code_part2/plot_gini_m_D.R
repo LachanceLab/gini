@@ -51,7 +51,7 @@ common_theme <- theme_light() +
 )
 
 # function that reads a trait's summary file and extracts the needed columns for plotting
-cleanup_data_lorenz <- function(code, threshold=100) {
+cleanup_data_lorenz <- function(code, threshold=500) {
   loc_sf <- paste0(dir_sfs,code,"_sf_indep.txt")
   
   sf <- as_tibble(fread(loc_sf)) %>%
@@ -80,7 +80,7 @@ plot_lorenz <- function(code, sfile) {
   title <- paste0(description)
   # sets proper math formatting for plot annotation
   gini_text <- formatC(gini[[1]],digits=3, format="f")
-  text <- paste0("G[100]==",gini_text)
+  text <- paste0("G[500]==",gini_text)
   
   # makes Lorenz curve plot
   gg <- ggplot(sfile, aes(x=100*percentile, y=gvc_cshare)) +
@@ -226,7 +226,7 @@ low_gini_code <- "height"
 low_gini_sf <- cleanup_data_lorenz(low_gini_code)
 low_gini_plot <- plot_lorenz(low_gini_code, low_gini_sf)
 
-high_gini_code <- "F_length_menstrual_cycle"
+high_gini_code <- "log_potassium_urine"
 high_gini_sf <- cleanup_data_lorenz(high_gini_code)
 high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf)
 

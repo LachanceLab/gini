@@ -20,7 +20,7 @@ pops <- c("EUR","AFR","AMR","CSA","EAS")
 ldscores_already_ajdusted <- TRUE
 # set to TRUE if code has already been run once, meaning that the top independent
 # SNPs file already contains the ld-scores for each SNP
-top_SNPs_already_appended <- TRUE
+top_SNPs_already_appended <- FALSE
 
 ## Functions
 

@@ -43,8 +43,9 @@ gini_p_theme <- theme(
 traits_table <- as_tibble(fread(loc_table))
 
 pop_ginis2 <- traits_table %>%
-  select(prive_code, GWAS_trait_type, group_consolidated, #portability_index,
-         starts_with("gini_"), pops, pops_pass_qc) %>% filter(GWAS_trait_type == "quantitative")
+  select(prive_code, GWAS_trait_type, PGS_trait_type, group_consolidated, #portability_index,
+         starts_with("gini_"), pops, pops_pass_qc) %>%
+  filter(GWAS_trait_type == "quantitative", PGS_trait_type=="quantitative")
 #pops <- substring(colnames(traits_table %>% select(starts_with("gini_"))),6)[-1]
 pops <- c("EUR","AMR","CSA","AFR","EAS") # "MID" ommitted
 
@@ -78,31 +79,36 @@ for (i in 1:length(pops)) {
 }
 ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 3, nrow = 2)
 
-loc_out <- paste0(dir_out,"gini_by_pop2.", print_mode)
+loc_out <- paste0(dir_out,"gini_by_pop.", print_mode)
 print_plot(ukginis, loc_out, print_mode, 4*500, 2*500, sf)
 print(loc_out)
 
-###
-
-cor_ginis <- tibble(pop1 = character(), pop2 = character(), r = numeric(), p = numeric())
-cols_ginis <- colnames(pop_ginis2 %>% select(starts_with("gini_")))
-for (col1 in cols_ginis) {
-  pop1 <- substr(col1, 6, nchar(col1))
-  for (col2 in cols_ginis) {
-    pop2 <- substr(col2, 6, nchar(col2))
-    
-    cor1 <- cor.test(pop_ginis2[[col1]], pop_ginis2[[col2]])
-    cor_ginis <- cor_ginis %>% add_row(
-      pop1=pop1, pop2=pop2, r=cor1$estimate, p=cor1$p.value
-    )
-  }
-}
-cor_ginis <- cor_ginis %>%
-  filter(pop1 != "panUKB", pop2 != "panUKB", pop1 != pop2)
-mean((cor_ginis %>% filter(pop1=="meta", pop2 != "EUR"))$r)
+# ###
+# 
+# cor_ginis <- tibble(pop1 = character(), pop2 = character(), r = numeric(), p = numeric())
+# cols_ginis <- colnames(pop_ginis2 %>% select(starts_with("gini_")))
+# for (col1 in cols_ginis) {
+#   pop1 <- substr(col1, 6, nchar(col1))
+#   for (col2 in cols_ginis) {
+#     pop2 <- substr(col2, 6, nchar(col2))
+#     
+#     cor1 <- cor.test(pop_ginis2[[col1]], pop_ginis2[[col2]])
+#     cor_ginis <- cor_ginis %>% add_row(
+#       pop1=pop1, pop2=pop2, r=cor1$estimate, p=cor1$p.value
+#     )
+#   }
+# }
+# cor_ginis <- cor_ginis %>%
+#   filter(pop1 != "panUKB", pop2 != "panUKB", pop1 != pop2)
+# mean((cor_ginis %>% filter(pop1=="meta", pop2 != "EUR"))$r)
 
 ####
 library(GGally)
-ggpairs(pop_ginis2,
-        mapping=aes(color=group_consolidated),
-        columns = paste0("gini_",pops))
+popxpop <- ggpairs(pop_ginis2, mapping=aes(color=group_consolidated),
+                   columns = paste0("gini_",pops)) +
+  labs(title="not finalized plot")
+
+loc_out <- paste0(dir_out,"gini_by_pop2.", print_mode)
+print_plot(popxpop, loc_out, print_mode, 1.5*500, 1.5*500, sf)
+ggsave(loc_out, popxpop,device="png", width=3500,height=3500, units="px")
+print(loc_out)
