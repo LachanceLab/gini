@@ -24,6 +24,7 @@ LD_long2 <- LD_long %>%
                             traitLD_unadj_min,traitLD_unadj_max,traitLD_unadj_mean),
     by="prive_code"
   ) %>% filter(GWAS_trait_type=="quantitative", PGS_trait_type=="quantitative")
+LD_long2 %>% group_by(pop) %>% summarize(traitLD_unadj = mean(traitLD_unadj)) %>% arrange(traitLD_unadj)
 
 ggplot(LD_long2,aes(x=reorder(short_label, traitLD_unadj_mean), y = traitLD_unadj)) +
   geom_segment(aes(xend=reorder(short_label, traitLD_unadj_mean), y=traitLD_unadj_min, yend=traitLD_unadj_max)) +
@@ -36,7 +37,7 @@ ggplot(LD_long2,aes(x=reorder(short_label, traitLD_unadj_mean), y = traitLD_unad
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   xlab("Trait (quantitative only)") +
   ylab("Trait LD-Score (not MAF-adjusted)") +
-  labs(subtitle="Number on the left is the number of independently significant (p<1E-5) SNPs used in calculations")
+  labs()
 
 
 # gini plot

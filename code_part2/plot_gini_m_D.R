@@ -9,9 +9,10 @@
 # keep running into issues, close R (unloading all libraries) and retry
 detach("package:plyr", unload=TRUE)
 library(tidyverse)
+library(data.table)
+library(scales)
 library(ggpubr)
 library(ggrepel)
-library(data.table)
 source("../code_part1/helper_functions/helper_functions.R")
 
 # sets working directory
@@ -194,6 +195,45 @@ plot_divergence <- function(code) {
              parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
 }
+# function that generates traitLD bar plot
+pops <- c("AFR","CSA","EAS","AMR","EUR")
+pop_LDs <- traits_table %>% filter(GWAS_trait_type=="quantitative",PGS_trait_type=="quantitative")
+max_CoV <- max(pop_LDs$traitLD_unadj_CoV)
+pop_LDs <- pop_LDs %>%
+  select(prive_code,any_of(paste0("traitLD_unadj_",pops))) %>% pivot_longer(
+    cols = starts_with("traitLD_unadj_"),
+    names_to = "pop",
+    names_prefix = "traitLD_unadj_",
+    values_to = "traitLD_unadj"
+  )
+plot_traitLD <- function(code) {
+  # extracts info about trait
+  slice <- traits_table %>% filter(prive_code==code)
+  description <- slice$description
+  traitLD_tbl <- pop_LDs %>% filter(prive_code == code)
+  
+  ylims <- c(slice$traitLD_unadj_mean - 2 * slice$traitLD_unadj_mean * max_CoV,
+             slice$traitLD_unadj_mean + 2 * slice$traitLD_unadj_mean * max_CoV)
+  
+  # adds text for traitLD_unadj_CV
+  text <- paste0("CV==",round(slice$traitLD_unadj_CoV,3))
+  gg <- ggplot(traitLD_tbl, aes(x = factor(pop, levels=pops), y = traitLD_unadj)) +
+    common_theme +
+    geom_hline(yintercept = slice$traitLD_unadj_mean, color="gray", size=2) +
+    geom_col(aes(fill=pop)) +
+    scale_y_continuous(limits=ylims,oob = rescale_none) +
+    xlab("Continental Population") +
+    ylab("TraitLD") +
+    labs(title = description, fill = "Ancestry") +
+    scale_fill_manual(values = c("#00A9FF","#7CAE00","#CD9600","#F8766D","#FF61CC"),
+                      breaks = pops) +
+    theme(axis.ticks.x = element_blank()) +
+    annotate("text",
+             x=pops[3], y = 0.985*diff(ylims) + ylims[1], label = text,
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
+  
+  gg
+}
 ### Code ####
 
 # reads traits table
@@ -248,6 +288,17 @@ high_D_code <- "darker_skin0"
 high_D_plot <- plot_divergence(high_D_code) +
   theme(legend.position = "none")
 
+# makes traitLD plots
+low_CV_code <- "log_glucose"
+low_CV_plot <- plot_traitLD(low_CV_code) +
+  theme(legend.justification = c(0,1),
+        legend.position = c(0.01, 0.99),
+        legend.background = element_rect(fill="transparent"))
+
+high_CV_code <- "neuroticism"
+high_CV_plot <- plot_traitLD(high_CV_code) +
+  theme(legend.position = "none")
+
 ## arranges all plots together
 # plots <- list(low_gini_plot , high_gini_plot,
 #               low_m_plot , high_m_plot,
@@ -255,10 +306,10 @@ high_D_plot <- plot_divergence(high_D_code) +
 # 
 # ncol = 2
 # nrow = 3
-plots <- list(low_gini_plot , high_m_plot, low_D_plot,
-              high_gini_plot, low_m_plot, high_D_plot)
+plots <- list(low_gini_plot , high_m_plot, low_D_plot, low_CV_plot,
+              high_gini_plot, low_m_plot, high_D_plot, high_CV_plot)
 
-ncol = 3
+ncol = 4
 nrow = 2
 gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow)
 
