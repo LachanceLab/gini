@@ -49,6 +49,11 @@ traits_table2 <- traits_table %>%
          group_consolidated, prevalence, all_of(vars)) %>%
   mutate(lifestyle = group_consolidated == "lifestyle/psychological")
 
+# manually set binary traits with inflated heritability to 0.6
+# (liability scale from original data is often exagerated)
+traits_table$ldpred2_h2[which(traits_table$PGS_trait_type == "binary" &
+                              traits_table$ldpred2_h2 > 0.6)] <- 0.6
+
 # Helper function for writing p-values onto plots
 color_p_significant <- "gray5"
 color_p_nonsignificant <- "gray60"
@@ -184,7 +189,7 @@ get_axis_lims <- function(vector,hard_min=NA,hard_max=NA) {
 axis_lims <- list(
   "log_F" = get_axis_lims(traits_table2$log_F),
   "traitLD_unadj_CoV"= get_axis_lims(traits_table2$traitLD_unadj_CoV),
-  "ldpred2_h2" = c(0,1),
+  "ldpred2_h2" = c(0,0.6),
   "pcor_United"= get_axis_lims(traits_table2$pcor_United,0),
   "portability_index"= get_axis_lims(traits_table2$portability_index,NA,0),
   "gini_panUKB"=c(0,1))
@@ -340,8 +345,9 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
                         values = c("binary"="#F8766D", "quantitative"="#00BFC4"))
   }
   # log10 scales for h^2
-  if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1))}
-  else {p <- p + xlim(xlims)}
+  # if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1))}
+  # else {p <- p + xlim(xlims)}
+  p <- p + xlim(xlims)
   # Adds p-value to plot
   # pads top to allow space for p-value
   yrange <- layer_scales(p)$y$range$range
@@ -350,7 +356,8 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   p <- p +
     scale_y_continuous(limits = yrange, expand=expansion(mult = c(0, .05))) +
     annotate("text",
-             x = ifelse(x=="ldpred2_h2",0.1,mean(xlims)),
+             #x = ifelse(x=="ldpred2_h2",0.1,mean(xlims)),
+             x = mean(xlims),
              y=diff(yrange)*((0.95+padding)/(2*padding)),
              label = text, parse=TRUE, vjust=0, hjust=0.5, size=4*sf,
              color=p_text_list[[2]])
