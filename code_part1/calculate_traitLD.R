@@ -120,7 +120,7 @@ for (i in 1:nrow(traits_table)) {
       # log10 transforms unadjusted traitLD score
       if (adj_status == "") {
         col_traitLD <- paste0("traitLD_unadj_",pop)
-        traitLD <- log10(traitLD)
+        #traitLD <- log10(traitLD) # no longer log10'ing unadjusted traitLD values
       } else {
         col_traitLD <- paste0("traitLD_adj_",pop)
       }
@@ -130,7 +130,6 @@ for (i in 1:nrow(traits_table)) {
     }
   }
 }
-
 ### computes meta-metrics related to traitLD across population
 LD_table <- traits_table %>%
   select(prive_code, starts_with("traitLD_unadj_")) %>%
