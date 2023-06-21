@@ -149,4 +149,25 @@ ggplot(pop_threshold_tbl, aes(x=as.factor(threshold), y=prop_gvc_top)) +
        color = "Population") +
   theme_light()
 
+#### compares prop_gvc_top against gini ####
+prop_vs_gini_tbl <- robustness_tbl %>%
+  filter(pop == "meta2use", threshold == 500) %>%
+  left_join(traits_table[c("prive_code","group_consolidated")], by="prive_code")
+gg <- ggplot(prop_vs_gini_tbl, aes(x=prop_gvc_top, y=gini)) +
+  geom_point(aes(color=group_consolidated), alpha=0.75, size=4*sf) +
+  xlim(0,1) + ylim(0,1) +
+  coord_fixed() +
+  labs(#title = expression(paste("Gini vs Proportion of ",italic(gvc)," among top SNPs for quantitative traits")),
+    x = expression(paste("Proportion of total ", italic(gvc), " captured within top SNPs")),
+    y = expression(paste("Gini"[500])),
+    color = "Trait Group") +
+  theme_light() +
+  gini_p_theme +
+  theme(legend.position = "top") +
+  gc_scale
+# prints out plot
+loc_out <- paste0("../generated_figures/gini_vs_prop-gvc-top.", print_mode)
+print(loc_out)
+print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+
 
