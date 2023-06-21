@@ -170,4 +170,25 @@ loc_out <- paste0("../generated_figures/gini_vs_prop-gvc-top.", print_mode)
 print(loc_out)
 print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
 
-
+#### gini_rank at different thresholds ####
+gini_rank_tbl <- robustness_tbl %>%
+  filter(pop == "meta2use") %>%
+  group_by(threshold) %>%
+  mutate(gini_rank = rank(gini)) %>%
+  left_join(traits_table[c("prive_code","group_consolidated")], by="prive_code")
+gg <- ggplot(gini_rank_tbl, aes(x = as.factor(threshold), y = gini_rank)) +
+  geom_line(aes(group=prive_code, color=group_consolidated), size=0.75*sf, key_glyph = "rect") +
+  labs(#title = 'Relative trait Gini rank at different top # of SNPs for 96 quantitative traits,
+       x = 'Top # of SNPs used in Gini calculation',
+       y = 'Trait rank by Gini (low rank = high Gini)',
+       color = "Trait Group") +
+  scale_x_discrete(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0.01,0.01)) +
+  scale_y_reverse() +
+  theme_light() + gini_p_theme +
+  theme(legend.position = "top") +
+  gc_scale
+# prints out plot
+loc_out <- paste0("../generated_figures/gini-rank_vs_threshold.", print_mode)
+print(loc_out)
+print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
