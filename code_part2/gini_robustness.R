@@ -192,3 +192,44 @@ gg <- ggplot(gini_rank_tbl, aes(x = as.factor(threshold), y = gini_rank)) +
 loc_out <- paste0("../generated_figures/gini-rank_vs_threshold.", print_mode)
 print(loc_out)
 print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+
+#### gini_pop vs gini_meta
+# makes table of ginis
+pop_ginis2 <- traits_table %>%
+  select(prive_code, GWAS_trait_type, PGS_trait_type, group_consolidated, #portability_index,
+         starts_with("gini_")) %>%
+  filter(GWAS_trait_type == "quantitative", PGS_trait_type=="quantitative")
+
+pops <- c("EUR","AMR","CSA","AFR","EAS") # "MID" ommitted
+
+gini_UK_plots <- list()
+for (i in 1:length(pops)) {
+  # computes correlation
+  pop2 <- pops[i]
+  col_pop2 <- paste0("gini_",pop2)
+  cor <- cor.test(pop_ginis2[["gini_panUKB"]], pop_ginis2[[col_pop2]])
+  # makes actual plot
+  p<-ggplot(data=pop_ginis2, aes(x = !!as.name(col_pop2), y = gini_panUKB, color=group_consolidated)) +
+    geom_abline(slope=1,intercept=0, size=1*sf) +
+    geom_point(alpha=0.75, size=4*sf) +
+    scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
+    scale_y_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
+    xlab(bquote(Gini[500][','][.(pop2)])) +
+    ylab(bquote(Gini[500][','][meta])) +
+    labs(color = "Trait Group") +
+    coord_fixed() +
+    theme_light() +
+    gini_p_theme +
+    gc_scale +
+    theme(legend.position = "top") +
+    annotate("text", x=0.025, y=0.975,hjust=0,vjust=1, parse=TRUE, size=10*sf,
+             label = paste0("r==",round(cor$estimate,3)))
+  gini_UK_plots[[i]] <- p
+}
+ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 3, nrow = 2,
+                     common.legend = TRUE,
+                     legend.grob = get_legend(gini_UK_plots, position="top"))
+
+loc_out <- paste0("../generated_figures/gini_by_pop.", print_mode)
+print(loc_out)
+print_plot(ukginis, loc_out, print_mode, 4*500, 2*500, sf)
