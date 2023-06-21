@@ -43,12 +43,12 @@ common_theme <- theme_light() +
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(),
   panel.border = element_rect(colour = "black", fill=NA, size=1),
-  plot.title = element_text(hjust = 0.5, size=13*sf),
-  axis.title = element_text(size=12*sf),
-  axis.text = element_text(size=11*sf),
-  legend.title = element_text(size=12*sf),
-  legend.text = element_text(size=10*sf),
-  plot.margin = unit(0.25*sf*c(1,1.2,1,1), "cm")
+  plot.title = element_text(hjust = 0.5, size=15*sf),
+  axis.title = element_text(size=14*sf),
+  axis.text = element_text(size=13*sf),
+  legend.title = element_text(size=13*sf),
+  legend.text = element_text(size=11*sf),
+  plot.margin = unit(0.25*sf*c(1.2,1.4,1.2,1.2), "cm")
 )
 
 # function that reads a trait's summary file and extracts the needed columns for plotting
@@ -179,7 +179,8 @@ plot_divergence <- function(code) {
           legend.title.align = 0.5,
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank()) +
-    xlab("Polygenic Score per UKBB Individual") +
+    #xlab("Polygenic Score per UKBB Individual") +
+    xlab("Polygenic Score") +
     ylab("Density") +
     scale_x_continuous(expand=expansion(mult = c(0, 0))) +
     labs(title=paste0(description))
@@ -216,12 +217,12 @@ plot_traitLD <- function(code) {
              slice$traitLD_unadj_mean + 2 * slice$traitLD_unadj_mean * max_CoV)
   
   # adds text for traitLD_unadj_CV
-  text <- paste0("CV==",round(slice$traitLD_unadj_CoV,3))
+  text <- paste0("LDCV==",round(slice$traitLD_unadj_CoV,3))
   gg <- ggplot(traitLD_tbl, aes(x = factor(pop, levels=pops), y = traitLD_unadj)) +
     common_theme +
     geom_hline(yintercept = slice$traitLD_unadj_mean, color="gray", size=2) +
     geom_col(aes(fill=pop)) +
-    scale_y_continuous(limits=ylims,oob = rescale_none) +
+    scale_y_continuous(limits=ylims,oob = rescale_none, expand = c(0,0)) +
     xlab("Continental Population") +
     ylab("TraitLD") +
     labs(title = description, fill = "Ancestry") +
@@ -291,31 +292,26 @@ high_D_plot <- plot_divergence(high_D_code) +
 # makes traitLD plots
 low_CV_code <- "log_glucose"
 low_CV_plot <- plot_traitLD(low_CV_code) +
-  theme(legend.justification = c(0,1),
-        legend.position = c(0.01, 0.99),
-        legend.background = element_rect(fill="transparent"))
+  theme(legend.position = "none")
+  # theme(legend.justification = c(0,1),
+  #       legend.position = c(0.01, 0.99),
+  #       legend.background = element_rect(fill="transparent"))
 
 high_CV_code <- "neuroticism"
 high_CV_plot <- plot_traitLD(high_CV_code) +
   theme(legend.position = "none")
 
-## arranges all plots together
-# plots <- list(low_gini_plot , high_gini_plot,
-#               low_m_plot , high_m_plot,
-#               low_D_plot, high_D_plot)
-# 
-# ncol = 2
-# nrow = 3
-plots <- list(low_gini_plot , high_m_plot, low_D_plot, low_CV_plot,
-              high_gini_plot, low_m_plot, high_D_plot, high_CV_plot)
+plots <- list(low_CV_plot, NULL, low_gini_plot , NULL, high_m_plot, NULL, low_D_plot, 
+              high_CV_plot, NULL, high_gini_plot, NULL, low_m_plot, NULL, high_D_plot)
 
-ncol = 4
+ncol = 7 # NULL plots used for extra spacing
 nrow = 2
-gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow)
+gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow,
+                widths = c(1, 0.075, 1, 0.075, 1, 0.075, 1))
 
 # plot save settings for each plot (in pixels)
-plot_width <- 1100
-plot_height <- 1100
+plot_width <- 1200
+plot_height <- 1200
 
 loc_out <- paste0(dir_out,"gini_m_D.", print_mode)
-ggsave(loc_out,width=ncol*plot_width*sf,height=nrow*plot_height*sf,units="px")
+ggsave(loc_out,width=4*plot_width*sf,height=2*plot_height*sf,units="px")

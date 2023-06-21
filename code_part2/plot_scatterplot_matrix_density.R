@@ -154,7 +154,7 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  "traitLD_unadj_CoV" = c("Trait~LD~CV","(CV)"),
+  "traitLD_unadj_CoV" = c("Trait~LD~CV","(LDCV)"),
   "gini_panUKB" = c("Gini","(G[list(100)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
@@ -226,15 +226,6 @@ lm_scatterplot <- function(data, mapping) {
                        labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
                        values=gg_pca_scale[["values"]][gg_pca_scale_subset])
-  
-  # log10 scales for h^2
-  # if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1),
-  #                                                breaks = c(0.01,0.1,1),
-  #                                                labels = c("0.01","0.10","1.00"))}
-  # if (y == "ldpred2_h2") {p <- p + scale_y_log10(limits = c(0.0096,1),
-  #                                                breaks = c(0.01,0.1,1),
-  #                                                labels = c("0.01","0.10","1.00"))}
-  
   p
 }
 scplot_textsize <- 20
@@ -314,7 +305,6 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   # gets adjusted p-values from Wilcoxon Ranked Test already done
   if (the_var_comparison=="group") {
     col_var <- "lifestyle"
-    #data <- data %>% filter(GWAS_trait_type=="quantitative")
   } else if (the_var_comparison=="type") {col_var <- "GWAS_trait_type"}
   
   adj_p_value <- (p_values_WRT %>%
@@ -344,16 +334,13 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
                         breaks=c("binary", "quantitative"),
                         values = c("binary"="#F8766D", "quantitative"="#00BFC4"))
   }
-  # log10 scales for h^2
-  # if (x == "ldpred2_h2") {p <- p + scale_x_log10(limits = c(0.0096,1))}
-  # else {p <- p + xlim(xlims)}
-  p <- p + xlim(xlims)
   # Adds p-value to plot
   # pads top to allow space for p-value
   yrange <- layer_scales(p)$y$range$range
   padding <- 1.20
   yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1]
   p <- p +
+    xlim(xlims) +
     scale_y_continuous(limits = yrange, expand=expansion(mult = c(0, .05))) +
     annotate("text",
              #x = ifelse(x=="ldpred2_h2",0.1,mean(xlims)),
@@ -403,95 +390,3 @@ for (var_comparison in c("group","type")) {
   
   print(paste("Saved dual density plots for",var_comparison))
 }
-
-
-### Prevalence Plots ### SKIPPED <------
-
-# # calculates adjusted p-values for correlation measurement between prevalence 
-# # and summary statistics
-# p_values_cor2 <- tibble(
-#   var1 = as.character(),
-#   var2 = as.character(),
-#   cor = as.numeric(),
-#   unadj_p_value = as.numeric(),
-#   adj_p_value = as.numeric()
-# )
-# for (j in 1:(length(vars))) {
-#   y <- vars[[j]]
-#   cor1 <- cor.test(log10(as.data.frame(traits_table)[,"prevalence"]),
-#                    as.data.frame(traits_table)[,y])
-#   cor_value <- cor1$estimate[[1]]
-#   p_value <- cor1$p.value
-#   p_values_cor2 <- p_values_cor2 %>% add_row(
-#     var1 = "log10_prevalence",
-#     var2 = y,
-#     cor = cor_value,
-#     unadj_p_value = p_value,
-#     adj_p_value = NA
-#   )
-# }
-# # uses False Discovery Rate to adjust p-values
-# adj_p_values_cor2 <- p.adjust(p_values_cor2$unadj_p_value,p_adjust_method)
-# p_values_cor2$adj_p_value <- adj_p_values_cor2
-# 
-# # Actually generates and saves dual density plots to system
-# prevalence_plots <- list()
-# for (i in 1:length(vars)) {
-#   var_measurement <- vars[i]
-#   xlims <- axis_lims[[var_measurement]]
-#   
-#   adj_p_value <- (p_values_cor2 %>% filter(var2==var_measurement))$adj_p_value
-#   if (adj_p_value < 0.05) {linealpha <- 0.9
-#   } else {linealpha <- 0.4}
-#   
-#   # converts p-value to text version
-#   p_text_list <- p_value_to_text(adj_p_value)
-#   text <- p_text_list[[1]]
-#   
-#   p <- ggplot(traits_table %>% filter(PGS_trait_type == "binary", GWAS_trait_type=="binary"),
-#               aes(x = !!as.name(var_measurement), y = log10(prevalence))) +
-#     geom_line(stat="smooth", method="lm", color="#F8766D", formula=y~x, size=1*sf, alpha=linealpha) +
-#     geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
-#     geom_point(alpha=0.75,shape=19, size=1.75*sf) +
-#     xlab(var_labels[[var_measurement]]) +
-#     ylab(bquote(Log[10](Prevalence))) +
-#     theme_light()
-#   if ( var_measurement == "ldpred2_h2") {
-#     p <- p + scale_x_log10(limits = c(0.0096,1),
-#                            breaks = c(0.01,0.1,1),
-#                            labels = c("0.01","0.10","1.00"))
-#   } else {p <- p + xlim(xlims)}
-#   # Adds p-value to plot
-#   yrange <- layer_scales(p)$y$range$range
-#   padding <- 1.15
-#   yrange[2] <- (yrange[2]-yrange[1]) * padding + yrange[1] # pads top to allow space for p-value
-#   p <- p +
-#     scale_y_continuous(limits = yrange) +
-#     annotate("text",
-#              x = ifelse(var_measurement=="ldpred2_h2",0.1,mean(xlims)),
-#              y=(diff(yrange))*((1+padding)/(2*padding)) + yrange[1],
-#              label = text, parse=TRUE, vjust=0, hjust=0.5, size=4*sf,
-#              color=p_text_list[[2]])
-#   p
-#   prevalence_plots[[i]] <- p
-# }
-# 
-# # combines plots into one figure
-# pscp <- ggmatrix(plots=prevalence_plots,
-#                 nrow=1,
-#                 ncol=length(vars),
-#                 xAxisLabels = NULL,
-#                 ylab = bquote(Log[10](Prevalence))) +
-#   theme(legend.position="top",
-#         legend.key.size = unit(1,"cm"),
-#         legend.text = element_text(size = ddplot_textsize*sf),
-#         axis.text = element_text(size=(ddplot_textsize*0.5)*sf),
-#         axis.title.y = element_text(size=(ddplot_textsize*0.75)*sf),
-#         text = element_text(size = ddplot_textsize*sf),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank())
-# 
-# # prints figure
-# loc_out <- paste0(dir_out,"prevalence_scatterplot.", print_mode)
-# print_plot(pscp, loc_out, print_mode, ddplot_width+100, ddplot_height, sf)
-# print("Saved prevalence scatterplot")
