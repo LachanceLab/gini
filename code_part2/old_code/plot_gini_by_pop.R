@@ -59,8 +59,8 @@ for (i in 1:length(pops)) {
     geom_point(alpha=0.75, size=4*sf) +
     scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
     scale_y_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
-    xlab(bquote(Gini[100][','][.(pop2)])) +
-    ylab(bquote(Gini[100][','][meta])) +
+    xlab(bquote(Gini[500][','][.(pop2)])) +
+    ylab(bquote(Gini[500][','][meta])) +
     labs(color = "Trait Type") +
     theme_light() +
     theme(aspect.ratio = 1,
