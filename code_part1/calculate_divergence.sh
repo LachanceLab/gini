@@ -1,4 +1,4 @@
-# 5 - calculate_divergence.sh
+# 4 - calculate_divergence.sh
 
 # Computes PGS for all traits on a subset of the UKB population using PLINK2
 

@@ -3,7 +3,7 @@ pheno <- commandArgs(trailingOnly = TRUE)[1]
 
 library(data.table)
 
-pval_cutoff <- 0.0001
+pval_cutoff <- 0.00001
 dir_sf <- "../generated_data/panUKB_sf/"
 
 loc_sf <- paste0(dir_sf,pheno,"_sf.tsv")

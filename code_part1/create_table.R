@@ -1,10 +1,10 @@
-# 5 - create_table.R
+# 3 - create_table.R
 
 # This script creates the traits table from which most proceeding analyses take
 # their data from. This includes joining all of Prive et al.'s trait info into
 # one, and calculating Gini, portability, and PRS divergence for each trait
 
-### Libraries and directories ####
+# Libraries and directories ####
 library(tidyverse)
 library(data.table)
 source("../code_part1/helper_functions/helper_functions.R")
@@ -22,15 +22,10 @@ dir_sf <- "../generated_data/panUKB_sf/"
 # saved to
 dir_out <- "../generated_data/"
 
-# location to the genetic recombination map in hg19 format, created by liftover.py
-loc_map <- paste0(dir_input_data,"aau1043_datas3_hg19")
-
-# Set to TRUE if you want to calculate rec_rate (old analysis)
-calculate_rec_rate <- FALSE
 # Set to TRUE if 1kG AFs have already been appended (skips loading step)
 already_appended_1kG <- TRUE
 
-### Code ----
+# Code ####
 
 # sets location to files used later in the script
 loc_phenotype_description <- paste0(dir_input_data,"phenotype-description.csv")
@@ -101,7 +96,7 @@ pcors <- pcors %>%
   )
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
-## Generating gini and recombination rate for each trait ####
+## Generating gini for each trait ####
 
 # expands traits_table for gini calculation, obtains list of ancestries
 pop_centers <- read.csv(
@@ -111,19 +106,11 @@ traits_table$cMperMb <- as.numeric(NA)
 
 # settings used for calculating gini
 threshold <- 500                # top # of SNPs (by gvc) to include
-average_window <- 100000        # size of averaging window for recombination rate
 pval_cutoff <- 1E-5             # pval cutoff to use for Winner's Curse correction
 all_pops <- c("meta_hq","meta","EUR","AFR","AMR","CSA","EAS")
 
-if (calculate_rec_rate) {
-  # loads recombination map, filters out X chromosome, converts chr to number
-  rec_map <- as_tibble(fread(loc_map)) #%>% filter(Chr != "chrX")
-  #rec_map$Chr <- as.numeric(substring(rec_map$Chr,4,5))
-  rec_map$Chr <- substring(rec_map$Chr,4,5)
-}
-
-# loops through each trait and calculates its gini, its recombination rate,
-# and keeps track of the SNPs in the top 100 bins in each trait for the UK
+# loops through each trait and calculates its gini
+# and keeps track of the SNPs in the top 500 in each trait for each population
 top_indep_SNPs <- tibble(
   chrom = as.character(),
   chr_position = as.numeric(),
@@ -154,7 +141,7 @@ if (!already_appended_1kG) {
     mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
 }
 
-# loops through each trait
+### loops through each trait ####
 for (i in 1:nrow(traits_table)) {
   
   # extracts trait-related information
@@ -291,52 +278,7 @@ for (i in 1:nrow(traits_table)) {
     top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
   }
   # saves sf back to system (WARNING: overrides file)
-  #fwrite(sf, loc_summary_file, sep="\t")
-  
-  ##############################################################################
-  # calculates recombination rate #
-  if (calculate_rec_rate) {
-    recombination_vector <- c()
-    for (chr_i in c(1:22,"X")) {
-      # extracts recombination map and significant SNPs for chromosome
-      rec_map_chr <- rec_map %>% filter(Chr == chr_i)
-      sf_top_chr <- sf_top %>% filter(chrom == chr_i)
-      # skips to next chromosome if no significant SNPs found in chromosome
-      if (nrow(sf_top_chr) == 0) {next}
-      # loops through each significant SNP
-      for (j in 1:nrow(sf_top_chr)) {
-        # sets window size around SNP to average out recombination in
-        start_region <- (sf_top_chr$chr_position[j]) - average_window/2
-        end_region <- (sf_top_chr$chr_position[j]) + average_window/2 - 1
-        rec_map_bins <- rec_map_chr %>% filter(Begin <= end_region,
-                                               End > start_region)
-        # manually sets recombination rate to 0 or NA if no recombination data
-        # found in window surrounding SNP
-        if (nrow(rec_map_bins) == 0) {SNP_cMperMb <- NA}
-        else if (max(rec_map_bins$cMperMb) == 0) {SNP_cMperMb <- 0}
-        else {
-          # calculates proportion of window size occupied by each region in
-          # the recombination rate map
-          rec_map_bins$Begin[1] <- start_region
-          rec_map_bins$End[nrow(rec_map_bins)] <- end_region
-          rec_map_bins$bp_range <- (rec_map_bins$End - rec_map_bins$Begin)
-          rec_map_bins$bp_range <- rec_map_bins$bp_range / sum(rec_map_bins$bp_range)
-          
-          # calculates recombination rate as an arithmetic mean weighted by
-          # proportion of window size occupied by recombination region
-          SNP_cMperMb <- sum(rec_map_bins$bp_range * rec_map_bins$cMperMb) / sum(rec_map_bins$bp_range)
-        }
-        recombination_vector <- c(recombination_vector,SNP_cMperMb)
-      }
-    }
-    
-    # sets trait recombination rate as arithmetic mean of significant SNPs'
-    # recombination rate weighted by gvc
-    sf_top$cMperMb <- recombination_vector
-    trait_cMperMb <- sum(sf_top$gvc * sf_top$cMperMb, na.rm=TRUE) / sum(sf_top$gvc)
-    traits_table$cMperMb[i] <- trait_cMperMb
-  }
-  ##############################################################################
+  fwrite(sf, loc_summary_file, sep="\t")
 }
 # binds the population-specific Ginis to traits_table
 pop_ginis2 <- pop_ginis %>%
@@ -405,6 +347,12 @@ traits_table$portability_index_P <- portability_index_Ps
 # calculate_divergence.sh
 # calculate_divergence.R
 
-## Saving the traits_table to system
+## Calculating LD variability ####
+
+# THIS IS DONE IN THE FOLLOWING TWO SCRIPTS:
+# reformat_ldscores.sh
+# calculate_traitLD.R
+
+## Saving the traits_table to system ####
 loc_out <- paste0(dir_out,"traits_table.txt")
 fwrite(traits_table,loc_out,sep="\t")

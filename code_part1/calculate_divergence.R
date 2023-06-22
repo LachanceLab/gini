@@ -1,9 +1,9 @@
-# 6 - calculate_divergence.R
+# 5 - calculate_divergence.R
 
 # Combines the chromosome-specific PGS data from calculate_divergence.sh and
 # computes an ANOVA by ancestry on PGS for each trait
 
-### Libraries and directories ####
+# Libraries and directories ####
 library(tidyverse)
 library(data.table)
 

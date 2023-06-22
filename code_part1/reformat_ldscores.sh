@@ -1,4 +1,4 @@
-# 7 - reformat_ldscores.sh
+# 6 - reformat_ldscores.sh
 
 # Cleans up the raw full LD scores from PanUKBB.
 

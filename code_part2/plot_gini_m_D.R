@@ -20,9 +20,6 @@ setwd("./")
 
 # Sets the directory of the summary files with appended allele frequencies
 dir_sfs <- "../generated_data/panUKB_sf/"
-# location to a file we generated that vastly speeds up the process of binning
-# can be obtained from our github under ~/generated_data/
-loc_chr_max_bps <- "../code_part1/chr_max_bps.txt"
 # Sets the location of the sampled individuals' PGSs
 loc_PGSs <- "../generated_data/pop_sampled_PGSs.txt"
 # sets the location of the traits table
@@ -239,9 +236,6 @@ plot_traitLD <- function(code) {
 
 # reads traits table
 traits_table <- as_tibble(fread(loc_table))
-
-# loads a file that contains the max base pair position for each chromosome
-# chr_max_bps <- as_tibble(fread(loc_chr_max_bps))
 
 # reads pop_centers, which contains PC distance information
 pop_centers <- read.csv(

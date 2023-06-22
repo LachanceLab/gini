@@ -7,7 +7,7 @@
 # It also randomly samples individuals from each ancestry to use for a future
 # calculation.
 
-### Packages and directories ###
+# Libraries and directories ####
 
 library(tidyverse)
 library(data.table)
@@ -24,7 +24,7 @@ loc_remove <- "/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/IDS_NOTTOUSE_
 dir_out <- "../generated_data/"
 
 
-### Code ----
+# Code ####
 
 # reads PC data and selects for just first 16 PCs (if more are present)
 raw_data <- as_tibble(fread(loc_PC))

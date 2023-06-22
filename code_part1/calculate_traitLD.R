@@ -1,10 +1,10 @@
-# 8 - calculate_traitLD.R
+# 7 - calculate_traitLD.R
 
 # calculates a weighted average LD score for SNPs associated with a trait, as
 # well as metrics of population-differences in LD scores
 
 
-## libraries and directories
+# Libraries and directories ####
 
 library(tidyverse)
 library(data.table)
@@ -22,7 +22,7 @@ ldscores_already_ajdusted <- TRUE
 # SNPs file already contains the ld-scores for each SNP
 top_SNPs_already_appended <- FALSE
 
-## Functions
+# Functions ####
 
 # function for adjsting LD scores by AF, as described in Gazal et al. 2017:
 # https://www.nature.com/articles/ng.3954
@@ -44,7 +44,7 @@ adjust_LDscores <- function(ldscores, col_AF="AF", col_ld_score = "ld_score") {
   return(ldscores)
 }
 
-## CODE
+# CODE ####
 
 # reads trait_table and top_indep_SNPs from create_table.R
 loc_traits_table <- paste0(dir_generated_data,"traits_table.txt")
@@ -52,7 +52,7 @@ traits_table <- as_tibble(fread(loc_traits_table))
 loc_top_indep_SNPs <- paste0(dir_generated_data,"top_indep_SNPs.txt")
 top_indep_SNPs <- as_tibble(fread(loc_top_indep_SNPs))
 
-# appends ld scores to top_indep_SNPs (if not done already)
+## appends ld scores to top_indep_SNPs (if not done already) ####
 if (!top_SNPs_already_appended) {
   for (pop in pops) {
     # reads LD scores file
@@ -86,7 +86,7 @@ for (pop in pops) {
   top_indep_SNPs %>% group_by(pop) %>%
     summarize(prop_NA = sum(is.na(!!as.name(col_ld))) / n()) %>% print()
 }
-# Loops through each trait to compute LD-related metrics
+## Loops through each trait to compute LD-related metrics ####
 for (i in 1:nrow(traits_table)) {
   # reads summary file
   code <- traits_table$prive_code[i]
@@ -130,7 +130,7 @@ for (i in 1:nrow(traits_table)) {
     }
   }
 }
-### computes meta-metrics related to traitLD across population
+## computes meta-metrics related to traitLD across population ####
 LD_table <- traits_table %>%
   select(prive_code, starts_with("traitLD_unadj_")) %>%
   pivot_longer(
