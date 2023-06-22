@@ -3,7 +3,6 @@
 # Creates PCA plots of the traits, using the six summary statistics as the initial dimensions
 
 ### Libraries and directories ####
-library(plyr)
 library(tidyverse)
 library(data.table)
 source("custom_ggbiplot.R") # loads custom 'ggbiplot' function from 'ggbiplot' package
@@ -50,7 +49,6 @@ traits_table <- as_tibble(fread(loc_table)) %>%
 # makes PCA for all traits, comparing binary vs quantitative traits
 matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, GWAS_trait_type, all_of(unname(vars)))
 colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
-matrix$Divergence <- log10(matrix$Divergence)
 matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
 
 # plots PCA for all traits, comparing binary vs quantitative traits
@@ -59,7 +57,7 @@ gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE,
                labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
   geom_text(aes(label="", color=matrix$GWAS_trait_type), key_glyph = "rect") + # empty geom
   theme_light() +
-  theme(legend.position = "bottom",
+  theme(legend.position = "top",
         text = element_text(size = 29*sf),
         panel.border = element_rect(colour = "black", fill=NA, size=1),
         panel.grid.major = element_blank(),
@@ -91,8 +89,8 @@ trait_types <- c("binary","quantitative")
 for (the_trait_type in trait_types) {
   overlap_fix = FALSE
   # changes plotting settings depending on trait type
-  if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2,3,4)}
-  else if (the_trait_type == "quantitative") {
+  if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2,3,4)
+  } else if (the_trait_type == "quantitative") {
     gg_pca_scale_subset <- c(1,3,4)
     overlap_fix = TRUE
   }
@@ -109,7 +107,7 @@ for (the_trait_type in trait_types) {
                         labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     theme_light() +
-    theme(legend.position = "bottom",
+    theme(legend.position = "top",
           text = element_text(size = 29*sf),
           panel.border = element_rect(colour = "black", fill=NA, size=1),
           panel.grid.major = element_blank(),

@@ -272,8 +272,8 @@ for (i in 1:2) {
   if (i==1) {
     var_comparison <- "group"
     # restricts to just quantitative to demonstrate relationships accurately
-    subtable1 <- traits_table2 %>% filter(lifestyle) %>% select(vars)
-    subtable2 <- traits_table2 %>% filter(!lifestyle) %>% select(vars)
+    subtable1 <- traits_table2 %>% filter(lifestyle) %>% select(all_of(vars))
+    subtable2 <- traits_table2 %>% filter(!lifestyle) %>% select(all_of(vars))
   } else if (i==2) {
     var_comparison <- "type"
     subtable1 <- traits_table %>% filter(PGS_trait_type=="binary", GWAS_trait_type=="binary") %>% select(vars)
