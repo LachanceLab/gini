@@ -34,7 +34,13 @@ gt_theme <- function(data) {
 
 # reads traits table
 traits_table <- as_tibble(fread(loc_table))
-vars <- c("ldpred2_h2","cMperMb","gini_United","pcor_United","portability_index", "f_stat")
+vars <- c("ldpred2_h2","traitLD_unadj_CoV","gini_panUKB","pcor_United","portability_index", "log_F")
+tt1 <- traits_table %>%
+  select(prive_code, description, group_consolidated, GWAS_trait_type, PGS_trait_type,
+         n_sig_SNPs, all_of(vars)) %>%
+  rename(divergence_log_F = log_F)
+loc_out <- "../generated_data/traits_table_simple.csv"
+fwrite(tt1,loc_out)
 rounding_decimals <- 3
 
 # makes list of low prevalence binary traits to exclude from table

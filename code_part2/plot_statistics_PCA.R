@@ -35,7 +35,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ###
 vars <- c("Heritability"="ldpred2_h2",
           #"Recombination Rate"="cMperMb",
-          "Trait LD CV"="traitLD_unadj_CoV",
+          "LD Variability"="traitLD_unadj_CoV",
           "Gini"="gini_panUKB",
           "PGS Accuracy"="pcor_United",
           "Portability"="portability_index",

@@ -215,7 +215,7 @@ for (i in 1:length(pops)) {
     scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
     scale_y_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
     xlab(bquote(Gini[500][','][.(pop2)])) +
-    ylab(bquote(Gini[500][','][meta])) +
+    ylab(bquote(Gini[500][','][Meta])) +
     labs(color = "Trait Group") +
     coord_fixed() +
     theme_light() +
@@ -232,4 +232,4 @@ ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 3, nrow = 2,
 
 loc_out <- paste0("../generated_figures/gini_by_pop.", print_mode)
 print(loc_out)
-print_plot(ukginis, loc_out, print_mode, 4*500, 2*500, sf)
+print_plot(ukginis, loc_out, print_mode, 3*600, 2*600, sf)

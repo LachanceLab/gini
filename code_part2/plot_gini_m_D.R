@@ -81,7 +81,7 @@ plot_lorenz <- function(code, sfile) {
   title <- paste0(description)
   # sets proper math formatting for plot annotation
   gini_text <- formatC(gini[[1]],digits=3, format="f")
-  text <- paste0("G[500]==",gini_text)
+  text <- paste0("G[list(500,Meta)]==",gini_text)
   
   # makes Lorenz curve plot
   gg <- ggplot(sfile, aes(x=100*percentile, y=gvc_cshare)) +
@@ -224,7 +224,7 @@ plot_traitLD <- function(code) {
     geom_col(aes(fill=pop)) +
     scale_y_continuous(limits=ylims,oob = rescale_none, expand = c(0,0)) +
     xlab("Continental Population") +
-    ylab("TraitLD") +
+    ylab("Trait LD") +
     labs(title = description, fill = "Ancestry") +
     scale_fill_manual(values = c("#00A9FF","#7CAE00","#CD9600","#F8766D","#FF61CC"),
                       breaks = pops) +

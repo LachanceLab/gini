@@ -154,8 +154,9 @@ upper_corr_p <- function(data,mapping) {
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
   "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  "traitLD_unadj_CoV" = c("Trait~LD~CV","(LDCV)"),
-  "gini_panUKB" = c("Gini","(G[list(100)])"),
+  #"traitLD_unadj_CoV" = c("Trait~LD~CV","(LDCV)"),
+  "traitLD_unadj_CoV" = c("LD~Variability","(LDCV)"),
+  "gini_panUKB" = c("Gini","(G[list(500,Meta)])"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
   "portability_index" = c("Portability","(m)"),
   "log_F" = c("Divergence","(D)"))
@@ -257,7 +258,7 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","Trait LD CV","Gini","PGS Accuracy","Portability","Divergence")
+column_labels <- c("Heritability","LD Variability","Gini","PGS Accuracy","Portability","Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
 # for each of the 6 measurements
