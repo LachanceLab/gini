@@ -11,8 +11,8 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
           arrow.size = 0.75, var.color = "darkred", overlap_fix = FALSE, ell.size = 0.75, 
           ...) 
 {
-  library(ggplot2)
-  library(plyr)
+  library(tidyverse)
+  #library(plyr)
   library(scales)
   library(grid)
   stopifnot(length(choices) == 2)
@@ -97,16 +97,21 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   if (!is.null(df.u$groups) && ellipse) {
     theta <- c(seq(-pi, pi, length = 100), seq(pi, -pi, length = 100))
     circle <- cbind(cos(theta), sin(theta))
-    ell <- ddply(df.u, "groups", function(x) {
-      if (nrow(x) <= 2) {
-        return(NULL)
-      }
-      sigma <- var(cbind(x$xvar, x$yvar))
-      mu <- c(mean(x$xvar), mean(x$yvar))
-      ed <- sqrt(qchisq(ellipse.prob, df = 2))
-      data.frame(sweep(circle %*% chol(sigma) * ed, 2, 
-                       mu, FUN = "+"), groups = x$groups[1])
-    })
+    ell <- df.u %>%
+      group_by(groups) %>%
+      group_map(~ {
+        x <- .x
+        if (nrow(x) <= 2) {
+          return(NULL)
+        }
+        sigma <- var(cbind(x$xvar, x$yvar))
+        mu <- c(mean(x$xvar), mean(x$yvar))
+        ed <- sqrt(qchisq(ellipse.prob, df = 2))
+        data.frame(sweep(circle %*% chol(sigma) * ed, 2, mu, FUN = "+"), groups = x$groups[1])
+      }, .keep = TRUE) %>% 
+      bind_rows()
+    
+    
     names(ell)[1:2] <- c("xvar", "yvar")
     g <- g + geom_path(data = ell, aes(color = groups, group = groups), size=ell.size)
   }

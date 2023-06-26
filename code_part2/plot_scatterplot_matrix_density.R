@@ -258,7 +258,12 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability","LD Variability","Gini","PGS Accuracy","Portability","Divergence")
+column_labels <- c("Heritability",
+                   "LD Variability",
+                   "Gini",
+                   "PGS Accuracy",
+                   "Portability",
+                   "Divergence")
 
 # uses Wilcoxon-ranked test to compare means differences between types and groups
 # for each of the 6 measurements

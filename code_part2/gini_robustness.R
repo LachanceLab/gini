@@ -139,7 +139,7 @@ pop_threshold_tbl <- robustness_tbl %>% group_by(pop, threshold) %>%
   filter(!pop %in% c("meta","meta_hq"))
 # plots gini by population and threshold
 ggplot(pop_threshold_tbl, aes(x= as.factor(threshold), y=gini)) +
-  geom_line(aes(color = pop, group = pop), size=1) +
+  geom_line(aes(color = pop, group = pop), size=0.5*sf) +
   xlab("Top # of SNPs used in Gini calculation") +
   ylab("Gini") +
   labs(title="Mean Gini for different top # of SNPs and populations",
@@ -147,7 +147,7 @@ ggplot(pop_threshold_tbl, aes(x= as.factor(threshold), y=gini)) +
   theme_light()
 # plots prop_gvc_top by population and threshold
 ggplot(pop_threshold_tbl, aes(x=as.factor(threshold), y=prop_gvc_top)) +
-  geom_line(aes(color = pop, group = pop), size=1) +
+  geom_line(aes(color = pop, group = pop), size=0.5*sf) +
   xlab("Top # of SNPs used in Gini calculation") +
   ylab("Proportion of total gvc captured within top SNPs") +
   labs(title="Mean Proportion of gvc in top SNPs for different top # of SNPs and populations",
@@ -159,7 +159,7 @@ prop_vs_gini_tbl <- robustness_tbl %>%
   filter(pop == "meta2use", threshold == 500) %>%
   left_join(traits_table[c("prive_code","group_consolidated")], by="prive_code")
 gg <- ggplot(prop_vs_gini_tbl, aes(x=prop_gvc_top, y=gini)) +
-  geom_point(aes(color=group_consolidated), alpha=0.75, size=4*sf) +
+  geom_point(aes(color=group_consolidated), alpha=0.75, size=6*sf) +
   xlim(0,1) + ylim(0,1) +
   coord_fixed() +
   labs(#title = expression(paste("Gini vs Proportion of ",italic(gvc)," among top SNPs for quantitative traits")),

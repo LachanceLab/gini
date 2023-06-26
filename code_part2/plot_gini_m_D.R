@@ -221,7 +221,7 @@ plot_traitLD <- function(code) {
     geom_col(aes(fill=pop)) +
     scale_y_continuous(limits=ylims,oob = rescale_none, expand = c(0,0)) +
     xlab("Continental Population") +
-    ylab("Trait LD") +
+    ylab("LD Score (trait mean)") +
     labs(title = description, fill = "Ancestry") +
     scale_fill_manual(values = c("#00A9FF","#7CAE00","#CD9600","#F8766D","#FF61CC"),
                       breaks = pops) +

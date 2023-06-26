@@ -2,7 +2,7 @@
 
 # Creates PCA plots of the traits, using the six summary statistics as the initial dimensions
 
-### Libraries and directories ####
+# Libraries and directories ####
 library(tidyverse)
 library(data.table)
 source("custom_ggbiplot.R") # loads custom 'ggbiplot' function from 'ggbiplot' package
@@ -19,7 +19,7 @@ dir_out <- "../generated_figures/"
 sf <- 3
 print_mode <- "png" # set to either "png" or "pdf"
 
-### Printing function ####
+# Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
   if (print_mode == "png") {
     png(loc_out, width = plot_width*sf, height = plot_height*sf)
@@ -31,7 +31,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 }
 
 
-### Code ###
+# Shared Code ####
 vars <- c("Heritability"="ldpred2_h2",
           #"Recombination Rate"="cMperMb",
           "LD Variability"="traitLD_unadj_CoV",
@@ -43,40 +43,6 @@ vars <- c("Heritability"="ldpred2_h2",
 # reads traits table, filters out low prevalence binary traits,
 traits_table <- as_tibble(fread(loc_table)) %>%
   filter(PGS_trait_type == GWAS_trait_type)
-  #filter(PGS_trait_type == "quantitative", GWAS_trait_type == "quantitative")
-
-
-# makes PCA for all traits, comparing binary vs quantitative traits
-matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, GWAS_trait_type, all_of(unname(vars)))
-colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
-matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
-
-# plots PCA for all traits, comparing binary vs quantitative traits
-gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE, labels=matrix$short_label,
-                varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-               labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
-  geom_text(aes(label="", color=matrix$GWAS_trait_type), key_glyph = "rect") + # empty geom
-  theme_light() +
-  theme(legend.position = "top",
-        text = element_text(size = 29*sf),
-        panel.border = element_rect(colour = "black", fill=NA, size=1),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(title = NULL, subtitle = NULL, color = "Trait Type") +
-  scale_color_manual(labels=c("Binary","Quantitative"),
-                     breaks=c("binary", "quantitative"),
-                     values = c("binary"="#F8766D", "quantitative"="#00BFC4")) +
-  scale_x_continuous(expand = c(0.1,0.075))
-
-# Saves image onto system
-plot_width <- 1000
-plot_height <- 1000
-loc_out <- paste0(dir_out,"summary_stats_PCA_ALL.", print_mode)
-print_plot(gg, loc_out, print_mode, plot_width, plot_height, sf)
-print(paste0("Saved PCA plot of all traits"))
-
-
-# makes and plots PCA for each of binary and quantitative trait, comparing groups
 
 # color legend for plots
 gg_pca_scale <- list(
@@ -85,6 +51,45 @@ gg_pca_scale <- list(
   values = c("biological measures"="#F8766D", "diseases"="#A3A500","lifestyle/psychological"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
 )
 trait_types <- c("binary","quantitative")
+
+PCA_theme <- theme_light() +
+  theme(legend.position = "top",
+        text = element_text(size = 20*sf),
+        panel.border = element_rect(colour = "black", fill=NA, size=1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_line(size=0.75*sf),
+        axis.ticks.length = unit(4*sf, "points"))
+plot_width <- 1000
+plot_height <- 1000
+
+# makes PCA for all traits, comparing binary vs quantitative traits
+matrix <- traits_table %>% select(prive_code, short_label, group_consolidated, GWAS_trait_type, all_of(unname(vars)))
+colnames(matrix)[which(colnames(matrix) %in% unname(vars))] <- names(vars)
+matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
+
+# Binary vs Quant ####
+# plots PCA for all traits, comparing binary vs quantitative traits
+gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE, labels=matrix$short_label,
+                varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
+               labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
+  geom_text(aes(label="", color=matrix$GWAS_trait_type), key_glyph = "rect") + # empty geom
+  PCA_theme +
+  labs(title = NULL, subtitle = NULL, color = "Trait Type") +
+  scale_color_manual(labels=c("Binary","Quantitative"),
+                     breaks=c("binary", "quantitative"),
+                     values = c("binary"="#F8766D", "quantitative"="#00BFC4")) +
+  scale_x_continuous(expand = c(0.1,0.075))
+ratio <- diff(layer_scales(gg)$y$range$range) / diff(layer_scales(gg)$x$range$range)
+
+# Saves image onto system
+loc_out <- paste0(dir_out,"summary_stats_PCA_ALL.", print_mode)
+print_plot(gg, loc_out, print_mode, plot_width, plot_height*ratio, sf)
+print(paste0("Saved PCA plot of all traits"))
+
+
+# Trait Groups ####
+# makes and plots PCA for each of binary and quantitative trait, comparing groups
 # makes PCA by group for each trait type
 for (the_trait_type in trait_types) {
   overlap_fix = FALSE
@@ -104,22 +109,19 @@ for (the_trait_type in trait_types) {
   # plots PCA
   gg <- custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, labels=matrix_filtered$short_label,
                         varname.adjust = 1.25, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-                        labels.size = 4*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
+                        labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
-    theme_light() +
-    theme(legend.position = "top",
-          text = element_text(size = 29*sf),
-          panel.border = element_rect(colour = "black", fill=NA, size=1),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank()) +
+    PCA_theme +
     labs(title = NULL, subtitle = NULL, color = "Trait Group") +
     scale_color_manual(labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
                        values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
     scale_x_continuous(expand = c(0.075,0.075))
   
+  ratio <- diff(layer_scales(gg)$y$range$range) / diff(layer_scales(gg)$x$range$range)
+  
   # saves image to system
   loc_out <- paste0(dir_out,"summary_stats_PCA_",the_trait_type,".", print_mode)
-  print_plot(gg, loc_out, print_mode, plot_width, plot_height, sf)
+  print_plot(gg, loc_out, print_mode, plot_width, plot_height*ratio, sf)
   print(paste("Saved PCA plot of",the_trait_type,"traits"))
 }
