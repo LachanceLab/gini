@@ -108,7 +108,10 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
   if (print_mode == "png") {
     png(loc_out, width = plot_width*sf, height = plot_height*sf)
   } else if (print_mode == "pdf") {
-    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+    #pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+    cairo_pdf(file = loc_out,
+              width = plot_width*sf / 75,
+              height = plot_height*sf / 75)
   }
   print(gg)
   dev.off()
@@ -166,7 +169,7 @@ gg <- ggplot(prop_vs_gini_tbl, aes(x=prop_gvc_top, y=gini)) +
   coord_fixed() +
   labs(#title = expression(paste("Gini vs Proportion of ",italic(gvc)," among top SNPs for quantitative traits")),
     x = expression(paste("Proportion of total ", italic(gvc), " captured within top SNPs")),
-    y = expression(paste(italic("Gini"[list(500,Meta)]))),
+    y = expression(paste(italic("G"[list(500,Meta)]))),
     color = "Trait Group") +
   theme_light() +
   gini_p_theme +
@@ -174,9 +177,11 @@ gg <- ggplot(prop_vs_gini_tbl, aes(x=prop_gvc_top, y=gini)) +
         axis.title.y = element_text(family="Georgia")) +
   gc_scale
 # prints out plot
-loc_out <- paste0("../generated_figures/gini_vs_prop-gvc-top.", print_mode)
+loc_out <- paste0("../generated_figures/gini_vs_prop-gvc-top")
 print(loc_out)
-print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+#print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".png"), "png", 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".pdf"), "pdf", 1200, 1200, sf)
 
 #### gini at different thresholds ####
 gini_rank_tbl <- robustness_tbl %>%
@@ -188,7 +193,7 @@ gg <- ggplot(gini_rank_tbl, aes(x = as.factor(threshold), y = gini)) +
   geom_line(aes(group=prive_code, color=group_consolidated), size=0.75*sf, key_glyph = "rect") +
   labs(#title = 'Gini vs top # of SNPs for 96 quantitative traits,
        x = 'Number of SNPs used in Genomic Inequality (Gini) calculations',
-       y = expression(paste(italic("Gini"[list(500,Meta)]))),
+       y = expression(paste(italic("G"[list(500,Meta)]))),
        color = "Trait Group") +
   scale_x_discrete(expand=c(0,0)) +
   scale_y_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
@@ -198,9 +203,11 @@ gg <- ggplot(gini_rank_tbl, aes(x = as.factor(threshold), y = gini)) +
         axis.title.y = element_text(family="Georgia")) +
   gc_scale
 # prints out plot
-loc_out <- paste0("../generated_figures/gini_vs_threshold.", print_mode)
+loc_out <- paste0("../generated_figures/gini_vs_threshold")
 print(loc_out)
-print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+#print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".png"), "png", 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".pdf"), "pdf", 1200, 1200, sf)
 
 #### gini_pop vs gini_meta
 # makes table of ginis
@@ -223,8 +230,8 @@ for (i in 1:length(pops)) {
     geom_point(alpha=0.75, size=4*sf) +
     scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
     scale_y_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
-    xlab(bquote(italic(Gini[500][','][.(pop2)]))) +
-    ylab(bquote(italic(Gini[500][','][Meta]))) +
+    xlab(bquote(italic(G[500][','][.(pop2)]))) +
+    ylab(bquote(italic(G[500][','][Meta]))) +
     labs(color = "Trait Group") +
     coord_fixed() +
     theme_light() +
@@ -240,6 +247,8 @@ ukginis <- ggarrange(plotlist = gini_UK_plots, ncol = 3, nrow = 2,
                      common.legend = TRUE,
                      legend.grob = get_legend(gini_UK_plots, position="top"))
 
-loc_out <- paste0("../generated_figures/gini_by_pop.", print_mode)
+loc_out <- paste0("../generated_figures/gini_by_pop")
 print(loc_out)
-print_plot(ukginis, loc_out, print_mode, 3*600, 2*600, sf)
+#print_plot(ukginis, loc_out, print_mode, 3*600, 2*600, sf)
+print_plot(ukginis, paste0(loc_out,".png"), "png", 3*600, 2*600, sf)
+print_plot(ukginis, paste0(loc_out,".pdf"), "pdf", 3*600, 2*600, sf)

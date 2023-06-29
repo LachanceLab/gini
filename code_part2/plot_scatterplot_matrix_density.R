@@ -10,7 +10,7 @@ library(GGally)
 library(rlang)
 library(extrafont)
 loadfonts(device = "win", quiet=TRUE)
-
+loadfonts(device = "pdf", quiet=TRUE)
 # sets working directory
 setwd("./")
 
@@ -31,7 +31,11 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
   if (print_mode == "png") {
     png(loc_out, width = plot_width*sf, height = plot_height*sf)
   } else if (print_mode == "pdf") {
-    pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+    #pdf(loc_out, width = plot_width*sf / 75, height = plot_height*sf / 75)
+    cairo_pdf(file = loc_out,
+              width = plot_width*sf / 75,
+              height = plot_height*sf / 75)
+              #symbolfamily = "Georgia")
   }
   print(gg)
   dev.off()
@@ -73,7 +77,7 @@ p_value_to_text <- function(p_value) {
     p_text <- formatC(p_value,format="E", digits=2)
     p_text_stem <- as.numeric(substr(p_text,1,4))
     p_text_exp <- as.numeric(substr(p_text,6,10))
-    p_text <- paste0("adjusted~p==",p_text_stem,"%*%10^",p_text_exp)
+    p_text <- paste0("adjusted~p==",p_text_stem,"%*%~10^",p_text_exp)
   } else {
     p_text <- paste0("adjusted~p==",p_text)
   }
@@ -142,9 +146,9 @@ upper_corr_p <- function(data,mapping) {
   
   # makes GGally textplot using custom text
   p <- ggally_text(label="") +
-    geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=6*sf,color=p_text_list[[2]],
+    geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=5.75*sf,color=p_text_list[[2]],
               label = text_rline, parse=TRUE ) + # correlation value
-    geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=6*sf,color=p_text_list[[2]],
+    geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=5.75*sf,color=p_text_list[[2]],
               label = p_text, parse=TRUE ) + # p-value
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
@@ -257,8 +261,9 @@ p_sc <- ggpairs(data = traits_table2,
 # Saves image onto system
 smplot_width <- 1200
 smplot_height <- 1150
-loc_out <- paste0(dir_out,"scatterplot_matrix.", print_mode)
-print_plot(p_sc, loc_out, print_mode, smplot_width, smplot_height, sf)
+loc_out <- paste0(dir_out,"scatterplot_matrix")
+print_plot(p_sc, paste0(loc_out,".png"), "png", smplot_width, smplot_height, sf)
+print_plot(p_sc, paste0(loc_out,".pdf"), "pdf", smplot_width, smplot_height, sf)
 print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
@@ -396,8 +401,10 @@ for (var_comparison in c("group","type")) {
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank())
   
-  loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison,".", print_mode)
-  print_plot(ddp, loc_out, print_mode, ddplot_width, ddplot_height, sf)
+  loc_out <- paste0(dir_out,"dual_density_plot_",var_comparison)
+  #print_plot(ddp, loc_out, print_mode, ddplot_width, ddplot_height, sf)
+  print_plot(ddp, paste0(loc_out,".png"), "png", ddplot_width, ddplot_height, sf)
+  print_plot(ddp, paste0(loc_out,".pdf"), "pdf", ddplot_width, ddplot_height, sf)
   
   print(paste("Saved dual density plots for",var_comparison))
 }

@@ -122,10 +122,11 @@ n_show <- 5 # shows top n_show highest and top n_show lowest
 
 # temporary table with just the gini, trait, and rank 
 temp <- traits_table %>%
+  filter(GWAS_trait_type == "quantitative", PGS_trait_type == "quantitative") %>%
   arrange(gini_panUKB) %>%
   mutate(gini_panUKB = as.character(formatC(gini_panUKB,rounding_decimals,format="f")),
          rank = as.character(row_number())) %>%
-  select(rank, short_label,GWAS_trait_type, gini_panUKB)
+  select(rank, short_label, gini_panUKB)
 
 # total number of traits (should be 163)
 N_total <- nrow(temp)
@@ -134,7 +135,7 @@ N_total <- nrow(temp)
 table1 <- temp %>%
   filter(as.numeric(rank) <= n_show) %>%
   add_row(
-    rank = "...", short_label = "...", GWAS_trait_type = "...",
+    rank = "...", short_label = "...",
     gini_panUKB = "..."
   ) %>%
   add_row(
@@ -147,7 +148,6 @@ table1gt <- gt(table1) %>%
   cols_label(
     rank = "Rank",
     short_label = "Trait",
-    GWAS_trait_type = "Type",
     gini_panUKB = md("G<sub>500,Meta</sub>")
   ) %>%
   cols_align(
@@ -170,10 +170,11 @@ n_show <- 5 # shows top n_show highest and top n_show lowest
 
 # temporary table with just the divergence, trait, and rank 
 temp <- traits_table %>%
+  filter(GWAS_trait_type == "quantitative", PGS_trait_type == "quantitative") %>%
   arrange(log_F) %>%
   mutate(log_F = as.character(formatC(log_F,rounding_decimals,format="f")),
          rank = as.character(row_number())) %>%
-  select(rank, short_label,PGS_trait_type, log_F)
+  select(rank, short_label, log_F)
 
 # total number of traits (should be 163)
 N_total <- nrow(temp)
@@ -182,7 +183,7 @@ N_total <- nrow(temp)
 table2 <- temp %>%
   filter(as.numeric(rank) <= n_show) %>%
   add_row(
-    rank = "...", short_label = "...", PGS_trait_type = "...",
+    rank = "...", short_label = "...",
     log_F = "..."
   ) %>%
   add_row(
@@ -195,7 +196,6 @@ table2gt <- gt(table2) %>%
   cols_label(
     rank = "Rank",
     short_label = "Trait",
-    PGS_trait_type = "Type",
     log_F = md("D")
   ) %>%
   cols_align(

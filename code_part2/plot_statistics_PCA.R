@@ -32,10 +32,10 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 
 # Shared Code ####
-vars <- c("Heritability"="ldpred2_h2",
+vars <- c("SNP Heritability"="ldpred2_h2",
           #"Recombination Rate"="cMperMb",
           "LD Variability"="traitLD_unadj_CoV",
-          "Gini"="gini_panUKB",
+          "Genomic Inequality"="gini_panUKB",
           "PGS Accuracy"="pcor_United",
           "Portability"="portability_index",
           "Divergence"="log_F")
@@ -83,8 +83,10 @@ gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE,
 ratio <- diff(layer_scales(gg)$y$range$range) / diff(layer_scales(gg)$x$range$range)
 
 # Saves image onto system
-loc_out <- paste0(dir_out,"summary_stats_PCA_ALL.", print_mode)
-print_plot(gg, loc_out, print_mode, plot_width, plot_height*ratio, sf)
+loc_out <- paste0(dir_out,"summary_stats_PCA_ALL")
+#print_plot(gg, loc_out, print_mode, plot_width, plot_height*ratio, sf)
+print_plot(gg, paste0(loc_out,".png"), "png", plot_width, plot_height*ratio, sf)
+print_plot(gg, paste0(loc_out,".pdf"), "pdf", plot_width, plot_height*ratio, sf)
 print(paste0("Saved PCA plot of all traits"))
 
 
@@ -117,11 +119,13 @@ for (the_trait_type in trait_types) {
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
                        values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
     scale_x_continuous(expand = c(0.075,0.075))
+  if(the_trait_type=="binary") {gg <- gg + scale_y_continuous(expand = c(0.085,0.085))}
   
   ratio <- diff(layer_scales(gg)$y$range$range) / diff(layer_scales(gg)$x$range$range)
   
   # saves image to system
-  loc_out <- paste0(dir_out,"summary_stats_PCA_",the_trait_type,".", print_mode)
-  print_plot(gg, loc_out, print_mode, plot_width, plot_height*ratio, sf)
+  loc_out <- paste0(dir_out,"summary_stats_PCA_",the_trait_type)
+  print_plot(gg, paste0(loc_out,".png"), "png", plot_width, plot_height*ratio, sf)
+  print_plot(gg, paste0(loc_out,".pdf"), "pdf", plot_width, plot_height*ratio, sf)
   print(paste("Saved PCA plot of",the_trait_type,"traits"))
 }

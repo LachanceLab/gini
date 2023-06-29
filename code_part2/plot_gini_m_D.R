@@ -125,7 +125,7 @@ plot_portability <- function(code) {
   if ((m < 0.001) & (m != 0)) {
     exponent <- floor(log10(abs(m)))
     base <- signif(m, digits = 3) / 10^exponent
-    text <- paste0("italic(m)==",base,"%*%10^",exponent)
+    text <- paste0("italic(m)==",base,"%*%~10^",exponent)
   } else {
     text <- paste0("italic(m)==",round(m,3))
   }
@@ -307,11 +307,13 @@ gg <- ggarrange(plotlist = plots, ncol = ncol, nrow = nrow,
 plot_width <- 1200
 plot_height <- 1200
 
-loc_out <- paste0(dir_out,"gini_m_D.", print_mode)
-#ggsave(loc_out,width=4*plot_width*sf,height=2*plot_height*sf,units="px")
-# pdf(file = "test.pdf")
-# gg
-# dev.off()
-cairo_pdf(file = "test.pdf", width = plot_width*sf / 75, height = 0.5*plot_height*sf / 75)
+# saves as png and pdf
+loc_out <- paste0(dir_out,"gini_m_D")
+ggsave(paste0(loc_out,".png"),
+       width=4*plot_width*sf,
+       height=2*plot_height*sf,units="px")
+cairo_pdf(file = paste0(loc_out,".pdf"),
+          width = plot_width*sf / 75,
+          height = 0.5*plot_height*sf / 75)
 gg
 dev.off()
