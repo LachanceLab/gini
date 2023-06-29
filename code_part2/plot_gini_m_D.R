@@ -4,15 +4,14 @@
 # and PGS Divergence
 
 ### Libraries and directories ####
-
-# plyr can often create issues since it shares function names with dplyr. If you
-# keep running into issues, close R (unloading all libraries) and retry
-detach("package:plyr", unload=TRUE)
 library(tidyverse)
 library(data.table)
 library(scales)
 library(ggpubr)
 library(ggrepel)
+library(extrafont)
+loadfonts(device = "win", quiet=TRUE)
+loadfonts(device = "pdf", quiet=TRUE)
 source("../code_part1/helper_functions/helper_functions.R")
 
 # sets working directory
@@ -29,7 +28,7 @@ dir_out <- "../generated_figures/"
 
 # sets scaling factors for image output. Default = 2
 sf <- 2
-print_mode <- "png" # set to either "png" or "pdf"
+print_mode <- "pdf" # set to either "png" or "pdf"
 
 ### Functions ####
 
@@ -78,7 +77,7 @@ plot_lorenz <- function(code, sfile) {
   title <- paste0(description)
   # sets proper math formatting for plot annotation
   gini_text <- formatC(gini[[1]],digits=3, format="f")
-  text <- paste0("G[list(500,Meta)]==",gini_text)
+  text <- paste0("italic(G[list(500,Meta)])==",gini_text)
   
   # makes Lorenz curve plot
   gg <- ggplot(sfile, aes(x=100*percentile, y=gvc_cshare)) +
@@ -91,7 +90,7 @@ plot_lorenz <- function(code, sfile) {
     scale_x_continuous(limits=c(0,100), expand = c(0.0,0.0)) +
     scale_y_continuous(limits=c(0,1), expand = c(0,0)) +
     annotate("text", x = 0.5 * 100, y = 0.975*(1), label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf, family = "Georgia")
   gg
 }
 # function that plots portability
@@ -126,9 +125,9 @@ plot_portability <- function(code) {
   if ((m < 0.001) & (m != 0)) {
     exponent <- floor(log10(abs(m)))
     base <- signif(m, digits = 3) / 10^exponent
-    text <- paste0("m==",base,"%*%10^",exponent)
+    text <- paste0("italic(m)==",base,"%*%10^",exponent)
   } else {
-    text <- paste0("m==",round(m,3))
+    text <- paste0("italic(m)==",round(m,3))
   }
   
   gg<-ggplot(pcor_data, aes(x=prive_dist_to_UK)) +
@@ -152,7 +151,7 @@ plot_portability <- function(code) {
                        label = format(c(0,0.25,0.5,0.75,1))) +
     annotate("text",
              x=0.5*(xrange[2]-xrange[1]),
-             y = 0.985*(yrange[2]-0), label = text,
+             y = 0.985*(yrange[2]-0), label = text, family = "Georgia",
              parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
   gg
 }
@@ -166,7 +165,7 @@ plot_divergence <- function(code) {
   if (code == "darker_skin0") {description <- "Skin color"}
   log_F <- slice$log_F[1]
   logfstat <- formatC(log_F,digits=2, format="f")
-  text <- paste0("D==",logfstat)
+  text <- paste0("italic(D)==",logfstat)
   
   # plots divergence
   gg<-ggplot(PGS_trait, aes(x=PGS, fill=Ancestry)) +
@@ -190,20 +189,10 @@ plot_divergence <- function(code) {
     scale_y_continuous(limits = c(0,yrange[2]), expand=expansion(mult = c(0, 0.01))) +
     annotate("text",
              x=(xrange[2]+xrange[1])/2, y = 0.985*(yrange[2]-0), label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf, family = "Georgia")
   gg
 }
 # function that generates traitLD bar plot
-pops <- c("AFR","CSA","EAS","AMR","EUR")
-pop_LDs <- traits_table %>% filter(GWAS_trait_type=="quantitative",PGS_trait_type=="quantitative")
-max_CoV <- max(pop_LDs$traitLD_unadj_CoV)
-pop_LDs <- pop_LDs %>%
-  select(prive_code,any_of(paste0("traitLD_unadj_",pops))) %>% pivot_longer(
-    cols = starts_with("traitLD_unadj_"),
-    names_to = "pop",
-    names_prefix = "traitLD_unadj_",
-    values_to = "traitLD_unadj"
-  )
 plot_traitLD <- function(code) {
   # extracts info about trait
   slice <- traits_table %>% filter(prive_code==code)
@@ -227,8 +216,8 @@ plot_traitLD <- function(code) {
                       breaks = pops) +
     theme(axis.ticks.x = element_blank()) +
     annotate("text",
-             x=pops[3], y = 0.985*diff(ylims) + ylims[1], label = text,
-             parse=TRUE, vjust=1, hjust=0.5, size=5*sf)
+             x=pops[3], y = 0.975*diff(ylims) + ylims[1], label = text,
+             parse=TRUE, vjust=1, hjust=0.5, size=5*sf, family = "Georgia")
   
   gg
 }
@@ -236,6 +225,17 @@ plot_traitLD <- function(code) {
 
 # reads traits table
 traits_table <- as_tibble(fread(loc_table))
+
+pops <- c("AFR","CSA","EAS","AMR","EUR")
+pop_LDs <- traits_table %>% filter(GWAS_trait_type=="quantitative",PGS_trait_type=="quantitative")
+max_CoV <- max(pop_LDs$traitLD_unadj_CoV)
+pop_LDs <- pop_LDs %>%
+  select(prive_code,any_of(paste0("traitLD_unadj_",pops))) %>% pivot_longer(
+    cols = starts_with("traitLD_unadj_"),
+    names_to = "pop",
+    names_prefix = "traitLD_unadj_",
+    values_to = "traitLD_unadj"
+  )
 
 # reads pop_centers, which contains PC distance information
 pop_centers <- read.csv(
@@ -308,4 +308,10 @@ plot_width <- 1200
 plot_height <- 1200
 
 loc_out <- paste0(dir_out,"gini_m_D.", print_mode)
-ggsave(loc_out,width=4*plot_width*sf,height=2*plot_height*sf,units="px")
+#ggsave(loc_out,width=4*plot_width*sf,height=2*plot_height*sf,units="px")
+# pdf(file = "test.pdf")
+# gg
+# dev.off()
+cairo_pdf(file = "test.pdf", width = plot_width*sf / 75, height = 0.5*plot_height*sf / 75)
+gg
+dev.off()

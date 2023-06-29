@@ -8,6 +8,8 @@ library(tidyverse)
 library(data.table)
 library(GGally)
 library(rlang)
+library(extrafont)
+loadfonts(device = "win", quiet=TRUE)
 
 # sets working directory
 setwd("./")
@@ -153,22 +155,25 @@ upper_corr_p <- function(data,mapping) {
 
 # Diagonal plots: display name and symbol of variable
 var_labels <- list(
-  "ldpred2_h2" = c("Heritability","({h^{2}}[SNP])"),
-  #"traitLD_unadj_CoV" = c("Trait~LD~CV","(LDCV)"),
+  "ldpred2_h2" = c("SNP~Heritability","(italic({h^{2}}[SNP]))"),
   "traitLD_unadj_CoV" = c("LD~Variability","(LDCV)"),
-  "gini_panUKB" = c("Gini","(G[list(500,Meta)])"),
+  "gini_panUKB" = c("Genomic~Inequality","(italic(G[list(500,Meta)]))"),
   "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
-  "portability_index" = c("Portability","(m)"),
-  "log_F" = c("Divergence","(D)"))
+  "portability_index" = c("Portability","(italic(m))"),
+  "log_F" = c("Divergence","(italic(D))"))
 diag_label <- function(data, mapping) {
   variable <- as.character(quo_get_expr(mapping[[1]]))
+  # if (variable %in% c("traitLD_unadj_CoV")) {font <- ""
+  # } else {font <- "Georgia"}
+  font <- "Georgia"
   
   # makes GGally textplot using custom text
   p <- ggally_text(label="") +
-    geom_text(aes(x=0.5,y=0.55), size=9*sf, hjust=0.5, vjust=0, color="black",
+    geom_text(aes(x=0.5,y=0.55), size=7*sf, hjust=0.5, vjust=0, color="black",
               label = var_labels[[variable]][1], parse = TRUE) + # top line
-    geom_text(aes(x=0.5,y=0.45), size=9*sf, hjust=0.5, vjust=1, color="black",
-              label = var_labels[[variable]][2], parse = TRUE) + # bottom line
+    geom_text(aes(x=0.5,y=0.45), size=7*sf, hjust=0.5, vjust=1, color="black",
+              label = var_labels[[variable]][2], parse = TRUE,
+              family=font) + # bottom line
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
           panel.border = element_rect(linetype = "solid", 
                                       color = "black",
@@ -258,9 +263,9 @@ print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
 
 ### Dual Density Plots ####
 
-column_labels <- c("Heritability",
+column_labels <- c("SNP Heritability",
                    "LD Variability",
-                   "Gini",
+                   "Genomic Inequality",
                    "PGS Accuracy",
                    "Portability",
                    "Divergence")
@@ -282,7 +287,7 @@ for (i in 1:2) {
   } else if (i==2) {
     var_comparison <- "type"
     subtable1 <- traits_table %>% filter(PGS_trait_type=="binary", GWAS_trait_type=="binary") %>% select(vars)
-    subtable2 <- traits_table2 %>% select(vars)
+    subtable2 <- traits_table2 %>% select(all_of(vars))
   }
   
   for (j in 1:length(vars)) {

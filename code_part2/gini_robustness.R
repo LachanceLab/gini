@@ -6,6 +6,8 @@ library(tidyverse)
 library(data.table)
 library(GGally)
 library(ggpubr)
+library(extrafont)
+loadfonts(device = "win", quiet=TRUE)
 source("../code_part1/helper_functions/helper_functions.R")
 
 # Check whether robustness test should be redone or not
@@ -133,26 +135,26 @@ gc_scale <- scale_color_manual(
 ### Actual plots ####
 
 #### compares gini by population ####
-pop_threshold_tbl <- robustness_tbl %>% group_by(pop, threshold) %>%
-  dplyr::summarize(gini = mean(gini),
-            prop_gvc_top = mean(prop_gvc_top)) %>%
-  filter(!pop %in% c("meta","meta_hq"))
-# plots gini by population and threshold
-ggplot(pop_threshold_tbl, aes(x= as.factor(threshold), y=gini)) +
-  geom_line(aes(color = pop, group = pop), size=0.5*sf) +
-  xlab("Top # of SNPs used in Gini calculation") +
-  ylab("Gini") +
-  labs(title="Mean Gini for different top # of SNPs and populations",
-       color = "Population") +
-  theme_light()
-# plots prop_gvc_top by population and threshold
-ggplot(pop_threshold_tbl, aes(x=as.factor(threshold), y=prop_gvc_top)) +
-  geom_line(aes(color = pop, group = pop), size=0.5*sf) +
-  xlab("Top # of SNPs used in Gini calculation") +
-  ylab("Proportion of total gvc captured within top SNPs") +
-  labs(title="Mean Proportion of gvc in top SNPs for different top # of SNPs and populations",
-       color = "Population") +
-  theme_light()
+# pop_threshold_tbl <- robustness_tbl %>% group_by(pop, threshold) %>%
+#   dplyr::summarize(gini = mean(gini),
+#             prop_gvc_top = mean(prop_gvc_top)) %>%
+#   filter(!pop %in% c("meta","meta_hq"))
+# # plots gini by population and threshold
+# ggplot(pop_threshold_tbl, aes(x= as.factor(threshold), y=gini)) +
+#   geom_line(aes(color = pop, group = pop), size=0.5*sf) +
+#   xlab("Top # of SNPs used in Gini calculation") +
+#   ylab("Gini") +
+#   labs(title="Mean Gini for different top # of SNPs and populations",
+#        color = "Population") +
+#   theme_light()
+# # plots prop_gvc_top by population and threshold
+# ggplot(pop_threshold_tbl, aes(x=as.factor(threshold), y=prop_gvc_top)) +
+#   geom_line(aes(color = pop, group = pop), size=0.5*sf) +
+#   xlab("Top # of SNPs used in Gini calculation") +
+#   ylab("Proportion of total gvc captured within top SNPs") +
+#   labs(title="Mean Proportion of gvc in top SNPs for different top # of SNPs and populations",
+#        color = "Population") +
+#   theme_light()
 
 #### compares prop_gvc_top against gini ####
 prop_vs_gini_tbl <- robustness_tbl %>%
@@ -164,11 +166,12 @@ gg <- ggplot(prop_vs_gini_tbl, aes(x=prop_gvc_top, y=gini)) +
   coord_fixed() +
   labs(#title = expression(paste("Gini vs Proportion of ",italic(gvc)," among top SNPs for quantitative traits")),
     x = expression(paste("Proportion of total ", italic(gvc), " captured within top SNPs")),
-    y = expression(paste("Gini"[list(500,Meta)])),
+    y = expression(paste(italic("Gini"[list(500,Meta)]))),
     color = "Trait Group") +
   theme_light() +
   gini_p_theme +
-  theme(legend.position = "top") +
+  theme(legend.position = "top",
+        axis.title.y = element_text(family="Georgia")) +
   gc_scale
 # prints out plot
 loc_out <- paste0("../generated_figures/gini_vs_prop-gvc-top.", print_mode)
@@ -184,14 +187,15 @@ gini_rank_tbl <- robustness_tbl %>%
 gg <- ggplot(gini_rank_tbl, aes(x = as.factor(threshold), y = gini)) +
   geom_line(aes(group=prive_code, color=group_consolidated), size=0.75*sf, key_glyph = "rect") +
   labs(#title = 'Gini vs top # of SNPs for 96 quantitative traits,
-       x = 'Top # of SNPs used in Gini calculation',
-       y = expression(paste("Gini"[list(500,Meta)])),
+       x = 'Number of SNPs used in Genomic Inequality (Gini) calculations',
+       y = expression(paste(italic("Gini"[list(500,Meta)]))),
        color = "Trait Group") +
   scale_x_discrete(expand=c(0,0)) +
   scale_y_continuous(expand=c(0.01,0.01), limits=c(0,1)) +
   #scale_y_reverse() +
   theme_light() + gini_p_theme +
-  theme(legend.position = "top") +
+  theme(legend.position = "top",
+        axis.title.y = element_text(family="Georgia")) +
   gc_scale
 # prints out plot
 loc_out <- paste0("../generated_figures/gini_vs_threshold.", print_mode)
@@ -219,14 +223,15 @@ for (i in 1:length(pops)) {
     geom_point(alpha=0.75, size=4*sf) +
     scale_x_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
     scale_y_continuous(expand=c(0.01,0.01),limits=c(0,1)) +
-    xlab(bquote(Gini[500][','][.(pop2)])) +
-    ylab(bquote(Gini[500][','][Meta])) +
+    xlab(bquote(italic(Gini[500][','][.(pop2)]))) +
+    ylab(bquote(italic(Gini[500][','][Meta]))) +
     labs(color = "Trait Group") +
     coord_fixed() +
     theme_light() +
     gini_p_theme +
     gc_scale +
-    theme(legend.position = "top") +
+    theme(legend.position = "top",
+          axis.title = element_text(family="Georgia")) +
     annotate("text", x=0.025, y=0.975,hjust=0,vjust=1, parse=TRUE, size=10*sf,
              label = paste0("r==",round(cor$estimate,3)))
   gini_UK_plots[[i]] <- p
