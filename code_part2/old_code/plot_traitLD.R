@@ -36,8 +36,8 @@ ggplot(LD_long2,aes(x=reorder(short_label, traitLD_unadj_mean), y = traitLD_unad
   theme_light() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   xlab("Trait (quantitative only)") +
-  ylab("Trait LD-Score (not MAF-adjusted)") +
-  labs()
+  ylab("Trait LD-Score") +
+  labs(color = "Ancestry")
 
 
 # gini plot
