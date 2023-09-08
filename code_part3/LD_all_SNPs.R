@@ -21,10 +21,11 @@ for (i in 1:length(pops)) {
   if (i==1) {LD_all <- LD_pop
   } else {LD_all <- LD_all %>% inner_join(LD_pop, by=c("CHR","BP","A0","A1","rsid","varid"))}
 }
-# about 8.74M SNPs
+# about 9M SNPs
 LD_all <- LD_all %>% 
-  filter(AF_EUR > 0.001) %>%
+  filter(AF_EUR > 0.01, AF_EUR < 0.99) %>%
   arrange(CHR, BP, A0, A1)
+# about 8.37M SNPs
 
 # writes to system
 loc_out <- paste0(dir_sims,"LD_all_SNPs.txt")
