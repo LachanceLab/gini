@@ -1,5 +1,7 @@
 # Libraries and paths ####
 library(tidyverse)
+# 1 LD_all_SNPs.R
+
 library(data.table)
 
 dir_LD <- "../input_data/ldscores/"

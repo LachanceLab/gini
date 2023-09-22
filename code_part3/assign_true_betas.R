@@ -1,3 +1,5 @@
+# 2 assign_true_betas.R
+
 # Libraries and paths ####
 library(tidyverse)
 library(data.table)
@@ -39,6 +41,7 @@ get_true_betas <- function(causal_SNPs, Mc, h2, seed=as.numeric(NA)) {
 # Code ####
 LD_all <- as_tibble(fread(paste0(dir_sims,"LD_all_SNPs.txt")))
 
+# simulation parameters
 set.seed(1)
 threshold <- 500
 Mcs <- c(10,100,500,1000,5000)
@@ -46,28 +49,48 @@ h2s <- c(0.1, 0.3, 0.5)
 trials <- 5
 
 all_causal_SNPs <- LD_all[0,"varid"]
+
+simphenos_tbl <- tibble(ID = as.numeric(),
+                        Mc = as.numeric(),
+                        h2 = as.numeric(),
+                        trial = as.numeric(),
+                        traitname = as.character())
+# generates true betas
 for (Mc in Mcs) {
   for (h2 in h2s) {
     for (i in 1:trials) {
       print(paste(Mc, h2, i))
       
-      causal_SNPs <- LD_all %>% 
+      causal_SNPs <- LD_all %>%
         sample_causal_SNPs(Mc) %>%
         get_true_betas(Mc, h2) %>%
         select(varid, beta_true)
-      
+
       col_beta <- paste0("tb_h",h2*10,"_Mc",Mc,"_t",i)
       colnames(causal_SNPs)[ncol(causal_SNPs)] <- col_beta
-      
-      
+
+
       all_causal_SNPs <- all_causal_SNPs %>%
         full_join(causal_SNPs, by="varid")
+      
+      simphenos_tbl <- simphenos_tbl %>% add_row(
+        Mc = Mc, h2 = h2, trial = i,
+        traitname = substring(col_beta,4)
+      )
     }
   }
 }
 
+# sets non-causal SNP effect sizes to zero
 all_causal_SNPs[is.na(all_causal_SNPs)] <- 0
+# joins LD data
 all_causal_SNPs <- LD_all %>% inner_join(all_causal_SNPs, by="varid")
 
+# saves true betas
 loc_out <- paste0(dir_sims, "all_true_betas.txt")
 fwrite(all_causal_SNPs, loc_out, sep="\t")
+
+# saves simulation phenotypes table
+simphenos_tbl$ID <- 1:nrow(simphenos_tbl)
+loc_out <- paste0(dir_sims, "simphenos_tbl.txt")
+fwrite(simphenos_tbl, loc_out, sep="\t")
