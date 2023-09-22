@@ -54,7 +54,8 @@ simphenos_tbl <- tibble(ID = as.numeric(),
                         Mc = as.numeric(),
                         h2 = as.numeric(),
                         trial = as.numeric(),
-                        traitname = as.character())
+                        traitname = as.character(),
+                        true_gini = as.numeric())
 # generates true betas
 for (Mc in Mcs) {
   for (h2 in h2s) {
@@ -89,6 +90,22 @@ all_causal_SNPs <- LD_all %>% inner_join(all_causal_SNPs, by="varid")
 # saves true betas
 loc_out <- paste0(dir_sims, "all_true_betas.txt")
 fwrite(all_causal_SNPs, loc_out, sep="\t")
+
+# computes true gini
+AFs <- all_causal_SNPs$AF_EUR
+for (i in 1:nrow(simphenos_tbl)) {
+  # extracts betas and computes gvcs
+  betas <- all_causal_SNPs[[11+i]]
+  gvcs <- 2 * betas^2 * AFs * (1 - AFs)
+  
+  gvcs <- gvcs[gvcs != 0]
+  # pads with zeros if necessary
+  gvc_list <- pad_zeros(gvcs, threshold)
+  # computes gini
+  gini <- get_gini(gvc_list)
+  
+  simphenos_tbl$true_gini[i] <- gini
+}
 
 # saves simulation phenotypes table
 simphenos_tbl$ID <- 1:nrow(simphenos_tbl)

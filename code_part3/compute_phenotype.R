@@ -3,7 +3,6 @@
 # Libraries and paths ####
 library(tidyverse)
 library(data.table)
-#source("../code_part1/helper_functions/helper_functions.R")
 
 dir_sims <- "../generated_data/simulations/"
 
