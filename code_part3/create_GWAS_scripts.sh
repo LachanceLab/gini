@@ -39,7 +39,7 @@ cd '${dir_GWAS_scripts}'                            # Change to working director
 
 ~/plink2/plink2 \
 --bfile '${loc_bfile_prefix}${j}' \
---keep '${dir_simulations}'pop_GWAS.txt \
+--keep '${dir_code3}${dir_simulations}'pop_GWAS.txt \
 --pheno '${dir_code3}${loc_pheno}' \
 --linear allow-no-covars cols=+a1freq \
 --extract range '${dir_code3}${loc_SNPs}' \

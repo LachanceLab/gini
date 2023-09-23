@@ -28,8 +28,8 @@ echo '#!/bin/bash
 #SBATCH -Jclump_'${traitname}'                    # Job name
 #SBATCH --account=gts-jlachance6-biocluster                 # charge account
 #SBATCH -N1 --ntasks-per-node=1                 # Number of nodes and cores per node required
-#SBATCH --mem-per-cpu=16G                        # Memory per core
-#SBATCH -t0:05:00                                    # Duration of the job (Ex: 15 mins)
+#SBATCH --mem-per-cpu=24G                        # Memory per core
+#SBATCH -t0:10:00                                    # Duration of the job (Ex: 15 mins)
 #SBATCH -qinferno                               # QOS Name
 #SBATCH -o'${dir_scripts}'clump_'${traitname}'.out                         # Combined output and error messages file
 cd '${dir_scripts}'                            # Change to working directory
@@ -42,14 +42,14 @@ echo '${traitname}'
 --allow-extra-chr \
 --keep '${loc_LD_IIDs}' \
 --clump '${dir_code3}${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear' \
---clump-snp-field ID \
+--clump-snp-field varid \
 --clump-field P \
 --clump-p1 '${pval_cutoff}' \
 --clump-r2 '${r2_cutoff}' \
 --out '${dir_code3}${dir_results}clumped/sim_GWAS_ALL.ph_${traitname}'
 
 ' > ${dir_scripts}clump_${traitname}.sh
-#sbatch ${dir_scripts}clump_${traitname}.sh
+sbatch ${dir_scripts}clump_${traitname}.sh
 echo clump_${traitname}.sh
 
 done

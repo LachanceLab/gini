@@ -21,11 +21,9 @@ for traitname in "${traitnames[@]}"; do
   for i in $(seq 1 22); do
     # If i is 1, copy the whole file including the header
     if [ $i -eq 1 ]; then
-      cat "${dir_results}sim_GWAS_chr${i}.ph_${traitname}.glm.linear" | head -1 > "${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear"
+      awk -F'\t' 'NR==1 {print $0 "\tvarid"}' "${dir_results}sim_GWAS_chr${i}.ph_${traitname}.glm.linear" > "${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear"
     fi
     # Skip the header and append to the combined file
-    #awk 'NR>1' "${dir_results}sim_GWAS_chr${i}.ph_${traitname}.glm.linear" >> "${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear"
     awk -F'\t' 'NR>1 {print $0 "\t" $1 ":" $2 "_" $4 "_" $5}' "${dir_results}sim_GWAS_chr${i}.ph_${traitname}.glm.linear" >> "${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear"
   done
-  sed -i '1 s/$/\tvarid/' "${dir_results}combined/sim_GWAS_ALL.ph_${traitname}.glm.linear"
 done
