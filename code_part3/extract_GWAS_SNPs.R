@@ -31,3 +31,13 @@ GWAS_ranges <- true_betas %>% mutate(one = 1, BP2 = BP) %>%
 
 loc_out <- paste0(dir_sims, "GWAS_ranges.txt")
 fwrite(GWAS_ranges, loc_out, sep=" ", col.names=FALSE)
+
+
+# gets training cohort for GWAS
+pop_all <- as_tibble(fread("../generated_data/pop_ALLrc_IIDs.txt", fill=TRUE)) %>% select(FID=V1,IID=V1,pop=V3)
+pop_PGS <- as_tibble(fread("../generated_data/pop_sampled_IIDs.txt", fill=TRUE)) %>% select(FID=V1,IID=V1,pop=V3)
+# filters to non-PGS UK individuals
+pop_GWAS <- pop_all %>% filter(!(IID %in% pop_PGS$IID), pop == "United")
+
+loc_out <- paste0(dir_sims,"pop_GWAS.txt")
+fwrite(pop_GWAS, loc_out, sep=" ", col.names = FALSE)
