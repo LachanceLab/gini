@@ -86,13 +86,15 @@ traits_table[traits_table$prive_code %in% psychological_codes,"group_consolidate
 
 ## Joining Prive et al.'s partial correlation values ####
 pcors$pop <- gsub('United Kingdom', 'United', pcors$pop)
-pcors <- pcors %>%
+pcors <- pcors  %>%
+  mutate(pcor = ifelse(pcor < 0, 0, pcor)) %>%
+  mutate(PGS_R2 = pcor^2) %>%
   rename(Nsize = N) %>%
   arrange(pop) %>%
   pivot_wider(
     names_from = pop,
     names_glue = "{.value}_{pop}",
-    values_from = c(Nsize,pcor,inf,sup)
+    values_from = c(Nsize,pcor,inf,sup, PGS_R2)
   )
 traits_table <- traits_table %>% left_join(pcors, by=c("prive_code"="pheno"))
 
@@ -140,6 +142,9 @@ if (!already_appended_1kG) {
     separate(BP, c("BP", NA, NA), sep="_", remove=TRUE) %>%
     mutate(BP = as.numeric(BP)) %>% rename(AF_1kG_CSA = AF_1kG_SAS)
 }
+
+# keeps gini computation w/o padding zeros
+ginis_nopadding <- c()
 
 ### loops through each trait ####
 for (i in 1:nrow(traits_table)) {
@@ -259,6 +264,11 @@ for (i in 1:nrow(traits_table)) {
     if (pop == meta2use) {
       sum_gvc_top <- sum(gvc_list)
       traits_table[i,"gini_panUKB"] <- gini
+      # no padding, for comparison
+      if (length(sf[[col_gvc]]) < threshold) {
+        gini_nopadding <- get_gini(sf[[col_gvc]])
+      } else {gini_nopadding <- gini}
+      ginis_nopadding[i] <- gini_nopadding
     }
     # adds data to table
     print(paste(code, pop, round(gini,4)))
@@ -278,7 +288,7 @@ for (i in 1:nrow(traits_table)) {
     top_indep_SNPs <- top_indep_SNPs %>% add_row(sf_top_out)
   }
   # saves sf back to system (WARNING: overrides file)
-  fwrite(sf, loc_summary_file, sep="\t")
+  #fwrite(sf, loc_summary_file, sep="\t")
 }
 # binds the population-specific Ginis to traits_table
 pop_ginis2 <- pop_ginis %>%
@@ -291,6 +301,26 @@ traits_table <- traits_table %>% left_join(pop_ginis2, by = "prive_code")
 # saves list of significant SNPs
 loc_out <- paste0(dir_out,"top_indep_SNPs.txt")
 fwrite(top_indep_SNPs, loc_out, sep="\t")
+
+# compares padding vs no-padding
+pad_comparison <- traits_table %>%
+  select(prive_code, short_label, GWAS_trait_type, gini_padding = gini_panUKB)
+pad_comparison$gini_no_padding <- ginis_nopadding
+pad_comparison <- pad_comparison %>%
+  filter(GWAS_trait_type == "quantitative") %>%
+  mutate(padded = gini_no_padding != gini_padding)
+# plots comparison
+ggplot(pad_comparison, aes(x = gini_padding, y = gini_no_padding, color=padded)) +
+  geom_point() +
+  geom_text_repel(data=pad_comparison %>% filter(padded),
+                  aes(label = short_label)) +
+  geom_abline() +
+  xlim(0,1) + ylim(0,1) +
+  labs(x = "Gini (with zero-padding)", y = "Gini (without zero-padding)") +
+  theme_light() +
+  theme(legend.position = "none")
+loc_out <- "../generated_figures/gini_padding_comparison.png"
+ggsave(loc_out, width=180, height=180, units="mm", dpi=300)
 
 ## Calculating portability indices ####
 
@@ -312,18 +342,18 @@ codes <- traits_table$prive_code
 # for relative predictive performance against PC distance from UK
 for (code in codes) {
   temp <- traits_table %>% filter(prive_code == code) %>%
-    select(starts_with("pcor_")) %>%
+    select(starts_with("PGS_R2_")) %>%
     pivot_longer(
-      cols = starts_with("pcor_"),
-      names_prefix = "pcor_",
+      cols = starts_with("PGS_R2_"),
+      names_prefix = "PGS_R2_",
       names_to = "population",
-      values_to = "pcor"
+      values_to = "PGS_R2"
     ) %>% mutate(
-      relative_pcor = pcor / (traits_table %>% filter(prive_code == code))$pcor_United[1]
+      relative_PGS_R2 = PGS_R2 / (traits_table %>% filter(prive_code == code))$PGS_R2_United[1]
     ) %>% left_join(distances, by="population")
   
   # extracts best fit line slope, standard error, and p-value
-  lin_model <- lm((temp$relative_pcor - 1) ~ 0 + temp$prive_dist_to_UK)
+  lin_model <- lm((temp$relative_PGS_R2 - 1) ~ 0 + temp$prive_dist_to_UK)
   portability_index <- summary(lin_model)$coefficients[1,1]
   portability_index_SE <- summary(lin_model)$coefficients[1,2]
   portability_index_P <- summary(lin_model)$coefficients[1,4]

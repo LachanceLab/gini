@@ -98,21 +98,14 @@ plot_portability <- function(code) {
   
   # properly formats tibble with PGS accuracy to compute relative PGS accuracy
   pcor_data <- traits_table %>% filter(prive_code == code) %>%
-    select(starts_with("pcor_")) %>%
+    select(starts_with("PGS_R2_")) %>%
     pivot_longer(
-      cols = starts_with("pcor_"),
-      names_prefix = "pcor_",
+      cols = starts_with("PGS_R2_"),
+      names_prefix = "PGS_R2_",
       names_to = "ancestry",
-      values_to = "pcor"
+      values_to = "PGS_R2"
     ) %>% mutate(
-      sup = traits_table %>% filter(prive_code == code) %>%
-        select(starts_with("sup_")) %>% unlist(),
-      inf = traits_table %>% filter(prive_code == code) %>%
-        select(starts_with("inf_")) %>% unlist()
-    ) %>% mutate(
-      relative_pcor = pcor / (traits_table %>% filter(prive_code == code))$pcor_United[1],
-      relative_sup = sup / (traits_table %>% filter(prive_code == code))$pcor_United[1],
-      relative_inf = inf / (traits_table %>% filter(prive_code == code))$pcor_United[1]
+      relative_PGS_R2 = PGS_R2 / (traits_table %>% filter(prive_code == code))$PGS_R2_United[1],
     ) %>% left_join(distances, by="ancestry")
   pcor_data[pcor_data$ancestry=="United","ancestry"] <- "UK"
   
@@ -133,9 +126,10 @@ plot_portability <- function(code) {
   gg<-ggplot(pcor_data, aes(x=prive_dist_to_UK)) +
     geom_segment(aes(x=0,y=1, xend=max(prive_dist_to_UK), yend=1 + m * max(prive_dist_to_UK)),
                  size=0.5*sf, color="dodgerblue1") +
-    geom_point(aes(y = relative_pcor), size = 1.5*sf) +
+    geom_point(aes(y = relative_PGS_R2, color=ancestry), size = 2.5*sf) +
     scale_x_continuous(expand=expansion(mult = c(0.02, .02))) +
     common_theme +
+    theme(legend.position = "none") +
     xlab("Genetic PC Distance to UK") +
     ylab("PGS Accuracy Relative to UK") +
     labs(title = description)

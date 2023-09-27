@@ -23,7 +23,7 @@ sf <- 2
 p_adjust_method <- "fdr" # used in p.adjust()
 print_mode <- "png" # set to either "png" or "pdf"
 # columns to plot
-vars <- c("ldpred2_h2","traitLD_unadj_CoV","gini_panUKB","pcor_United","portability_index", "log_F")
+vars <- c("ldpred2_h2","traitLD_unadj_CoV","gini_panUKB","PGS_R2_United","portability_index", "log_F")
 
 ### Printing function ####
 print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
@@ -47,7 +47,8 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-traits_table <- as_tibble(fread(loc_table))
+traits_table <- as_tibble(fread(loc_table)) %>%
+  filter(portability_index !=0)
 traits_table2 <- traits_table %>%
   filter(PGS_trait_type == "quantitative",
          GWAS_trait_type == "quantitative") %>%
@@ -106,7 +107,8 @@ for (i in 1:(length(vars) - 1)) {
   for (j in (i+1):(length(vars))) {
     y <- vars[[j]]
     cor1 <- cor.test(as.data.frame(traits_table2)[,x],
-                     as.data.frame(traits_table2)[,y])
+                     as.data.frame(traits_table2)[,y],
+                     method = "pearson")
     cor_value <- cor1$estimate[[1]]
     p_value <- cor1$p.value
     p_values_cor <- p_values_cor %>% add_row(
@@ -121,6 +123,9 @@ for (i in 1:(length(vars) - 1)) {
 # adjust p-values for multiple-testing
 adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,p_adjust_method)
 p_values_cor$adj_p_value <- adj_p_values_cor
+
+#p_values_cor <- p_values_cor1 %>% left_join(p_values_cor2, by=c("var1","var2"), suffix=c(".pearson",".spearman"))
+#ggplot(p_values_cor, aes(x=cor.pearson, y=cor.spearman)) + geom_point() + geom_abline(slope=1) + theme_light()
 
 ## Matrix subplot functions
 
@@ -162,7 +167,7 @@ var_labels <- list(
   "ldpred2_h2" = c("SNP~Heritability","(italic({h^{2}}[SNP]))"),
   "traitLD_unadj_CoV" = c("LD~Variability","(LDCV)"),
   "gini_panUKB" = c("Genomic~Inequality","(italic(G[list(500,Meta)]))"),
-  "pcor_United" = c("PGS~Accuracy","(symbol(r)[UK])"),
+  "PGS_R2_United" = c("PGS~Accuracy","(symbol(R)[UK])"),
   "portability_index" = c("Portability","(italic(m))"),
   "log_F" = c("Divergence","(italic(D))"))
 diag_label <- function(data, mapping) {
@@ -200,7 +205,7 @@ axis_lims <- list(
   "log_F" = get_axis_lims(traits_table2$log_F),
   "traitLD_unadj_CoV"= get_axis_lims(traits_table2$traitLD_unadj_CoV),
   "ldpred2_h2" = c(0,0.6),
-  "pcor_United"= get_axis_lims(traits_table2$pcor_United,0),
+  "PGS_R2_United"= get_axis_lims(traits_table2$PGS_R2_United,0),
   "portability_index"= get_axis_lims(traits_table2$portability_index,NA,0),
   "gini_panUKB"=c(0,1))
 gg_pca_scale <- list(
@@ -226,6 +231,7 @@ lm_scatterplot <- function(data, mapping) {
   p <- ggplot(data=data, mapping=mapping) +
     geom_line(stat="smooth", method="lm", color="grey30", formula=y~x, size=1*sf, alpha=linealpha) +
     geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
+    #geom_smooth(aes(color=group_consolidated), method="lm", formula=y~x, size=1*sf, se=TRUE, alpha=0.25) +
     geom_point(aes(color=group_consolidated),
                alpha=0.75,shape=19, size=2*sf) +
     geom_text(aes(label="", color=data$group_consolidated), key_glyph = "rect") + # empty geom
@@ -261,7 +267,7 @@ p_sc <- ggpairs(data = traits_table2,
 # Saves image onto system
 smplot_width <- 1200
 smplot_height <- 1150
-loc_out <- paste0(dir_out,"scatterplot_matrix")
+loc_out <- paste0(dir_out,"scatterplot_matrix_group")
 print_plot(p_sc, paste0(loc_out,".png"), "png", smplot_width, smplot_height, sf)
 print_plot(p_sc, paste0(loc_out,".pdf"), "pdf", smplot_width, smplot_height, sf)
 print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
@@ -408,3 +414,42 @@ for (var_comparison in c("group","type")) {
   
   print(paste("Saved dual density plots for",var_comparison))
 }
+
+
+
+# just the density plots for each group, ugly repeat code
+density_plots2 <- list()
+for (i in 1:length(vars)) {
+  x <- vars[i]
+  xlims <- axis_lims[[x]]
+  
+  p <- ggplot(traits_table2, mapping=aes(x=!!as.name(x) )) +
+    geom_density(mapping=aes(fill=group_consolidated),alpha=0.5,size=0.5*sf) +
+    theme_light() +
+    labs(fill="Trait Group") +
+    scale_fill_manual(name="Trait Group",
+                       labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
+                       breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
+                       values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
+    xlim(xlims) +
+    scale_y_continuous(expand=expansion(mult = c(0, .05)))
+  
+  density_plots2[[i]] <- p
+}
+ddp2 <- ggmatrix(plots=density_plots2,
+                nrow=1,
+                ncol=length(vars),
+                legend=1,
+                xAxisLabels = column_labels) +
+  theme(legend.position="top",
+        legend.key.size = unit(1,"cm"),
+        legend.text = element_text(size = ddplot_textsize*sf),
+        axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf),
+        axis.text.y = element_blank(),
+        text = element_text(size = ddplot_textsize*sf),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+loc_out <- paste0(dir_out,"triple_density_plot")
+print_plot(ddp2, paste0(loc_out,".png"), "png", ddplot_width, ddplot_height, sf)
+print_plot(ddp2, paste0(loc_out,".pdf"), "pdf", ddplot_width, ddplot_height, sf)
