@@ -19,8 +19,10 @@ mapfile -t -s 1 -O 1 traitnames < <(awk -F'\t' '{print $5}' $loc_simphenos)
 
 # LD clump
 
-pval_cutoff=0.00001
-r2_cutoff=0.2
+#pval_cutoff=0.00001
+pval_cutoff=0.00000005
+r2_cutoff=0.0
+kb_cutoff=1000
 
 for traitname in "${traitnames[@]}"; do
 
@@ -29,7 +31,7 @@ echo '#!/bin/bash
 #SBATCH --account=gts-jlachance6-biocluster                 # charge account
 #SBATCH -N1 --ntasks-per-node=1                 # Number of nodes and cores per node required
 #SBATCH --mem-per-cpu=24G                        # Memory per core
-#SBATCH -t0:10:00                                    # Duration of the job (Ex: 15 mins)
+#SBATCH -t0:03:00                                    # Duration of the job (Ex: 15 mins)
 #SBATCH -qinferno                               # QOS Name
 #SBATCH -o'${dir_scripts}'clump_'${traitname}'.out                         # Combined output and error messages file
 cd '${dir_scripts}'                            # Change to working directory
@@ -46,6 +48,7 @@ echo '${traitname}'
 --clump-field P \
 --clump-p1 '${pval_cutoff}' \
 --clump-r2 '${r2_cutoff}' \
+--clump-kb '${kb_cutoff}' \
 --out '${dir_code3}${dir_results}clumped/sim_GWAS_ALL.ph_${traitname}'
 
 ' > ${dir_scripts}clump_${traitname}.sh

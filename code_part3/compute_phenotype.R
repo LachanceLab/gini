@@ -5,6 +5,7 @@ library(tidyverse)
 library(data.table)
 
 dir_sims <- "../generated_data/simulations/"
+loc_PCs <- "/storage/home/hcoda1/1/ncarvalho6/scratch/03-06_UKB/ukb_IID_16PCs.txt"
 
 # Compute genetic_liabilities ####
 dir_genliabs <- paste0(dir_sims,"genetic_liabilities/")
@@ -48,6 +49,16 @@ for (i in 1:nrow(simphenos_tbl)) {
 }
 # renames columns
 colnames(pheno)[-c(1:2)] <- paste0("ph_",simphenos_tbl$traitname)
+
 # saves phenotype data
 loc_out <- paste0(dir_sims, "pheno_values.txt")
 fwrite(pheno, loc_out, sep="\t")
+
+
+# makes PCs/covariate file
+PCs <- as_tibble(fread(loc_PCs))
+colnames(PCs) <- c("IID",paste0("PC",1:40))
+
+PCs <- PCs %>% mutate(FID = IID) %>% select(FID, everything())
+loc_out <- paste0(dir_sims, "covar_PCs.txt")
+fwrite(PCs, loc_out, sep="\t")
