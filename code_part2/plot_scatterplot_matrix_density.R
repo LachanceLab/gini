@@ -47,8 +47,7 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 ### Code ####
 
 # reads traits table, filters out low prevalence traits, and defines lifestyle traits
-traits_table <- as_tibble(fread(loc_table)) %>%
-  filter(portability_index !=0)
+traits_table <- as_tibble(fread(loc_table)) %>% filter(portability_index !=0)
 traits_table2 <- traits_table %>%
   filter(PGS_trait_type == "quantitative",
          GWAS_trait_type == "quantitative") %>%
@@ -267,7 +266,8 @@ p_sc <- ggpairs(data = traits_table2,
 # Saves image onto system
 smplot_width <- 1200
 smplot_height <- 1150
-loc_out <- paste0(dir_out,"scatterplot_matrix_group")
+#loc_out <- paste0(dir_out,"scatterplot_matrix_group")
+loc_out <- paste0(dir_out,"scatterplot_matrix")
 print_plot(p_sc, paste0(loc_out,".png"), "png", smplot_width, smplot_height, sf)
 print_plot(p_sc, paste0(loc_out,".pdf"), "pdf", smplot_width, smplot_height, sf)
 print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))

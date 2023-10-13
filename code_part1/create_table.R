@@ -350,10 +350,27 @@ for (code in codes) {
       values_to = "PGS_R2"
     ) %>% mutate(
       relative_PGS_R2 = PGS_R2 / (traits_table %>% filter(prive_code == code))$PGS_R2_United[1]
-    ) %>% left_join(distances, by="population")
+    ) %>%
+    drop_na() %>%
+    left_join(distances, by="population") %>%
+    # warning: ugly code solution
+    left_join(traits_table %>%
+                filter(prive_code == code) %>%
+                select(starts_with("Nsize_")) %>%
+                pivot_longer(cols = everything(),
+                             names_prefix = "Nsize_",
+                             names_to = "population",
+                             values_to = "N"),
+              by="population"
+              ) # %>%filter(N >= 100)
+  
+  print(paste(code,min(temp$N)))
+  
+  
   
   # extracts best fit line slope, standard error, and p-value
-  lin_model <- lm((temp$relative_PGS_R2 - 1) ~ 0 + temp$prive_dist_to_UK)
+  lin_model <- lm((temp$relative_PGS_R2 - 1) ~ 0 + temp$prive_dist_to_UK,
+                  weights = temp$N)
   portability_index <- summary(lin_model)$coefficients[1,1]
   portability_index_SE <- summary(lin_model)$coefficients[1,2]
   portability_index_P <- summary(lin_model)$coefficients[1,4]
@@ -362,7 +379,7 @@ for (code in codes) {
   portability_index_SEs <- append(portability_index_SEs,portability_index_SE)
   portability_index_Ps <- append(portability_index_Ps,portability_index_P)
   
-  print(paste(code,portability_index))
+  #print(paste(code,portability_index))
 }
 # sets a hard cap of 0 for portability
 portability_indices[portability_indices > 0] <- 0
