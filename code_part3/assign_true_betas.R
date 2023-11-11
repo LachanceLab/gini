@@ -55,7 +55,7 @@ simphenos_tbl <- tibble(ID = as.numeric(),
                         h2 = as.numeric(),
                         trial = as.numeric(),
                         traitname = as.character(),
-                        true_gini = as.numeric())
+                        gini_true = as.numeric())
 # generates true betas
 for (Mc in Mcs) {
   for (h2 in h2s) {
@@ -104,7 +104,7 @@ for (i in 1:nrow(simphenos_tbl)) {
   # computes gini
   gini <- get_gini(gvc_list)
   
-  simphenos_tbl$true_gini[i] <- gini
+  simphenos_tbl$gini_true[i] <- gini
 }
 
 # saves simulation phenotypes table

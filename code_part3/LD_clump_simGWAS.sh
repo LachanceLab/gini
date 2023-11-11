@@ -19,10 +19,10 @@ mapfile -t -s 1 -O 1 traitnames < <(awk -F'\t' '{print $5}' $loc_simphenos)
 
 # LD clump
 
-#pval_cutoff=0.00001
-pval_cutoff=0.00000005
-r2_cutoff=0.0
-kb_cutoff=1000
+pval_cutoff=0.00001
+#pval_cutoff=0.00000005
+r2_cutoff=0.2 #0.0
+#kb_cutoff=1000
 
 for traitname in "${traitnames[@]}"; do
 
@@ -48,8 +48,9 @@ echo '${traitname}'
 --clump-field P \
 --clump-p1 '${pval_cutoff}' \
 --clump-r2 '${r2_cutoff}' \
---clump-kb '${kb_cutoff}' \
 --out '${dir_code3}${dir_results}clumped/sim_GWAS_ALL.ph_${traitname}'
+
+# --clump-kb '${kb_cutoff}' \
 
 ' > ${dir_scripts}clump_${traitname}.sh
 sbatch ${dir_scripts}clump_${traitname}.sh

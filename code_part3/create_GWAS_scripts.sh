@@ -10,32 +10,19 @@ mkdir -p ${dir_GWAS_scripts}
 dir_out=${dir_simulations}GWAS_results/
 mkdir -p ${dir_out}
 
-# gets number of GWAS to do
-# loc_simphenos=${dir_simulations}simphenos_tbl.txt
-# N_GWAS=$(($(wc -l < ${loc_simphenos}) - 1))
-
 loc_pheno=${dir_simulations}pheno_values.txt
 loc_covar=${dir_simulations}covar_PCs.txt
-# 
-# for i in $(seq 1 $N_GWAS); do
-# # only does trial 1 for now
-# if [ $(( (i + 4) % 5 )) -eq 0 ]; then
-# echo $i
 
 loc_SNPs=${dir_simulations}GWAS_ranges.txt
 loc_out=${dir_out}sim_GWAS_chr
-
-# number of phenotypes
-
-
 
 for j in {1..22}; do
 
 echo '#!/bin/bash
 #SBATCH -Jsim_GWAS_chr'${j}'                    # Job name
 #SBATCH --account=gts-jlachance6-biocluster                 # charge account
-#SBATCH -N1 --ntasks-per-node=12                 # Number of nodes and cores per node required
-#SBATCH --mem-per-cpu=2G                        # Memory per core
+#SBATCH -N1 --ntasks-per-node=4                 # Number of nodes and cores per node required
+#SBATCH --mem-per-cpu=6G                        # Memory per core
 #SBATCH -t9:00:00                                    # Duration of the job (Ex: 15 mins)
 #SBATCH -qinferno                               # QOS Name
 #SBATCH -o'${dir_GWAS_scripts}'sim_GWAS_chr'${j}'.out                         # Combined output and error messages file
@@ -47,18 +34,14 @@ cd '${dir_GWAS_scripts}'                            # Change to working director
 --keep '${dir_code3}${dir_simulations}'pop_GWAS.txt \
 --pheno '${dir_code3}${loc_pheno}' \
 --covar '${dir_code3}${loc_covar}' \
---linear allow-no-covars cols=+a1freq \
---extract range '${dir_code3}${loc_SNPs}' \
---bed-border-kb 1000 \
+--linear allow-no-covars hide-covar cols=+a1freq \
 --out '${dir_code3}${loc_out}${j}'
+
+#--extract range '${dir_code3}${loc_SNPs}' \
+#--bed-border-kb 1000 \
 
 ' > ${dir_GWAS_scripts}sim_GWAS_chr${j}.sh
 sbatch ${dir_GWAS_scripts}sim_GWAS_chr${j}.sh
 echo sim_GWAS_chr${j}.sh
 
 done
-
-# --pheno-col-nums $((2 + i)) \
-# fi
-# 
-# done
