@@ -16,23 +16,23 @@ sample_causal_SNPs <- function(LD_all, Mc, seed=as.numeric(NA)) {
   
   return(causal_SNPs)
 }
-get_true_betas <- function(causal_SNPs, Mc, h2, seed=as.numeric(NA)) {
+get_true_betas <- function(causal_SNPs, Mc, h2, shape, seed=as.numeric(NA)) {
   if (!is.na(seed)) {set.seed(seed)}
   causal_SNPs <- causal_SNPs %>%
     mutate(beta_true = as.numeric(NA),
            gvc_EUR = as.numeric(NA))
   
+  scale <- h2 / (Mc * shape)
+  
   for (i in 1:Mc) {
     # adapted from: https://www.biorxiv.org/content/10.1101/2022.12.29.522270v2.full
     AF <- causal_SNPs$AF_EUR[i]
-    prior_beta_var <- h2 / (2 * AF * (1-AF) * Mc)
-    
-    
-    # draws from normal distribution
-    beta_true <- rnorm(1, mean=0, sd=sqrt(prior_beta_var))
-    causal_SNPs$beta_true[i] <- beta_true
-    causal_SNPs$gvc_EUR[i] <- 2 * beta_true^2 * AF * (1-AF)
+    causal_SNPs$beta_true[i] <- sqrt( rgamma(1, shape = shape, scale = scale) /
+                                        (2 * AF * (1-AF)) )
   }
+  causal_SNPs <- causal_SNPs %>%
+    mutate(beta_true = beta_true * sample(c(-1,1),Mc, replace=TRUE),
+           gvc_EUR = 2 * beta_true^2 * AF_EUR * (1-AF_EUR))
   #print(sum(causal_SNPs$gvc_EUR))
   
   return(causal_SNPs)
@@ -44,18 +44,15 @@ LD_all <- as_tibble(fread(paste0(dir_sims,"LD_all_SNPs.txt")))
 # simulation parameters
 set.seed(1)
 threshold <- 500
-Mcs <- c(10,100,500,1000,5000)
+Mcs <- c(50,100,500,1000,5000)
 h2s <- c(0.1, 0.3, 0.5)
+shape <- 0.5
 trials <- 5
 
 all_causal_SNPs <- LD_all[0,"varid"]
 
-simphenos_tbl <- tibble(ID = as.numeric(),
-                        Mc = as.numeric(),
-                        h2 = as.numeric(),
-                        trial = as.numeric(),
-                        traitname = as.character(),
-                        gini_true = as.numeric())
+simphenos_tbl <- tibble(ID = 0, Mc = 0, h2 = 0, trial = 0,
+                        traitname = "", gini_true = 0)[0,]
 # generates true betas
 for (Mc in Mcs) {
   for (h2 in h2s) {
@@ -64,7 +61,7 @@ for (Mc in Mcs) {
       
       causal_SNPs <- LD_all %>%
         sample_causal_SNPs(Mc) %>%
-        get_true_betas(Mc, h2) %>%
+        get_true_betas(Mc, h2, shape) %>%
         select(varid, beta_true)
 
       col_beta <- paste0("tb_h",h2*10,"_Mc",Mc,"_t",i)
