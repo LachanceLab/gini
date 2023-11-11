@@ -62,3 +62,12 @@ colnames(PCs) <- c("IID",paste0("PC",1:40))
 PCs <- PCs %>% mutate(FID = IID) %>% select(FID, everything())
 loc_out <- paste0(dir_sims, "covar_PCs.txt")
 fwrite(PCs, loc_out, sep="\t")
+
+# gets training cohort for GWAS
+pop_all <- as_tibble(fread("../generated_data/pop_ALLrc_IIDs.txt", fill=TRUE)) %>% select(FID=V1,IID=V1,pop=V3)
+pop_PGS <- as_tibble(fread("../generated_data/pop_sampled_IIDs.txt", fill=TRUE)) %>% select(FID=V1,IID=V1,pop=V3)
+# filters to non-PGS UK individuals
+pop_GWAS <- pop_all %>% filter(!(IID %in% pop_PGS$IID), pop == "United")
+
+loc_out <- paste0(dir_sims,"pop_GWAS.txt")
+fwrite(pop_GWAS, loc_out, sep=" ", col.names = FALSE)
