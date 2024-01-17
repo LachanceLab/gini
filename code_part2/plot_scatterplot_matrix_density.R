@@ -93,38 +93,40 @@ p_value_to_text <- function(p_value) {
 ### Scatterplot Matrix ####
 
 # calculates adjusted p-values for correlation measurement between variables
-p_values_cor <- tibble(
-  var1 = as.character(),
-  var2 = as.character(),
-  cor = as.numeric(),
-  unadj_p_value = as.numeric(),
-  adj_p_value = as.numeric()
-)
+p_values_cor <- tibble(var1='', var2='', trait.group = '',
+  pearson=0, pearson.p.unadj=0, pearson.p.adj=0,
+  spearman=0, spearman.p.unadj=0, spearman.p.adj=0
+)[0,]
 # loops through unique pairs of summary statistics
-for (i in 1:(length(vars) - 1)) {
-  x <- vars[[i]]
-  for (j in (i+1):(length(vars))) {
-    y <- vars[[j]]
-    cor1 <- cor.test(as.data.frame(traits_table2)[,x],
-                     as.data.frame(traits_table2)[,y],
-                     method = "pearson")
-    cor_value <- cor1$estimate[[1]]
-    p_value <- cor1$p.value
-    p_values_cor <- p_values_cor %>% add_row(
-      var1 = x,
-      var2 = y,
-      cor = cor_value,
-      unadj_p_value = p_value,
-      adj_p_value = NA
-    )
+for (group in c('all', unique(traits_table2$group_consolidated))) {
+  if (group=='all') {tt3 <- traits_table2
+  } else {tt3 <- traits_table2 %>% filter(group_consolidated==group)}
+  
+  for (i in 1:(length(vars) - 1)) {
+    x <- vars[[i]]
+    for (j in (i+1):(length(vars))) {
+      y <- vars[[j]]
+      cor.pearson <- cor.test(tt3[[x]], tt3[[y]], method = "pearson")
+      cor.spearman <- cor.test(tt3[[x]], tt3[[y]], method = "spearman")
+      p_values_cor <- p_values_cor %>%
+        add_row(var1 = x, var2 = y, trait.group = group,
+                pearson = cor.pearson$estimate[[1]],
+                pearson.p.unadj = cor.pearson$p.value,
+                pearson.p.adj = NA,
+                spearman = cor.spearman$estimate[[1]],
+                spearman.p.unadj = cor.spearman$p.value,
+                spearman.p.adj = NA)
+    }
   }
+  # adjust p-values for multiple-testing
+  p_values_cor$pearson.p.adj[p_values_cor$trait.group==group] <-
+    p.adjust(p_values_cor$pearson.p.unadj[p_values_cor$trait.group==group], p_adjust_method)
+  p_values_cor$spearman.p.adj[p_values_cor$trait.group==group] <-
+    p.adjust(p_values_cor$spearman.p.unadj[p_values_cor$trait.group==group], p_adjust_method)
 }
-# adjust p-values for multiple-testing
-adj_p_values_cor <- p.adjust(p_values_cor$unadj_p_value,p_adjust_method)
-p_values_cor$adj_p_value <- adj_p_values_cor
 
-#p_values_cor <- p_values_cor1 %>% left_join(p_values_cor2, by=c("var1","var2"), suffix=c(".pearson",".spearman"))
-#ggplot(p_values_cor, aes(x=cor.pearson, y=cor.spearman)) + geom_point() + geom_abline(slope=1) + theme_light()
+# saves this table to system
+fwrite(p_values_cor, paste0(dir_out,'scatterplot_corrs.csv'),sep=',')
 
 ## Matrix subplot functions
 
@@ -135,29 +137,45 @@ upper_corr_p <- function(data,mapping) {
   y <- as.character(quo_get_expr(mapping[[2]]))
   
   # extracts r- and p-value from previous computations
-  slice <- p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x) )
-  cor_value <- slice$cor
-  p_value <- slice$adj_p_value
+  slice <- p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x),
+                                    trait.group=='all')
   
-  p_text_list <- p_value_to_text(p_value)
-  p_text <- p_text_list[[1]]
+  pearson <- slice$pearson
+  pearson.text <- paste0('r==',formatC(pearson,digits=3, format="f"))
+  pearson.p <- slice$pearson.p.adj
+  pearson.p.text <- p_value_to_text(pearson.p)
   
-  # determines full text to display
-  cor_text <- formatC(cor_value,digits=3, format="f")
-  text_rline <- paste0("r==", cor_text)
+  spearman <- slice$spearman
+  spearman.p <- slice$spearman.p.adj
+  spearman.p.text <- p_value_to_text(spearman.p)
+  spearman.text <- paste0('symbol(r)==',formatC(spearman,digits=3, format="f"))
+
   
-  
-  
+  text.tbl <- tibble(line = c(pearson.text,pearson.p.text[[1]],
+                              spearman.text,spearman.p.text[[1]]),
+                     color=c(rep(pearson.p.text[[2]],2),
+                             rep(spearman.p.text[[2]],2)),
+                     y = c(0.80, 0.65, 0.35, 0.20)
+  )
   # makes GGally textplot using custom text
-  p <- ggally_text(label="") +
-    geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=5.75*sf,color=p_text_list[[2]],
-              label = text_rline, parse=TRUE ) + # correlation value
-    geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=5.75*sf,color=p_text_list[[2]],
-              label = p_text, parse=TRUE ) + # p-value
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-          panel.border = element_rect(linetype = "solid", 
-                                      color = theme_get()$panel.background$fill,
-                                      fill = "transparent"))
+  # p <- ggally_text(label="") +
+  #   geom_text(aes(x=0.5,y=0.55),hjust=0.5,vjust=0,size=5.75*sf,color=pearson.p.text[[2]],
+  #             label = pearson.text, parse=TRUE ) + # correlation value
+  #   geom_text(aes(x=0.5,y=0.45),hjust=0.5,vjust=1,size=5.75*sf,color=pearson.p.text[[2]],
+  #             label = pearson.p.text[[1]], parse=TRUE ) + # p-value
+  #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+  #         panel.border = element_rect(linetype = "solid", 
+  #                                     color = theme_get()$panel.background$fill,
+  #                                     fill = "transparent"))
+  
+  p <- ggally_text('') +
+    geom_text(data=text.tbl, aes(x=0.5, y=y, color=color, label=line),
+              hjust=0.5, vjust=0.5, parse=TRUE, size=5.75*sf) +
+    scale_color_manual(values = text.tbl$color) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.border = element_rect(linetype = "solid",
+                                        color = theme_get()$panel.background$fill,
+                                        fill = "transparent"))
   p
 }
 
@@ -223,20 +241,24 @@ lm_scatterplot <- function(data, mapping) {
   ylims <- axis_lims[[y]]
   
   # extracts adjusted p-value and sets significance color
-  p_value <- (p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x) ))$adj_p_value
+  p_value <- (p_values_cor %>% filter( (var1==x & var2==y) | (var1==y & var2==x),
+                                       trait.group=='all'))$pearson.p.adj
   if (p_value < 0.05) {linealpha <- 0.9}
   else {linealpha <- 0.4}
   
-  p <- ggplot(data=data, mapping=mapping) +
+  p <- ggplot(data=data, mapping=mapping)
+  
+  if (name.out=='') {p <- p +
     geom_line(stat="smooth", method="lm", color="grey30", formula=y~x, size=1*sf, alpha=linealpha) +
-    geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2) +
-    #geom_smooth(aes(color=group_consolidated), method="lm", formula=y~x, size=1*sf, se=TRUE, alpha=0.25) +
-    geom_point(aes(color=group_consolidated),
-               alpha=0.75,shape=19, size=2*sf) +
+    geom_smooth(method="lm", linetype=0, formula=y~x, size=1*sf, alpha=linealpha/2)
+  } else {p <- p +
+    geom_smooth(aes(color=group_consolidated), method="lm", formula=y~x, size=1*sf, se=TRUE, alpha=0.25)
+  }
+  
+  p <- p +
+    geom_point(aes(color=group_consolidated), alpha=0.75,shape=19, size=2*sf) +
     geom_text(aes(label="", color=data$group_consolidated), key_glyph = "rect") + # empty geom
-    xlim(xlims) +
-    ylim(ylims) +
-    theme_light() +
+    xlim(xlims) + ylim(ylims) + theme_light() +
     scale_color_manual(name="Trait Group",
                        labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
@@ -246,31 +268,33 @@ lm_scatterplot <- function(data, mapping) {
 scplot_textsize <- 20
 
 # makes actual scatterplot matrix
-p_sc <- ggpairs(data = traits_table2,
-                columns=vars,
-                lower = list(continuous = lm_scatterplot),
-                diag = list(continuous = diag_label),
-                upper = list(continuous = upper_corr_p),
-                axisLabels = "show",
-                legend=c(2,1)
-) +
-  theme(strip.text.x = element_blank(),
-        strip.text.y = element_blank(),
-        legend.position="bottom",
-        legend.key.size = unit(1,"cm"),
-        legend.text = element_text(size = scplot_textsize*sf),
-        text = element_text(size = scplot_textsize*sf),
-        axis.text.x = element_text(size=(scplot_textsize*0.5)*sf),
-        axis.text.y = element_text(size=(scplot_textsize*0.5)*sf))
-
-# Saves image onto system
-smplot_width <- 1200
-smplot_height <- 1150
-#loc_out <- paste0(dir_out,"scatterplot_matrix_group")
-loc_out <- paste0(dir_out,"scatterplot_matrix")
-print_plot(p_sc, paste0(loc_out,".png"), "png", smplot_width, smplot_height, sf)
-print_plot(p_sc, paste0(loc_out,".pdf"), "pdf", smplot_width, smplot_height, sf)
-print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot matrix"))
+for (name.out in c('','_group')) {
+  p_sc <- ggpairs(data = traits_table2,
+                  columns=vars,
+                  lower = list(continuous = lm_scatterplot),
+                  diag = list(continuous = diag_label),
+                  upper = list(continuous = upper_corr_p),
+                  axisLabels = "show",
+                  legend=c(2,1)
+  ) +
+    theme(strip.text.x = element_blank(),
+          strip.text.y = element_blank(),
+          legend.position="bottom",
+          legend.key.size = unit(1,"cm"),
+          legend.text = element_text(size = scplot_textsize*sf),
+          text = element_text(size = scplot_textsize*sf),
+          axis.text.x = element_text(size=(scplot_textsize*0.5)*sf),
+          axis.text.y = element_text(size=(scplot_textsize*0.5)*sf))
+  
+  # Saves image onto system
+  smplot_width <- 1200
+  smplot_height <- 1150
+  #loc_out <- paste0(dir_out,"scatterplot_matrix_group")
+  loc_out <- paste0(dir_out,"scatterplot_matrix", name.out)
+  print_plot(p_sc, paste0(loc_out,".png"), "png", 1200, 1150, sf)
+  print_plot(p_sc, paste0(loc_out,".pdf"), "pdf", 1200, 1150, sf)
+  print(paste0("Saved ",length(vars),"x",length(vars)," scatterplot_matrix",name.out))
+}
 
 ### Dual Density Plots ####
 
