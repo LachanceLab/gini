@@ -105,9 +105,9 @@ plot_portability <- function(code) {
       names_to = "ancestry",
       values_to = "PGS_R2"
     ) %>% mutate(
+      ancestry = factor(str_replace(ancestry, 'United','UK'), levels = distances$ancestry), 
       relative_PGS_R2 = PGS_R2 / (traits_table %>% filter(prive_code == code))$PGS_R2_United[1],
     ) %>% left_join(distances, by="ancestry")
-  pcor_data[pcor_data$ancestry=="United","ancestry"] <- "UK"
   
   # extracts trait information (including portability slope)
   slice <- traits_table %>% filter(prive_code == code)
@@ -137,9 +137,10 @@ plot_portability <- function(code) {
   # annotation position and scales depend on existing plot scales
   xrange <- layer_scales(gg)$x$range$range
   yrange <- layer_scales(gg)$y$range$range
+  if (yrange[1] > 0) {yrange[1] <- 0}
   yrange[2] <- 1.15 #manually pads y-max of plot
   gg <- gg +
-    scale_y_continuous(limits = c(0,yrange[2]),
+    scale_y_continuous(limits = c(yrange[1],yrange[2]),
                        expand=expansion(mult = c(0, .01)),
                        breaks = c(0,0.25,0.5,0.75,1),
                        label = format(c(0,0.25,0.5,0.75,1))) +
@@ -206,7 +207,8 @@ plot_traitLD <- function(code) {
     xlab("Continental Population") +
     ylab("LD Score (trait mean)") +
     labs(title = description, fill = "Ancestry") +
-    scale_fill_manual(values = c("#00A9FF","#7CAE00","#CD9600","#F8766D","#FF61CC"),
+    scale_fill_manual(#values = hue_pal()(5),
+                      values = c('#F8766D','#00BFC4',"#00A9FF","#C77CFF",'#FF61CC'),
                       breaks = pops) +
     theme(axis.ticks.x = element_blank()) +
     annotate("text",
@@ -220,7 +222,8 @@ plot_traitLD <- function(code) {
 # reads traits table
 traits_table <- as_tibble(fread(loc_table))
 
-pops <- c("AFR","CSA","EAS","AMR","EUR")
+#pops <- c("AFR","CSA","EAS","AMR","EUR")
+pops <- c('EUR','CSA','EAS','AMR','AFR')
 pop_LDs <- traits_table %>% filter(GWAS_trait_type=="quantitative",PGS_trait_type=="quantitative")
 max_CoV <- max(pop_LDs$traitLD_unadj_CoV)
 pop_LDs <- pop_LDs %>%
@@ -236,19 +239,21 @@ pop_centers <- read.csv(
   "https://raw.githubusercontent.com/privefl/UKBB-PGS/main/pop_centers.csv",
   stringsAsFactors = FALSE)
 ancestries <- sort(pop_centers$Ancestry)
-ancestries[9] <- "United" # in order to match other data
+ancestries[9] <- "UK" # in order to match other data
 # calculates average PCA distance between ancestries
 prive_PC <- pop_centers %>% select(PC1:PC16)
 prive_dist_to_UK <- as.matrix(dist(prive_PC))[,1]
 distances <- tibble(
   ancestry = pop_centers$Ancestry,
   prive_dist_to_UK = prive_dist_to_UK
-) %>% arrange(ancestry)
-distances$ancestry <- str_replace(distances$ancestry,"United Kingdom","United")
+) %>% arrange(prive_dist_to_UK)
+distances$ancestry <- str_replace(distances$ancestry,"United Kingdom","UK")
+distances$ancestry <- factor(distances$ancestry, levels = distances$ancestry)
 
 # reads the PGSs and changes "United" to "UK"
 PGSs <- as_tibble(fread(loc_PGSs)) %>% filter(pop != "Ashkenazi")
 PGSs[PGSs$pop=="United","pop"] <- "UK"
+PGSs$pop <- factor(PGSs$pop, levels = distances$ancestry)
 
 ## makes Lorenz plots
 low_gini_code <- "height"
@@ -260,11 +265,11 @@ high_gini_sf <- cleanup_data_lorenz(high_gini_code)
 high_gini_plot <- plot_lorenz(high_gini_code, high_gini_sf)
 
 ## makes portability plots
-low_m_code <- "cholesterol"
-low_m_plot <- plot_portability(low_m_code)
-
-high_m_code <- "haemoglobin"
+high_m_code <- "cholesterol"
 high_m_plot <- plot_portability(high_m_code)
+
+low_m_code <- "haemoglobin"
+low_m_plot <- plot_portability(low_m_code)
 
 ## makes divergence plots
 low_D_code <- "log_platelet_crit"
@@ -289,8 +294,8 @@ high_CV_code <- "neuroticism"
 high_CV_plot <- plot_traitLD(high_CV_code) +
   theme(legend.position = "none")
 
-plots <- list(low_CV_plot, NULL, low_gini_plot , NULL, high_m_plot, NULL, low_D_plot, 
-              high_CV_plot, NULL, high_gini_plot, NULL, low_m_plot, NULL, high_D_plot)
+plots <- list(low_CV_plot, NULL, low_gini_plot , NULL, low_m_plot, NULL, low_D_plot, 
+              high_CV_plot, NULL, high_gini_plot, NULL, high_m_plot, NULL, high_D_plot)
 
 ncol = 7 # NULL plots used for extra spacing
 nrow = 2
