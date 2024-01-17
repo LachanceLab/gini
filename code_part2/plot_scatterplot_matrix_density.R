@@ -166,7 +166,7 @@ var_labels <- list(
   "ldpred2_h2" = c("SNP~Heritability","(italic({h^{2}}[SNP]))"),
   "traitLD_unadj_CoV" = c("LD~Variability","(LDCV)"),
   "gini_panUKB" = c("Genomic~Inequality","(italic(G[list(500,Meta)]))"),
-  "PGS_R2_United" = c("PGS~Accuracy","(symbol(R)[UK])"),
+  "PGS_R2_United" = c("PGS~Accuracy","(italic({R^{2}}[UK]))"),
   "portability_index" = c("Portability","(italic(m))"),
   "log_F" = c("Divergence","(italic(D))"))
 diag_label <- function(data, mapping) {
@@ -289,6 +289,7 @@ p_values_WRT <- tibble(
   unadj_p_value = as.numeric(),
   adj_p_value = as.numeric()
 )
+# this is ugly code, i know
 for (i in 1:2) {
   if (i==1) {
     var_comparison <- "group"
@@ -297,21 +298,30 @@ for (i in 1:2) {
     subtable2 <- traits_table2 %>% filter(!lifestyle) %>% select(all_of(vars))
   } else if (i==2) {
     var_comparison <- "type"
-    subtable1 <- traits_table %>% filter(PGS_trait_type=="binary", GWAS_trait_type=="binary") %>% select(vars)
+    subtable1 <- traits_table %>% filter(PGS_trait_type=="binary", GWAS_trait_type=="binary") %>% select(all_of(vars))
     subtable2 <- traits_table2 %>% select(all_of(vars))
   }
   
   for (j in 1:length(vars)) {
-    # uses Wilcoxon signed-rank test to determine significant differences
     var_measurement <- colnames(subtable1)[j]
-    WRT1 <- wilcox.test(subtable1[[j]], subtable2[[j]], paired=FALSE)
-    p_value <- WRT1$p.value
-    p_values_WRT <- p_values_WRT %>% add_row(
-      var_measurement = var_measurement,
-      var_comparison = var_comparison,
-      unadj_p_value = p_value,
-      adj_p_value = NA
-    )
+    if (i==1) {
+      # uses ANOVA for testing differences across trait groups
+      formula <- paste0(var_measurement, ' ~ group_consolidated')
+      aov1 <- aov(as.formula(formula), data=traits_table2)
+      p_values_WRT <- p_values_WRT %>% add_row(
+        var_measurement = var_measurement, var_comparison = var_comparison,
+        unadj_p_value = summary(aov1)[[1]][1,5], adj_p_value = NA
+      )
+      
+    } else if (i==2) {
+      # uses Wilcoxon signed-rank test to determine significant differences
+      WRT1 <- wilcox.test(subtable1[[j]], subtable2[[j]], paired=FALSE)
+      p_value <- WRT1$p.value
+      p_values_WRT <- p_values_WRT %>% add_row(
+        var_measurement = var_measurement, var_comparison = var_comparison,
+        unadj_p_value = p_value, adj_p_value = NA
+      )
+    }
   }
   # Adjusts p-values for multiple-testing. Adjusts within 6x1 plot
   adj_p_values_WRT <- p.adjust(p_values_WRT$unadj_p_value[(length(vars)*i-(length(vars)-1)):(length(vars)*i)],p_adjust_method)
@@ -326,7 +336,8 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   
   # gets adjusted p-values from Wilcoxon Ranked Test already done
   if (the_var_comparison=="group") {
-    col_var <- "lifestyle"
+    #col_var <- "lifestyle"
+    col_var <- 'group_consolidated'
   } else if (the_var_comparison=="type") {col_var <- "GWAS_trait_type"}
   
   adj_p_value <- (p_values_WRT %>%
@@ -346,9 +357,9 @@ dual_density <- function(data, mapping, the_var_comparison, the_var_measurement)
   if (the_var_comparison == "group") {
     p <- p +
       labs(fill="Trait Group") +
-      scale_fill_manual(labels=c("Lifestyle/Psychological","Non-lifestyle/psychological"),
-                        breaks=c(TRUE, FALSE),
-                        values = c("TRUE"="#00BF7D", "FALSE"="gray20"))
+      scale_fill_manual(labels=gg_pca_scale[["labels"]][-2],
+                        breaks=gg_pca_scale[["breaks"]][-2],
+                        values=gg_pca_scale[["values"]][-2])
   } else if (the_var_comparison == "type") {
     p <- p +
       labs(fill="Trait Type") +
@@ -418,38 +429,38 @@ for (var_comparison in c("group","type")) {
 
 
 # just the density plots for each group, ugly repeat code
-density_plots2 <- list()
-for (i in 1:length(vars)) {
-  x <- vars[i]
-  xlims <- axis_lims[[x]]
-  
-  p <- ggplot(traits_table2, mapping=aes(x=!!as.name(x) )) +
-    geom_density(mapping=aes(fill=group_consolidated),alpha=0.5,size=0.5*sf) +
-    theme_light() +
-    labs(fill="Trait Group") +
-    scale_fill_manual(name="Trait Group",
-                       labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
-                       breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
-                       values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
-    xlim(xlims) +
-    scale_y_continuous(expand=expansion(mult = c(0, .05)))
-  
-  density_plots2[[i]] <- p
-}
-ddp2 <- ggmatrix(plots=density_plots2,
-                nrow=1,
-                ncol=length(vars),
-                legend=1,
-                xAxisLabels = column_labels) +
-  theme(legend.position="top",
-        legend.key.size = unit(1,"cm"),
-        legend.text = element_text(size = ddplot_textsize*sf),
-        axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf),
-        axis.text.y = element_blank(),
-        text = element_text(size = ddplot_textsize*sf),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-
-loc_out <- paste0(dir_out,"triple_density_plot")
-print_plot(ddp2, paste0(loc_out,".png"), "png", ddplot_width, ddplot_height, sf)
-print_plot(ddp2, paste0(loc_out,".pdf"), "pdf", ddplot_width, ddplot_height, sf)
+# density_plots2 <- list()
+# for (i in 1:length(vars)) {
+#   x <- vars[i]
+#   xlims <- axis_lims[[x]]
+#   
+#   p <- ggplot(traits_table2, mapping=aes(x=!!as.name(x) )) +
+#     geom_density(mapping=aes(fill=group_consolidated),alpha=0.5,size=0.5*sf) +
+#     theme_light() +
+#     labs(fill="Trait Group") +
+#     scale_fill_manual(name="Trait Group",
+#                        labels=gg_pca_scale[["labels"]][gg_pca_scale_subset],
+#                        breaks=gg_pca_scale[["breaks"]][gg_pca_scale_subset],
+#                        values=gg_pca_scale[["values"]][gg_pca_scale_subset]) +
+#     xlim(xlims) +
+#     scale_y_continuous(expand=expansion(mult = c(0, .05)))
+#   
+#   density_plots2[[i]] <- p
+# }
+# ddp2 <- ggmatrix(plots=density_plots2,
+#                 nrow=1,
+#                 ncol=length(vars),
+#                 legend=1,
+#                 xAxisLabels = column_labels) +
+#   theme(legend.position="top",
+#         legend.key.size = unit(1,"cm"),
+#         legend.text = element_text(size = ddplot_textsize*sf),
+#         axis.text.x = element_text(size=(ddplot_textsize*0.5)*sf),
+#         axis.text.y = element_blank(),
+#         text = element_text(size = ddplot_textsize*sf),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank())
+# 
+# loc_out <- paste0(dir_out,"triple_density_plot")
+# print_plot(ddp2, paste0(loc_out,".png"), "png", ddplot_width, ddplot_height, sf)
+# print_plot(ddp2, paste0(loc_out,".pdf"), "pdf", ddplot_width, ddplot_height, sf)
