@@ -68,6 +68,8 @@ pop_all <- as_tibble(fread("../generated_data/pop_ALLrc_IIDs.txt", fill=TRUE)) %
 pop_PGS <- as_tibble(fread("../generated_data/pop_sampled_IIDs.txt", fill=TRUE)) %>% select(FID=V1,IID=V1,pop=V3)
 # filters to non-PGS UK individuals
 pop_GWAS <- pop_all %>% filter(!(IID %in% pop_PGS$IID), pop == "United")
+N <- 20000
+pop_GWAS2 <- pop_GWAS[sample(1:nrow(pop_GWAS),N,replace = FALSE),]
 
-loc_out <- paste0(dir_sims,"pop_GWAS.txt")
-fwrite(pop_GWAS, loc_out, sep=" ", col.names = FALSE)
+loc_out <- paste0(dir_sims,"pop_GWAS2.txt")
+fwrite(pop_GWAS2, loc_out, sep=" ", col.names = FALSE)

@@ -7,8 +7,9 @@ loc_bfile=${dir_1kG}'1kG_phase3_GRCh37_ALL'
 # sets path to text file containing FID and IID of individuals to use in LD panel
 loc_LD_IIDs=${dir_1kG}'EUR_IIDs.txt'
 
-dir_results=${dir_sims}GWAS_results/
-mkdir -p ${dir_results}clumped/
+dir_results=${dir_sims}GWAS_results_PC/
+dir_clumped=${dir_results}clumped_p8_r01
+mkdir -p ${dir_clumped}
 
 dir_scripts=${dir_code3}clump_scripts/
 mkdir -p ${dir_scripts}
@@ -19,9 +20,10 @@ mapfile -t -s 1 -O 1 traitnames < <(awk -F'\t' '{print $5}' $loc_simphenos)
 
 # LD clump
 
-pval_cutoff=0.00001
-#pval_cutoff=0.00000005
-r2_cutoff=0.2 #0.0
+#pval_cutoff=0.00001
+pval_cutoff=0.00000005
+#r2_cutoff=0.2
+r2_cutoff=0.01
 #kb_cutoff=1000
 
 for traitname in "${traitnames[@]}"; do
@@ -48,7 +50,7 @@ echo '${traitname}'
 --clump-field P \
 --clump-p1 '${pval_cutoff}' \
 --clump-r2 '${r2_cutoff}' \
---out '${dir_code3}${dir_results}clumped/sim_GWAS_ALL.ph_${traitname}'
+--out '${dir_code3}${dir_clumped}/sim_GWAS_ALL.ph_${traitname}'
 
 # --clump-kb '${kb_cutoff}' \
 
