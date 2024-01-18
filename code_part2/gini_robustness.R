@@ -129,7 +129,7 @@ gini_p_theme <- theme(
 )
 
 # color legend for plots
-gc_scale <- scale_color_manual(
+gc_scale <- scale_color_manual(name = 'Trait Group',
   labels = c("Biological Measures","Lifestyle/Psychological","Physical Measures"),
   breaks = c("biological measures","lifestyle/psychological","physical measures"),
   values = c("biological measures"="#F8766D","lifestyle/psychological"="#00BF7D","physical measures"="#00B0F6","psychological"="#E76BF3")
@@ -252,3 +252,29 @@ print(loc_out)
 #print_plot(ukginis, loc_out, print_mode, 3*600, 2*600, sf)
 print_plot(ukginis, paste0(loc_out,".png"), "png", 3*600, 2*600, sf)
 print_plot(ukginis, paste0(loc_out,".pdf"), "pdf", 3*600, 2*600, sf)
+
+
+
+# supplemental stuff ####
+# gini vs M ####
+ttq <- traits_table %>% filter(prive_code %in% qcodes)
+
+gg <- ggplot(ttq, aes(x=n_sig_SNPs, y=gini_panUKB)) +
+  geom_point(aes(color=group_consolidated), size=6*sf) +
+  geom_vline(xintercept = 500, size=sf) +
+  scale_x_log10() +
+  scale_y_continuous(limits = c(0,1), expand = c(0,0.025)) +
+  xlab('Log-10 transformed number of independent significant SNPs') +
+  ylab(bquote(italic(G[500][','][Meta]))) +
+  annotate('text', label='M==500', parse=TRUE, size=10*sf,
+           x=530,y=0.01, vjust=0, hjust=0) +
+  theme_light() +
+  gini_p_theme +
+  gc_scale +
+  theme(legend.position = 'top')
+
+loc_out <- paste0("../generated_figures/gini_vs_M")
+print(loc_out)
+#print_plot(gg, loc_out, print_mode, 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".png"), "png", 1200, 1200, sf)
+print_plot(gg, paste0(loc_out,".pdf"), "pdf", 1200, 1200, sf)
