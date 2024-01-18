@@ -8,7 +8,8 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
           ellipse = FALSE, ellipse.prob = 0.68, labels = NULL, labels.size = 3, 
           alpha = 1, var.axes = TRUE, circle = FALSE, circle.prob = 0.69, 
           varname.size = 3, varname.adjust = 1.5, varname.abbrev = FALSE,
-          arrow.size = 0.75, var.color = "darkred", overlap_fix = FALSE, ell.size = 0.75, 
+          arrow.size = 0.75, var.color = "darkred", overlap_fix = FALSE, ell.size = 0.75,
+          point.size = 1, plot.outside = TRUE,
           ...) 
 {
   library(tidyverse)
@@ -55,14 +56,14 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
   df.v$angle <- with(df.v, (180/pi) * atan(yvar/xvar))
   df.v$hjust = with(df.v, (1 - varname.adjust * sign(xvar))/2)
   df.v2 <- df.v
-  if (overlap_fix) {
-    df.v2$angle[1] <- df.v2$angle[1] + 3.2
-    df.v2$angle[4] <- df.v2$angle[4] - 0.5
-    df.v2$length <- sqrt(df.v2$xvar**2 + df.v2$yvar**2)
-    df.v2$length[1] <- df.v2$length[1] * 0.945
-    df.v2$xvar[c(1,4)] <- df.v2$length[c(1,4)] * cos(df.v2$angle[c(1,4)] * (pi/180))
-    df.v2$yvar[c(1,4)] <- df.v2$length[c(1,4)] * sin(df.v2$angle[c(1,4)] * (pi/180))
-  }
+  # if (overlap_fix) {
+  #   df.v2$angle[1] <- df.v2$angle[1] + 3.2
+  #   df.v2$angle[4] <- df.v2$angle[4] - 0.5
+  #   df.v2$length <- sqrt(df.v2$xvar**2 + df.v2$yvar**2)
+  #   df.v2$length[1] <- df.v2$length[1] * 0.945
+  #   df.v2$xvar[c(1,4)] <- df.v2$length[c(1,4)] * cos(df.v2$angle[c(1,4)] * (pi/180))
+  #   df.v2$yvar[c(1,4)] <- df.v2$length[c(1,4)] * sin(df.v2$angle[c(1,4)] * (pi/180))
+  # }
   g <- ggplot(data = df.u, aes(x = xvar, y = yvar)) + xlab(u.axis.labs[1]) + 
     ylab(u.axis.labs[2]) + coord_equal()
   if (var.axes) {
@@ -78,43 +79,74 @@ custom_ggbiplot <- function (pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
                           arrow = arrow(length = unit(arrow.size,"picas")),
                           color = var.color, lwd=arrow.size)
   }
+  
+  ellipse_params <- list()
+  if (!is.null(df.u$groups) && ellipse) {
+    theta <- c(seq(-pi, pi, length = 100), seq(pi, -pi, length = 100))
+    circle <- cbind(cos(theta), sin(theta))
+    
+    ell <- data.frame(X1=0,X2=0,groups='')[0,]
+    ell.params <- list()
+    for (group in sort(unique(df.u$groups))) {
+      x <- df.u %>% filter(groups==group)
+      sigma <- var(cbind(x$xvar, x$yvar))
+      mu <- c(mean(x$xvar), mean(x$yvar))
+      ed <- sqrt(qchisq(ellipse.prob, df = 2))
+      
+      ell <- rbind(ell,
+                   data.frame(sweep(circle %*% chol(sigma) * ed, 2, mu, FUN = "+"), groups = x$groups[1]))
+      ell.params[[group]] <- list(sigma=sigma,mu=mu,ed=ed)
+      
+    }
+    
+    names(ell)[1:2] <- c("xvar", "yvar")
+    g <- g + geom_path(data = ell, aes(color = groups, group = groups), size=ell.size)
+  }
+  
+  # determines if a point is inside its group' ellipse
+  mahalanobis_distance <- function(x, center, cov_matrix) {
+    diff <- matrix(x - center, ncol = 2)
+    sqrt((diff %*% solve(cov_matrix) %*% t(diff)))
+  }
+  is_point_out_ellipse <- function(x, y, group, ell.params) {
+    params <- ell.params[[group]]
+    md <- mahalanobis_distance(c(x, y), params$mu, params$sigma)[[1]]
+    md > params$ed
+  }
+  
+  df.u <- df.u %>%
+    rowwise() %>%
+    mutate(outside.ell = is_point_out_ellipse(xvar, yvar, groups, ell.params))
+  
   if (!is.null(df.u$labels)) {
     if (!is.null(df.u$groups)) {
-      g <- g + geom_text(aes(label = labels, color = groups), 
-                         size = labels.size)
+      if (plot.outside) {
+        df.u.out <- df.u
+        df.u.in <- df.u[0,]
+      } else {
+        df.u.out <- df.u %>% filter(outside.ell)
+        df.u.in <- df.u %>% filter(!outside.ell)
+      }
+      
+      g <- g + geom_text(data=df.u.out,
+                         aes(label = labels, color = groups), 
+                         size = labels.size) +
+        geom_point(data = df.u.in,
+                   aes(color = groups), alpha = alpha, size=point.size)
     }
     else {
       g <- g + geom_text(aes(label = labels), size = labels.size)
     }
   } else {
     if (!is.null(df.u$groups)) {
-      g <- g + geom_point(aes(color = groups), alpha = alpha)
+      g <- g + geom_point(aes(color = groups), alpha = alpha, size=point.size)
     }
     else {
-      g <- g + geom_point(alpha = alpha)
+      g <- g + geom_point(alpha = alpha, size=point.size)
     }
   }
-  if (!is.null(df.u$groups) && ellipse) {
-    theta <- c(seq(-pi, pi, length = 100), seq(pi, -pi, length = 100))
-    circle <- cbind(cos(theta), sin(theta))
-    ell <- df.u %>%
-      group_by(groups) %>%
-      group_map(~ {
-        x <- .x
-        if (nrow(x) <= 2) {
-          return(NULL)
-        }
-        sigma <- var(cbind(x$xvar, x$yvar))
-        mu <- c(mean(x$xvar), mean(x$yvar))
-        ed <- sqrt(qchisq(ellipse.prob, df = 2))
-        data.frame(sweep(circle %*% chol(sigma) * ed, 2, mu, FUN = "+"), groups = x$groups[1])
-      }, .keep = TRUE) %>% 
-      bind_rows()
-    
-    
-    names(ell)[1:2] <- c("xvar", "yvar")
-    g <- g + geom_path(data = ell, aes(color = groups, group = groups), size=ell.size)
-  }
+  
+  
   if (var.axes) {
     g <- g + geom_text(data = df.v2, aes(label = varname, 
                                         x = xvar, y = yvar, angle = angle, hjust = hjust), 

@@ -33,10 +33,9 @@ print_plot <- function(gg, loc_out, print_mode, plot_width, plot_height, sf) {
 
 # Shared Code ####
 vars <- c("SNP Heritability"="ldpred2_h2",
-          #"Recombination Rate"="cMperMb",
           "LD Variability"="traitLD_unadj_CoV",
           "Genomic Inequality"="gini_panUKB",
-          "PGS Accuracy"="pcor_United",
+          "PGS Accuracy"="PGS_R2_United",
           "Portability"="portability_index",
           "Divergence"="log_F")
 
@@ -70,9 +69,11 @@ matrix.pca <- prcomp(matrix[names(vars)], center=TRUE, scale. = TRUE)
 
 # Binary vs Quant ####
 # plots PCA for all traits, comparing binary vs quantitative traits
-gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE, labels=matrix$short_label,
-                varname.adjust = 1.75, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-               labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf) +
+gg <- custom_ggbiplot(matrix.pca, groups = matrix$GWAS_trait_type, ellipse=TRUE, #labels=matrix$short_label,
+                varname.adjust = 1.25, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
+               labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf,
+               point.size=2*sf, #plot.outside = FALSE
+               ) +
   geom_text(aes(label="", color=matrix$GWAS_trait_type), key_glyph = "rect") + # empty geom
   PCA_theme +
   labs(title = NULL, subtitle = NULL, color = "Trait Type") +
@@ -99,7 +100,7 @@ for (the_trait_type in trait_types) {
   if (the_trait_type == "binary") {gg_pca_scale_subset <- c(2,3,4)
   } else if (the_trait_type == "quantitative") {
     gg_pca_scale_subset <- c(1,3,4)
-    overlap_fix = TRUE
+    #overlap_fix = TRUE
   }
   
   # selects just traits of trait type
@@ -109,9 +110,11 @@ for (the_trait_type in trait_types) {
   matrix.pca <- prcomp(matrix_filtered[names(vars)], center=TRUE, scale. = TRUE)
   
   # plots PCA
-  gg <- custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, labels=matrix_filtered$short_label,
+  gg <- custom_ggbiplot(matrix.pca, groups = matrix_filtered$group_consolidated, ellipse=TRUE, #labels=matrix_filtered$short_label,
                         varname.adjust = 1.25, varname.size = 6*sf, var.color="gray20", ell.size = 0.6*sf,
-                        labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix) +
+                        labels.size = 5*sf, var.scale = 1, obs.scale = 1, arrow.size = 0.75*sf, overlap_fix = overlap_fix,
+                        point.size=2*sf, #plot.outside = FALSE
+                        ) +
     geom_text(aes(label="", color=matrix_filtered$group_consolidated), key_glyph = "rect") + # empty geom
     PCA_theme +
     labs(title = NULL, subtitle = NULL, color = "Trait Group") +
